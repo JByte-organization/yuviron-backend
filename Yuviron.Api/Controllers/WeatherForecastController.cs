@@ -39,4 +39,11 @@ public class UsersController : ControllerBase
         if (user is null) return NotFound();
         return Ok(user);
     }
+
+    [HttpGet("getList")]
+    public async Task<ActionResult<List<User>>> GetAllUsers()
+    {
+        var users = await _db.Users.AsNoTracking().ToListAsync();
+        return Ok(users);
+    }
 }
