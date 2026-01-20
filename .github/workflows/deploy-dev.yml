@@ -11,6 +11,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: dev
 
     steps:
       - name: Checkout
@@ -33,14 +34,14 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22
         with:
-          application_name: ${{ vars.EB_APPLICATION_NAME }}
-          environment_name: ${{ vars.EB_ENVIRONMENT_NAME }}
-          region: ${{ vars.AWS_REGION }}
+          application_name: ${{ secrets.EB_APPLICATION_NAME }}
+          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+          region: ${{ secrets.AWS_REGION }}
           version_label: dev-${{ github.sha }}
           deployment_package: app.zip
