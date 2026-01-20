@@ -2,7 +2,7 @@ name: Deploy DEV to Elastic Beanstalk
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: ["dev"]
 
 permissions:
   id-token: write
@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
     environment: dev
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -37,11 +37,24 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v22
-        with:
-          application_name: ${{ secrets.EB_APPLICATION_NAME }}
-          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
-          region: ${{ secrets.AWS_REGION }}
-          version_label: dev-${{ github.sha }}
-          deployment_package: app.zip
+      - name: Deploy to Elastic Beanstalk (AWS CLI)
+        run: |
+          APP="${{ secrets.EB_APPLICATION_NAME }}"
+          ENV="${{ secrets.EB_ENVIRONMENT_NAME }}"
+          REGION="${{ secrets.AWS_REGION }}"
+          VERSION="dev-${GITHUB_SHA}"
+
+          S3_BUCKET="$(aws elasticbeanstalk create-storage-location --region "$REGION" --query 'S3Bucket' --output text)"
+
+          aws s3 cp app.zip "s3://$S3_BUCKET/$APP/$VERSION.zip" --region "$REGION"
+
+          aws elasticbeanstalk create-application-version \
+            --application-name "$APP" \
+            --version-label "$VERSION" \
+            --source-bundle S3Bucket="$S3_BUCKET",S3Key="$APP/$VERSION.zip" \
+            --region "$REGION"
+
+          aws elasticbeanstalk update-environment \
+            --environment-name "$ENV" \
+            --version-label "$VERSION" \
+            --region "$REGION"
