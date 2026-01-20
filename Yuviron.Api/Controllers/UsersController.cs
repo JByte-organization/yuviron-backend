@@ -8,20 +8,17 @@ namespace Yuviron.Api.Controllers;
 
 [ApiController]
 [Route("users")]
-public class UsersController : ControllerBase
-{
+public class UsersController : ControllerBase {
     private readonly AppDbContext _db;
 
     public UsersController(AppDbContext db) => _db = db;
 
     [HttpPost]
-    public async Task<ActionResult<User>> Create([FromBody] CreateUserRequest req)
-    {
+    public async Task<ActionResult<User>> Create([FromBody] CreateUserRequest req) {
         if (string.IsNullOrWhiteSpace(req.FirstName) || string.IsNullOrWhiteSpace(req.LastName))
             return BadRequest("firstName and lastName are required");
 
-        var user = new User
-        {
+        var user = new User {
             FirstName = req.FirstName.Trim(),
             LastName = req.LastName.Trim()
         };
@@ -33,16 +30,14 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<User>> GetById(int id)
-    {
+    public async Task<ActionResult<User>> GetById(int id) {
         var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (user is null) return NotFound();
         return Ok(user);
     }
 
     [HttpGet("getList")]
-    public async Task<ActionResult<List<User>>> GetAllUsers()
-    {
+    public async Task<ActionResult<List<User>>> GetAllUsers() {
         var users = await _db.Users.AsNoTracking().ToListAsync();
         return Ok(users);
     }

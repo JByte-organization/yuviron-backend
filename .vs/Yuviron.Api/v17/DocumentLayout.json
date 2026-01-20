@@ -3,12 +3,20 @@
   "WorkspaceRootPath": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|d:\\nikolayfilippov\\graduate_work\\yuviron-backend\\yuviron.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E96593F-4F10-491C-A976-674521A00DE0}|Yuviron.Api\\Yuviron.Api.csproj|solutionrelative:yuviron.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,33 +26,56 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Order.cs",
+              "DocumentMoniker": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Models\\Order.cs",
+              "RelativeDocumentMoniker": "Yuviron.Api\\Models\\Order.cs",
+              "ToolTip": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Models\\Order.cs",
+              "RelativeToolTip": "Yuviron.Api\\Models\\Order.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T11:50:29.985Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "OrdersController.cs",
+              "DocumentMoniker": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\OrdersController.cs",
+              "RelativeDocumentMoniker": "Yuviron.Api\\Controllers\\OrdersController.cs",
+              "ToolTip": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\OrdersController.cs",
+              "RelativeToolTip": "Yuviron.Api\\Controllers\\OrdersController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T11:44:14.753Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "Yuviron.Api\\Controllers\\UsersController.cs",
+              "ToolTip": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "Yuviron.Api\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T10:52:18.448Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Program.cs",
               "RelativeDocumentMoniker": "Yuviron.Api\\Program.cs",
               "ToolTip": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Program.cs",
               "RelativeToolTip": "Yuviron.Api\\Program.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAAB4AAAAlAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-20T11:34:23.147Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\WeatherForecastController.cs",
-              "RelativeDocumentMoniker": "Yuviron.Api\\Controllers\\WeatherForecastController.cs",
-              "ToolTip": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Controllers\\WeatherForecastController.cs",
-              "RelativeToolTip": "Yuviron.Api\\Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAABkAAAAAAAAAAAAcwCoAAAAVAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-20T10:52:18.448Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-20T11:34:23.147Z"
             }
           ]
         }

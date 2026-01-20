@@ -217,10 +217,10 @@ D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\st
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\staticwebassets.build.json.cache
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\staticwebassets.development.json
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\Yuviron..701B059B.Up2Date
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\Yuviron.Api.dll
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\refint\Yuviron.Api.dll
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\Yuviron.Api.pdb
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\Yuviron.Api.genruntimeconfig.cache
 D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\ref\Yuviron.Api.dll
+D:\NikolayFilippov\graduate_work\yuviron-backend\Yuviron.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
