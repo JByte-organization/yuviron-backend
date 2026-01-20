@@ -20,14 +20,24 @@ builder.Services.AddDbContext<AppDbContext>(options => {
 
 var app = builder.Build();
 
+// AUTOMIGRATIONS (DEV ONLY)
+if (app.Environment.IsDevelopment()) {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// Swagger
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// HTTPS
 if (!app.Environment.IsDevelopment()) {
     app.UseHttpsRedirection();
 }
+
 app.UseAuthorization();
 app.MapControllers();
 
