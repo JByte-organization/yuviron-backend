@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api\\Yuviron.Api.csproj": {}
+    "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api.csproj": {}
   },
   "projects": {
-    "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api\\Yuviron.Api.csproj": {
+    "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api\\Yuviron.Api.csproj",
+        "projectUniqueName": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api.csproj",
         "projectName": "Yuviron.Api",
-        "projectPath": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api\\Yuviron.Api.csproj",
+        "projectPath": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api.csproj",
         "packagesPath": "C:\\Users\\nf\\.nuget\\packages\\",
-        "outputPath": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\Yuviron.Api\\obj\\",
+        "outputPath": "D:\\NikolayFilippov\\graduate_work\\yuviron-backend\\Yuviron.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
