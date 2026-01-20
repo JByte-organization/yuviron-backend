@@ -1,4 +1,4 @@
-name: Deploy (dev) to Elastic Beanstalk
+name: Deploy DEV to Elastic Beanstalk
 
 on:
   push:
