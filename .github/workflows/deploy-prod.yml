@@ -42,7 +42,7 @@ jobs:
           APP="${{ secrets.EB_APPLICATION_NAME }}"
           ENV="${{ secrets.EB_ENVIRONMENT_NAME }}"
           REGION="${{ secrets.AWS_REGION }}"
-          VERSION="prod-${GITHUB_SHA}"
+          VERSION="prod-${GITHUB_SHA}-${GITHUB_RUN_NUMBER}"
 
           S3_BUCKET="$(aws elasticbeanstalk create-storage-location --region "$REGION" --query 'S3Bucket' --output text)"
 
