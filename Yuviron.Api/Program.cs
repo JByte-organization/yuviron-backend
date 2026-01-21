@@ -35,7 +35,8 @@ if (app.Environment.IsDevelopment()) {
 
 // HTTPS
 if (!app.Environment.IsDevelopment()) {
-    app.UseHttpsRedirection();
+    // Временно отключаем HTTPS редирект, пока не настроен сертификат/ALB
+	// app.UseHttpsRedirection();
 }
 
 app.UseAuthorization();
