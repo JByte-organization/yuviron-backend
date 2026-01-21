@@ -8,6 +8,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
 jobs:
   deploy:
     environment: prod
@@ -38,23 +42,54 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to Elastic Beanstalk (AWS CLI)
+        shell: bash
         run: |
+          set -euo pipefail
+
           APP="${{ secrets.EB_APPLICATION_NAME }}"
           ENV="${{ secrets.EB_ENVIRONMENT_NAME }}"
           REGION="${{ secrets.AWS_REGION }}"
-          VERSION="prod-${GITHUB_SHA}-${GITHUB_RUN_NUMBER}"
 
-          S3_BUCKET="$(aws elasticbeanstalk create-storage-location --region "$REGION" --query 'S3Bucket' --output text)"
+          # Уникальная версия на каждый запуск workflow (не конфликтует при повторных деплоях)
+          VERSION="prod-${GITHUB_SHA}-${GITHUB_RUN_ID}"
 
-          aws s3 cp app.zip "s3://$S3_BUCKET/$APP/$VERSION.zip" --region "$REGION"
+          echo "APP=$APP"
+          echo "ENV=$ENV"
+          echo "REGION=$REGION"
+          echo "VERSION=$VERSION"
 
-          aws elasticbeanstalk create-application-version \
-            --application-name "$APP" \
-            --version-label "$VERSION" \
-            --source-bundle S3Bucket="$S3_BUCKET",S3Key="$APP/$VERSION.zip" \
-            --region "$REGION"
+          # Гарантированно получаем S3 bucket для EB (создаёт один раз, потом возвращает существующий)
+          S3_BUCKET="$(aws elasticbeanstalk create-storage-location \
+            --region "$REGION" \
+            --query 'S3Bucket' \
+            --output text)"
 
+          echo "EB S3 bucket: $S3_BUCKET"
+
+          # Загружаем артефакт
+          aws s3 cp app.zip "s3://${S3_BUCKET}/${APP}/${VERSION}.zip" --region "$REGION"
+
+          # Если application-version уже существует (редко, но бывает при повторном прогоне),
+          # не падаем — просто обновим environment на эту версию.
+          if aws elasticbeanstalk describe-application-versions \
+              --application-name "$APP" \
+              --version-labels "$VERSION" \
+              --region "$REGION" \
+              --query 'ApplicationVersions[0].VersionLabel' \
+              --output text 2>/dev/null | grep -q "$VERSION"; then
+            echo "Application version already exists: $VERSION"
+          else
+            aws elasticbeanstalk create-application-version \
+              --application-name "$APP" \
+              --version-label "$VERSION" \
+              --source-bundle S3Bucket="$S3_BUCKET",S3Key="$APP/$VERSION.zip" \
+              --region "$REGION"
+          fi
+
+          # Переключаем окружение на новую версию
           aws elasticbeanstalk update-environment \
             --environment-name "$ENV" \
             --version-label "$VERSION" \
             --region "$REGION"
+
+          echo "Deployment triggered успешно."
