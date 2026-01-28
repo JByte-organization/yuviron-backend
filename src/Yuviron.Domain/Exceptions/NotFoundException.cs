@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Yuviron.Domain.Exceptions;
 
-namespace Yuviron.Domain.Exceptions
+public class NotFoundException : Exception
 {
-    internal class NotFoundException
+    public NotFoundException(string name, object key)
+        : base($"Entity \"{name}\" ({key}) was not found.")
     {
     }
 }

@@ -1,3 +1,4 @@
+using Yuviron.Api.Middlewares;
 using Yuviron.Application;
 using Yuviron.Infrastructure;
 using Yuviron.Infrastructure.Persistence;
@@ -13,6 +14,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
@@ -55,6 +58,7 @@ else
     app.UseHttpsRedirection();
 }
 
+app.UseExceptionHandler();
 app.UseAuthorization();
 app.MapControllers();
 
