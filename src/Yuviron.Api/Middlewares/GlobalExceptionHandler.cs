@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Api.Middlewares;
 
@@ -40,14 +41,21 @@ public class GlobalExceptionHandler : IExceptionHandler
                     );
                 break;
 
-            // Случай Б: Сущность не найдена (например, неверный ID)
-            case KeyNotFoundException:
+            // Случай Б: кастомный NotFound (Ошибка 404)
+            case NotFoundException notFoundEx:
                 problemDetails.Status = StatusCodes.Status404NotFound;
-                problemDetails.Title = "Not Found";
-                problemDetails.Detail = exception.Message;
+                problemDetails.Title = "Resource Not Found";
+                problemDetails.Detail = notFoundEx.Message; 
                 break;
 
-            // Случай В: Любая другая ошибка (баг в коде, база упала)
+            // Случай В: кастомный DomainException (нарушение бизнес-правил)
+            case DomainException domainEx:
+                problemDetails.Status = StatusCodes.Status400BadRequest; // Или 422 UnprocessableEntity
+                problemDetails.Title = "Business Rule Violation";
+                problemDetails.Detail = domainEx.Message;
+                break;
+
+            // Случай С: Любая другая ошибка (баг в коде, база упала)
             default:
                 problemDetails.Status = StatusCodes.Status500InternalServerError;
                 problemDetails.Title = "Internal Server Error";
