@@ -2,7 +2,7 @@ name: Deploy DEV to Elastic Beanstalk
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["dev"] 
 
 permissions:
   id-token: write
@@ -20,13 +20,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "9.0.x"
 
       - name: Restore
-        run: dotnet restore Yuviron.Api/Yuviron.Api.csproj
+        run: dotnet restore src/Yuviron.Api/Yuviron.Api.csproj
 
       - name: Publish
-        run: dotnet publish Yuviron.Api/Yuviron.Api.csproj -c Release -o publish
+        run: dotnet publish src/Yuviron.Api/Yuviron.Api.csproj -c Release -o publish
 
       - name: Zip artifact
         run: cd publish && zip -r ../app.zip .
