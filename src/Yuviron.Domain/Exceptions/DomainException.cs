@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Yuviron.Domain.Exceptions;
 
-namespace Yuviron.Domain.Exceptions
+public abstract class DomainException : Exception
 {
-    internal class DomainException
+    protected DomainException(string message) : base(message)
     {
     }
 }
