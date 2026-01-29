@@ -15,13 +15,13 @@ public class PlaylistConfiguration : IEntityTypeConfiguration<Playlist>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Title).IsRequired().HasMaxLength(150);
-        builder.HasIndex(x => x.IsDeleted); // Для быстрого фильтра soft-delete
+        builder.HasIndex(x => x.IsDeleted); 
 
         builder.HasOne(x => x.User)
-               .WithMany() // Если нужно, добавь в User: ICollection<Playlist> Playlists
-               .HasForeignKey(x => x.OwnerUserId)
+               .WithMany() 
+               .HasForeignKey(x => x.UserId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasQueryFilter(p => !p.IsDeleted); // Автоматически скрывать удаленные
+        builder.HasQueryFilter(p => !p.IsDeleted); 
     }
 }

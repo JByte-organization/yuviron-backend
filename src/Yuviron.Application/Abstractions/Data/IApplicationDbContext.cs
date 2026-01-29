@@ -2,7 +2,7 @@
 using Yuviron.Application.Abstractions.Data;
 using Yuviron.Domain.Entities;
 
-namespace Yuviron.Application.Abstractions; // Важно: Namespace совпадает
+namespace Yuviron.Application.Abstractions;
 
 public interface IApplicationDbContext : IUnitOfWork
 {

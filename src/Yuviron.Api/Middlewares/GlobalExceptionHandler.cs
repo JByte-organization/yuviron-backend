@@ -28,7 +28,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         switch (exception)
         {
-            // Случай А: Ошибка валидации (то, что выбросил ValidationBehavior)
+            // 1. Ошибки валидации (400)
             case ValidationException validationException:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Validation Error";
@@ -41,21 +41,28 @@ public class GlobalExceptionHandler : IExceptionHandler
                     );
                 break;
 
-            // Случай Б: кастомный NotFound (Ошибка 404)
+            // 2. Не найдено (404)
             case NotFoundException notFoundEx:
                 problemDetails.Status = StatusCodes.Status404NotFound;
                 problemDetails.Title = "Resource Not Found";
-                problemDetails.Detail = notFoundEx.Message; 
+                problemDetails.Detail = notFoundEx.Message;
                 break;
 
-            // Случай В: кастомный DomainException (нарушение бизнес-правил)
+
+            case UserAlreadyExistsException existsEx:
+                problemDetails.Status = StatusCodes.Status409Conflict;
+                problemDetails.Title = "Resource Conflict";
+                problemDetails.Detail = existsEx.Message;
+                break;
+
+            // 4. Остальные бизнес-правила (400)
             case DomainException domainEx:
-                problemDetails.Status = StatusCodes.Status400BadRequest; // Или 422 UnprocessableEntity
+                problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Business Rule Violation";
                 problemDetails.Detail = domainEx.Message;
                 break;
 
-            // Случай С: Любая другая ошибка (баг в коде, база упала)
+            // 5. Всё остальное (500)
             default:
                 problemDetails.Status = StatusCodes.Status500InternalServerError;
                 problemDetails.Title = "Internal Server Error";
@@ -63,13 +70,9 @@ public class GlobalExceptionHandler : IExceptionHandler
                 break;
         }
 
-        // 3. Устанавливаем статус код ответа
         context.Response.StatusCode = problemDetails.Status.Value;
-
-        // 4. Отправляем JSON обратно клиенту
         await context.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
-        // Возвращаем true, сигнализируя, что мы обработали ошибку
         return true;
     }
 }

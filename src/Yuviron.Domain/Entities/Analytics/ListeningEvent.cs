@@ -22,4 +22,30 @@ public class ListeningEvent : Entity
     public virtual Track Track { get; private set; } = null!;
 
     private ListeningEvent() { }
+
+    public static ListeningEvent Create(
+        Guid? userId,
+        Guid trackId,
+        int msPlayed,
+        string deviceType,
+        string? countryCode,
+        string? sourceType,
+        Guid? sourceId)
+    {
+       
+        if (msPlayed < 0) throw new ArgumentException("Cannot play negative time");
+
+        return new ListeningEvent
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TrackId = trackId,
+            PlayedAt = DateTime.UtcNow, 
+            MsPlayed = msPlayed,
+            DeviceType = deviceType,
+            CountryCode = countryCode,
+            SourceType = sourceType,
+            SourceId = sourceId
+        };
+    }
 }

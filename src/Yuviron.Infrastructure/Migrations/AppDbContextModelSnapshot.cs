@@ -747,9 +747,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<bool>("IsPublic")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -758,11 +755,14 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
 
-                    b.HasIndex("OwnerUserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("playlists", (string)null);
                 });
@@ -1751,7 +1751,7 @@ namespace Yuviron.Infrastructure.Migrations
                 {
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
                         .WithMany()
-                        .HasForeignKey("OwnerUserId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

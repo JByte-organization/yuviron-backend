@@ -74,19 +74,7 @@ app.UseExceptionHandler();
 // --- 3. Swagger ---
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var initializer = scope.ServiceProvider.GetRequiredService<AppDbContextInitializer>();
 
-    try
-    {
-        await initializer.InitialiseAsync();
-        await initializer.SeedAsync();
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during database initialisation.");
-    }
 
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -108,7 +96,6 @@ else
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

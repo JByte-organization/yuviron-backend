@@ -15,12 +15,10 @@ public class AppDbContextInitializer
         _context = context;
     }
 
-    // 1. Метод для применения миграций (создание таблиц)
     public async Task InitialiseAsync()
     {
         try
         {
-            // Проверяем, что БД реляционная (MySQL подходит), и накатываем миграции
             if (_context.Database.IsRelational())
             {
                 await _context.Database.MigrateAsync();
@@ -33,7 +31,6 @@ public class AppDbContextInitializer
         }
     }
 
-    // 2. Метод для заполнения начальными данными
     public async Task SeedAsync()
     {
         try
@@ -49,21 +46,18 @@ public class AppDbContextInitializer
 
     public async Task TrySeedAsync()
     {
-        // --- Сидинг Ролей ---
-        // Если таблица ролей пуста, добавляем базовые роли
+
         if (!await _context.Roles.AnyAsync())
         {
             await _context.Roles.AddRangeAsync(
-                new Role("User"),            // Обычный пользователь
-                new Role("ManagementUser"),  // Менеджер артиста/лейбла
-                new Role("Admin")            // Администратор платформы
+                new Role("User"),           
+                new Role("ManagementUser"), 
+                new Role("Admin")            
             );
 
             await _context.SaveChangesAsync();
         }
 
-        // --- Сидинг Жанров ---
-        // Если жанров нет, добавляем базовые, чтобы приложение не было пустым
         if (!await _context.Genres.AnyAsync())
         {
             await _context.Genres.AddRangeAsync(
