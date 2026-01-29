@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using MediatR;
 
-namespace Yuviron.Application.Features.Auth.Commands.Login
-{
-    internal class LoginCommand
-    {
-    }
-}
+namespace Yuviron.Application.Features.Auth.Commands.Login;
+
+public record LoginCommand(string Email, string Password) : IRequest<LoginResponse>;

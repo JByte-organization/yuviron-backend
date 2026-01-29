@@ -17,4 +17,16 @@ public class UserProfile : Entity
     public virtual User User { get; private set; } = null!;
 
     private UserProfile() { }
+
+    public static UserProfile Create(Guid userId, string displayName)
+    {
+        return new UserProfile
+        {
+
+            Id = userId,
+            UserId = userId,
+            DisplayName = displayName,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
 }
