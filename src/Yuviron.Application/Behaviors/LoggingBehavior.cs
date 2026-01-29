@@ -19,13 +19,10 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     {
         var requestName = typeof(TRequest).Name;
 
-        // 1. Логируем, что запрос начался
         _logger.LogInformation("Yuviron Request: Starting {Name} {@Request}", requestName, request);
 
-        // 2. Передаем управление дальше по цепочке (к валидатору или хендлеру)
         var response = await next();
 
-        // 3. Логируем, что запрос успешно завершился
         _logger.LogInformation("Yuviron Request: Completed {Name}", requestName);
 
         return response;
