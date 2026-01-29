@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Authentication;

@@ -1,4 +1,4 @@
-﻿namespace Yuviron.Application.Abstractions;
+﻿namespace Yuviron.Application.Abstractions.Authentication;
 
 public interface IPasswordHasher
 {

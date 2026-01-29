@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 

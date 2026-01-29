@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
-namespace Yuviron.Application.Abstractions.Messaging
+namespace Yuviron.Application.Abstractions.Messaging;
+
+public interface IEmailService
 {
-    internal interface IEmailService
-    {
-    }
+    Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default);
 }

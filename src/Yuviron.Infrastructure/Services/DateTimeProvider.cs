@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Yuviron.Application.Abstractions.Services;
 
-namespace Yuviron.Infrastructure.Services
+namespace Yuviron.Infrastructure.Services;
+
+public class DateTimeProvider : IDateTimeProvider
 {
-    internal class DateTimeProvider
-    {
-    }
+    public DateTime UtcNow => DateTime.UtcNow;
 }

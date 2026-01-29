@@ -1,14 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Amazon.Runtime;
+using Amazon.S3;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Yuviron.Application.Abstractions; 
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Yuviron.Infrastructure;
 
@@ -56,6 +61,21 @@ public static class DependencyInjection
                 };
             });
 
+        var awsOptions = configuration.GetAWSOptions();
+
+        var accessKey = configuration["AWS:AccessKey"];
+        var secretKey = configuration["AWS:SecretKey"];
+
+        if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
+        {
+            awsOptions.Credentials = new BasicAWSCredentials(accessKey, secretKey);
+        }
+
+        services.AddDefaultAWSOptions(awsOptions);
+        services.AddAWSService<IAmazonS3>();
+
+        services.AddScoped<IFileStorageService, S3FileStorageService>();
+
         // Связываем интерфейс IApplicationDbContext с реализацией AppDbContext
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
@@ -67,6 +87,11 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+
+        services.AddHttpContextAccessor(); 
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
 
         return services;
     }

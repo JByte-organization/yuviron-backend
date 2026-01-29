@@ -1,6 +1,6 @@
-﻿using Yuviron.Application.Abstractions;
+﻿using Yuviron.Application.Abstractions.Authentication;
 
-namespace Yuviron.Infrastructure.Services;
+namespace Yuviron.Infrastructure.Authentication;
 
 public class PasswordHasher : IPasswordHasher
 {

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Yuviron.Application.Abstractions.Data;
 
-namespace Yuviron.Application.Abstractions.Data
+public interface IUnitOfWork
 {
-    internal interface IUnitOfWork
-    {
-    }
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

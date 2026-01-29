@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Yuviron.Application.Abstractions.Data;
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Abstractions; // Важно: Namespace совпадает
 
-public interface IApplicationDbContext
+public interface IApplicationDbContext : IUnitOfWork
 {
     // --- Identity ---
     DbSet<User> Users { get; }
@@ -70,5 +71,4 @@ public interface IApplicationDbContext
     DbSet<UserAchievement> UserAchievements { get; }
     DbSet<UserAchievementProgress> UserAchievementProgress { get; }
 
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
