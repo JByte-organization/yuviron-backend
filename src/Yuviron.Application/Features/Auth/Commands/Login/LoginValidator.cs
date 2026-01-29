@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using FluentValidation;
 
-namespace Yuviron.Application.Features.Auth.Commands.Login
+namespace Yuviron.Application.Features.Auth.Commands.Login;
+
+public class LoginValidator : AbstractValidator<LoginCommand>
 {
-    internal class LoginValidator
+    public LoginValidator()
     {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Password).NotEmpty();
     }
 }

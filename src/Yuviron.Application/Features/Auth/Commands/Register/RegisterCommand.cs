@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using MediatR;
 
-namespace Yuviron.Application.Features.Auth.Commands.Register
-{
-    internal class RegisterCommand
-    {
-    }
-}
+namespace Yuviron.Application.Features.Auth.Commands.Register;
+
+public record RegisterCommand(
+    string Email,
+    string Password,
+    string FirstName
+) : IRequest<Guid>;

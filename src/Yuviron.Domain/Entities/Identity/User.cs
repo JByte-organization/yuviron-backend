@@ -15,8 +15,6 @@ public class User : Entity
     public DateTime UpdatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
 
-    // Навигационные свойства (связи)
-    // Используем ICollection для чистоты, инициализируем пустым списком
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
@@ -24,9 +22,8 @@ public class User : Entity
     public virtual UserProfile? Profile { get; private set; }
     public virtual UserSettings? Settings { get; private set; }
 
-    private User() { } // Для EF Core
+    private User() { } 
 
-    // Фабричный метод для создания
     public static User Create(string email, string passwordHash)
     {
         return new User
@@ -38,5 +35,10 @@ public class User : Entity
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+    }
+
+    public void SetProfile(UserProfile profile)
+    {
+        Profile = profile;
     }
 }
