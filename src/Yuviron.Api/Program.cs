@@ -71,11 +71,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionHandler();
 
-// --- 3. Swagger ---
-if (app.Environment.IsDevelopment())
-{
+var swaggerEnabled =
+    app.Environment.IsDevelopment() ||
+    builder.Configuration.GetValue<bool>("Swagger:Enabled");
 
-
+if (swaggerEnabled) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
