@@ -27,10 +27,12 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore
+        working-directory: src
         run: dotnet restore Yuviron.Api/Yuviron.Api.csproj
 
       - name: Publish
-        run: dotnet publish Yuviron.Api/Yuviron.Api.csproj -c Release -o publish
+        working-directory: src
+        run: dotnet publish Yuviron.Api/Yuviron.Api.csproj -c Release -o ../publish
 
       - name: Zip artifact
         run: cd publish && zip -r ../app.zip .
