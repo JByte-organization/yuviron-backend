@@ -4,7 +4,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
-namespace Yuviron.Application.Features.Users.GetUserProfile;
+namespace Yuviron.Application.Features.Users.Queries.GetUserProfile;
 
 public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserProfileDTO>
 {

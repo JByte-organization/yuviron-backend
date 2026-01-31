@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Yuviron.Application.Features.Users.GetUserProfile;
+using Yuviron.Application.Features.Users.Queries.GetUserProfile;
 
 
 namespace Yuviron.Api.Controllers;
