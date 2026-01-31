@@ -1,4 +1,4 @@
-﻿namespace Yuviron.Application.Features.Users.GetUserProfile;
+﻿namespace Yuviron.Application.Features.Users.Queries.GetUserProfile;
 
 public record UserProfileDTO(
     Guid Id,
