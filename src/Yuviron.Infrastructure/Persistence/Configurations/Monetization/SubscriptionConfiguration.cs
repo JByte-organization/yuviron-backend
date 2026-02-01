@@ -18,7 +18,7 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.HasIndex(x => x.EndAt); // Чтобы искать истекшие
 
         builder.HasOne(x => x.User)
-               .WithMany() // Или .WithMany(u => u.Subscriptions)
+               .WithMany(u => u.Subscriptions)
                .HasForeignKey(x => x.UserId)
                .OnDelete(DeleteBehavior.Cascade);
 

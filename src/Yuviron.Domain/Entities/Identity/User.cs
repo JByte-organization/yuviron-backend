@@ -15,6 +15,7 @@ public class User : Entity
     public DateTime UpdatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
 
+    public virtual ICollection<Subscription> Subscriptions { get; private set; } = new List<Subscription>();
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
