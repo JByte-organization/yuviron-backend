@@ -15,4 +15,16 @@ public class Plan : Entity
     public PlanPeriod Period { get; private set; }
 
     private Plan() { }
+
+    public static Plan Create(string name, decimal price, string currency, PlanPeriod period)
+    {
+        return new Plan
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Price = price,
+            Currency = currency,
+            Period = period
+        };
+    }
 }

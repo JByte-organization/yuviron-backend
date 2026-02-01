@@ -21,11 +21,15 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await _context.Users
+            .AsNoTracking()                 
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .Include(u => u.Subscriptions)            
             .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
         if (user == null)
         {
-
+            
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 

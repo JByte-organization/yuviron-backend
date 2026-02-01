@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Infrastructure.Authentication;
 
@@ -28,6 +29,30 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (user.UserRoles != null)
+        {
+            foreach (var userRole in user.UserRoles)
+            {
+                if (userRole.Role != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+                }
+            }
+        }
+
+        if (user.Subscriptions != null)
+        {
+            var isPremium = user.Subscriptions.Any(s =>
+                s.Status == SubscriptionStatus.Active &&
+                s.EndAt > DateTime.UtcNow);
+
+            if (isPremium)
+            {
+                // Додаємо простий прапорець "true"
+                claims.Add(new Claim("is_premium", "true"));
+            }
+        }
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,

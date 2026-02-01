@@ -20,4 +20,18 @@ public class Subscription : Entity
     public virtual Plan Plan { get; private set; } = null!;
 
     private Subscription() { }
+
+    public static Subscription Create(Guid userId, Guid planId, DateTime startAt, DateTime endAt, SubscriptionStatus status)
+    {
+        return new Subscription
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PlanId = planId,
+            StartAt = startAt,
+            EndAt = endAt,
+            Status = status,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
 }
