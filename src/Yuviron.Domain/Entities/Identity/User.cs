@@ -14,8 +14,11 @@ public class User : Entity
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
-    public bool AcceptMarketing { get; private set; } 
+    public bool AcceptMarketing { get; private set; }
     public bool AcceptTerms { get; private set; }
+    public string? LoginCodeHash { get; private set; }
+    public DateTime? LoginCodeExpiryUtc { get; private set; }
+
     public virtual ICollection<Subscription> Subscriptions { get; private set; } = new List<Subscription>();
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
@@ -34,8 +37,8 @@ public class User : Entity
             Email = email,
             PasswordHash = passwordHash,
             AccountState = AccountState.Active,
-            AcceptMarketing = acceptMarketing, 
-            AcceptTerms = acceptTerms,      
+            AcceptMarketing = acceptMarketing,
+            AcceptTerms = acceptTerms,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -44,5 +47,17 @@ public class User : Entity
     public void SetProfile(UserProfile profile)
     {
         Profile = profile;
+    }
+
+    public void SetLoginCode(string codeHash)
+    {
+        LoginCodeHash = codeHash;
+        LoginCodeExpiryUtc = DateTime.UtcNow.AddMinutes(10);
+    }
+
+    public void ClearLoginCode()
+    {
+        LoginCodeHash = null;
+        LoginCodeExpiryUtc = null;
     }
 }
