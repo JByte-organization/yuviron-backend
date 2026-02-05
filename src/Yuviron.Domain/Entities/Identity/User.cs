@@ -14,7 +14,8 @@ public class User : Entity
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
-
+    public bool AcceptMarketing { get; private set; } 
+    public bool AcceptTerms { get; private set; }
     public virtual ICollection<Subscription> Subscriptions { get; private set; } = new List<Subscription>();
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
@@ -23,9 +24,9 @@ public class User : Entity
     public virtual UserProfile? Profile { get; private set; }
     public virtual UserSettings? Settings { get; private set; }
 
-    private User() { } 
+    private User() { }
 
-    public static User Create(string email, string passwordHash)
+    public static User Create(string email, string passwordHash, bool acceptMarketing, bool acceptTerms)
     {
         return new User
         {
@@ -33,6 +34,8 @@ public class User : Entity
             Email = email,
             PasswordHash = passwordHash,
             AccountState = AccountState.Active,
+            AcceptMarketing = acceptMarketing, 
+            AcceptTerms = acceptTerms,      
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

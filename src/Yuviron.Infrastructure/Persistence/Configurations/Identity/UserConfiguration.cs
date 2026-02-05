@@ -17,6 +17,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Email).IsRequired().HasMaxLength(320);
         builder.HasIndex(x => x.Email).IsUnique();
 
+        builder.Property(x => x.AcceptMarketing).HasDefaultValue(false);
+        builder.Property(x => x.AcceptTerms).IsRequired();
+
         builder.Property(x => x.PasswordHash).IsRequired();
         builder.Property(x => x.AccountState).IsRequired(); // Сохранится как int
     }

@@ -19,6 +19,9 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         builder.Property(x => x.DisplayName).IsRequired().HasMaxLength(100);
         builder.Property(x => x.Country).HasMaxLength(2); // ISO code
 
+        builder.Property(x => x.Gender).IsRequired();
+        builder.Property(x => x.DateOfBirth).IsRequired().HasColumnType("date");
+
         builder.HasOne(x => x.User)
                .WithOne(u => u.Profile)
                .HasForeignKey<UserProfile>(x => x.UserId)
