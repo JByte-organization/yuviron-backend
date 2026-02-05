@@ -33,8 +33,24 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
 
         
         var passwordHash = _passwordHasher.Hash(request.Password);
-        var user = User.Create(request.Email, passwordHash);
-        var profile = UserProfile.Create(user.Id, request.FirstName);
+
+        // 1. Создаем Юзера (с галочками)
+        var user = User.Create(
+            request.Email,
+            passwordHash,
+            request.AcceptMarketing,
+            request.AcceptTerms
+        );
+
+        // 2. Создаем Профиль (с датой рождения и полом)
+        var profile = UserProfile.Create(
+            user.Id,
+            request.FirstName,
+            request.DateOfBirth,
+            request.Gender
+        );
+
+        user.SetProfile(profile);
         user.SetProfile(profile);
 
         _context.Users.Add(user);
