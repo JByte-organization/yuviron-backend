@@ -73,11 +73,11 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<UserAchievement> UserAchievements => Set<UserAchievement>();
     public DbSet<UserAchievementProgress> UserAchievementProgress => Set<UserAchievementProgress>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // ВАЖНО: Эта строка находит все 50+ файлов конфигурации, 
-        // которые ты создал в папке Configurations, и применяет их.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         base.OnModelCreating(modelBuilder);

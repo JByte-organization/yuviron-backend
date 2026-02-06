@@ -21,6 +21,8 @@
   <ItemGroup>
     <Folder Include="Features\Artists\Commands\" />
     <Folder Include="Features\Artists\Queries\" />
+    <Folder Include="Features\Playlists\Commands\" />
+    <Folder Include="Features\Playlists\Queries\" />
   </ItemGroup>
 
 </Project>
