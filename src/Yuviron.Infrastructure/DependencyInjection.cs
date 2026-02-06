@@ -38,6 +38,8 @@ public static class DependencyInjection
             {
  
                 builder.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+
+                builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
         });
 
@@ -88,7 +90,8 @@ public static class DependencyInjection
 
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
-        services.AddHttpContextAccessor(); 
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IEmailService, SmtpEmailService>();
