@@ -1,6 +1,8 @@
-﻿namespace Yuviron.Application.Abstractions;
+﻿using Yuviron.Domain.Enums;
+
+namespace Yuviron.Application.Abstractions;
 
 public interface ISecuredRequest
 {
-    string RequiredPermission { get; }
+    AppPermission RequiredPermission { get; }
 }

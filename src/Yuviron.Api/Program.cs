@@ -6,12 +6,9 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Подключаем слои ---
-// Внутри AddInfrastructure вызовется код подключения к БД, который мы написали выше
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Стандартные сервисы API
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -50,8 +47,6 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
-// --- 2. AUTOMIGRATIONS (DEV ONLY) ---
-// Используем Initializer, чтобы красиво накатить миграции и сиды
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -59,8 +54,8 @@ if (app.Environment.IsDevelopment())
 
     try
     {
-        await initializer.InitialiseAsync(); // Применит db.Database.Migrate()
-        await initializer.SeedAsync();     // Добавит начальные данные
+        await initializer.InitialiseAsync(); 
+        await initializer.SeedAsync();   
     }
     catch (Exception ex)
     {
@@ -80,8 +75,6 @@ if (swaggerEnabled) {
     app.UseSwaggerUI();
 }
 
-// --- 4. HTTPS ---
-// Твоя логика: отключаем редирект на проде (полезно для AWS Load Balancer)
 if (!app.Environment.IsDevelopment())
 {
     // Временно отключаем HTTPS редирект, пока не настроен сертификат/ALB
@@ -89,7 +82,6 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    // В Dev режиме можно оставить, или тоже закомментировать, если мешает
     app.UseHttpsRedirection();
 }
 

@@ -9,9 +9,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Infrastructure.Authentication;
+using Yuviron.Infrastructure.Caching;
+using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
 
@@ -73,15 +76,18 @@ public static class DependencyInjection
             awsOptions.Credentials = new BasicAWSCredentials(accessKey, secretKey);
         }
 
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
+
         services.AddDefaultAWSOptions(awsOptions);
         services.AddAWSService<IAmazonS3>();
 
         services.AddScoped<IFileStorageService, S3FileStorageService>();
 
-        // Связываем интерфейс IApplicationDbContext с реализацией AppDbContext
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
-        // Регистрируем Инициализатор БД (для миграций)
         services.AddScoped<AppDbContextInitializer>();
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -89,7 +95,8 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-
+        services.AddSingleton<ICacheService, CacheService>();
+        services.AddScoped<IPermissionService, PermissionService>();
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

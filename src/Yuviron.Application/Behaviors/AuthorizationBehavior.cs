@@ -8,10 +8,12 @@ public class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
     where TRequest : IRequest<TResponse>
 {
     private readonly IUserContext _userContext;
+    private readonly IPermissionService _permissionService;
 
-    public AuthorizationBehavior(IUserContext userContext)
+    public AuthorizationBehavior(IUserContext userContext, IPermissionService permissionService)
     {
         _userContext = userContext;
+        _permissionService = permissionService;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -23,9 +25,13 @@ public class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
                 throw new UnauthorizedAccessException("User is not authenticated.");
             }
 
-            if (!_userContext.HasPermission(securedRequest.RequiredPermission))
+            var userPermissions = await _permissionService.GetPermissionsAsync(_userContext.UserId, cancellationToken);
+
+            var requiredPermString = securedRequest.RequiredPermission.ToString();
+
+            if (!userPermissions.Contains(requiredPermString))
             {
-                throw new UnauthorizedAccessException($"Access denied. Required permission: {securedRequest.RequiredPermission}");
+                throw new UnauthorizedAccessException($"Access denied. Required: {requiredPermString}");
             }
         }
 
