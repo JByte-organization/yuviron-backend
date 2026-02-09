@@ -34,7 +34,6 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         
         var passwordHash = _passwordHasher.Hash(request.Password);
 
-        // 1. Создаем Юзера (с галочками)
         var user = User.Create(
             request.Email,
             passwordHash,
@@ -42,7 +41,6 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
             request.AcceptTerms
         );
 
-        // 2. Создаем Профиль (с датой рождения и полом)
         var profile = UserProfile.Create(
             user.Id,
             request.FirstName,

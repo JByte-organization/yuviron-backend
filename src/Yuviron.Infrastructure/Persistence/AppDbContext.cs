@@ -15,6 +15,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     // --- Profile ---
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
@@ -73,8 +75,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<UserAchievement> UserAchievements => Set<UserAchievement>();
     public DbSet<UserAchievementProgress> UserAchievementProgress => Set<UserAchievementProgress>();
-    public DbSet<Permission> Permissions => Set<Permission>();
-    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,9 +2,9 @@
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Domain.Constants;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 
@@ -36,14 +36,6 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             foreach (var userRole in user.UserRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
-
-                if (userRole.Role.RolePermissions != null)
-                {
-                    foreach (var rp in userRole.Role.RolePermissions)
-                    {
-                        claims.Add(new Claim("permission", rp.Permission.Name));
-                    }
-                }
             }
         }
 
@@ -56,20 +48,6 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             if (isPremium)
             {
                 claims.Add(new Claim("is_premium", "true"));
-
-                var premiumPermissions = new[]
-                {
-                    Perms.HighQualityAudio,
-                    Perms.NoAds,
-                };
-
-                foreach (var perm in premiumPermissions)
-                {
-                    if (!claims.Any(c => c.Type == "permission" && c.Value == perm))
-                    {
-                        claims.Add(new Claim("permission", perm));
-                    }
-                }
             }
         }
 
@@ -81,5 +59,13 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 }

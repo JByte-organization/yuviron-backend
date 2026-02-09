@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Domain.Constants;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 
@@ -52,15 +51,12 @@ public class AppDbContextInitializer
 
     public async Task TrySeedAsync()
     {
-        var allPermsTypes = typeof(Perms)
-            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-            .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string))
-            .Select(x => (string)x.GetValue(null)!)
-            .ToList();
+        var allPerms = Enum.GetNames(typeof(AppPermission));
 
         var existingPerms = await _context.Permissions.Select(p => p.Name).ToListAsync();
-        var newPerms = allPermsTypes.Except(existingPerms)
-            .Select(name => Permission.Create(name, $"Auto-generated: {name}"));
+
+        var newPerms = allPerms.Except(existingPerms)
+            .Select(name => Permission.Create(name, $"System permission: {name}"));
 
         if (newPerms.Any())
         {
@@ -79,20 +75,25 @@ public class AppDbContextInitializer
         }
 
         var roleConfig = new Dictionary<string, string[]>
-        {
-            { "Admin", allPermsTypes.ToArray() },
+    {
+        { "Admin", allPerms },
 
-            { "ManagementUser", new[]
-                {
-                    Perms.UploadTrack,
-                    Perms.EditTrack,
-                    Perms.BlockTrack,
-                    Perms.ViewAnalytics
-                }
-            },
+        { "ManagementUser", new[]
+            {
+                nameof(AppPermission.TracksUpload),
+                nameof(AppPermission.TracksEdit),
+                nameof(AppPermission.TracksBlock),
+                nameof(AppPermission.AnalyticsView)
+            }
+        },
 
-            { "User", new[] { Perms.CreatePlaylist } }
-        };
+        { "User", new[]
+            {
+                nameof(AppPermission.CreatePlaylist),
+                nameof(AppPermission.TracksUpload)
+            }
+        }
+    };
 
         var allDbPerms = await _context.Permissions.ToListAsync();
         var allRoles = await _context.Roles.Include(r => r.RolePermissions).ToListAsync();
