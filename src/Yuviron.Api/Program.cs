@@ -6,25 +6,43 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var allowedOrigins = new[]
+{
+    "http://localhost:3000",                                       
+    "http://yuviron-web-dev.eba-6mnjiyxy.eu-west-2.elasticbeanstalk.com",   
+    "http://yuviron-web-prod.eba-6mnjiyxy.eu-west-2.elasticbeanstalk.com"  
+};
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMyFrontend",
+        policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = @"JWT Authorization header using the Bearer scheme. 
-                      Enter 'Bearer' [space] and then your token in the text input below.
-                      Example: 'Bearer 12345abcdef'",
+        Description = "Вставь сюда ТОЛЬКО токен (без слова Bearer).",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -33,15 +51,13 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
+                }
             },
             new List<string>()
         }
     });
 });
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -54,8 +70,8 @@ if (app.Environment.IsDevelopment())
 
     try
     {
-        await initializer.InitialiseAsync(); 
-        await initializer.SeedAsync();   
+        await initializer.InitialiseAsync();
+        await initializer.SeedAsync();
     }
     catch (Exception ex)
     {
@@ -70,20 +86,22 @@ var swaggerEnabled =
     app.Environment.IsDevelopment() ||
     builder.Configuration.GetValue<bool>("Swagger:Enabled");
 
-if (swaggerEnabled) {
+if (swaggerEnabled)
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 if (!app.Environment.IsDevelopment())
 {
-    // Временно отключаем HTTPS редирект, пока не настроен сертификат/ALB
     // app.UseHttpsRedirection();
 }
 else
 {
     app.UseHttpsRedirection();
 }
+
+app.UseCors("AllowMyFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

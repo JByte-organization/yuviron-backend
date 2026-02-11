@@ -7,4 +7,6 @@ public interface IPermissionService
     Task<HashSet<string>> GetPermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<HashSet<string>> CachePermissionsAsync(User user, CancellationToken cancellationToken = default);
+
+    Task InvalidatePermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
 }

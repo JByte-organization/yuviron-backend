@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 
@@ -13,10 +14,14 @@ namespace Yuviron.Infrastructure.Authentication;
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
     private readonly JwtSettings _jwtSettings;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public JwtTokenGenerator(IOptions<JwtSettings> jwtOptions)
+    public JwtTokenGenerator(
+        IOptions<JwtSettings> jwtOptions,
+        IDateTimeProvider dateTimeProvider)
     {
         _jwtSettings = jwtOptions.Value;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public string GenerateToken(User user)
@@ -39,23 +44,16 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             }
         }
 
-        if (user.Subscriptions != null)
+        if (user.Subscriptions != null && user.HasActivePremiumSubscription(_dateTimeProvider.UtcNow))
         {
-            var isPremium = user.Subscriptions.Any(s =>
-                s.Status == SubscriptionStatus.Active &&
-                s.EndAt > DateTime.UtcNow);
-
-            if (isPremium)
-            {
-                claims.Add(new Claim("is_premium", "true"));
-            }
+            claims.Add(new Claim("is_premium", "true"));
         }
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -67,5 +65,12 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
+    }
+
+    public string HashRefreshToken(string token)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
     }
 }
