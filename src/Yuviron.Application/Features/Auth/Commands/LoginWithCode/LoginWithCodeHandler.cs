@@ -2,7 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Features.Auth.Commands.Login; // Для LoginResponse
+using Yuviron.Application.Abstractions.Services; 
+using Yuviron.Application.Features.Auth.Commands.Login; 
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
@@ -13,17 +14,20 @@ public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginR
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IPermissionService _permissionService;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public LoginWithCodeHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IDateTimeProvider dateTimeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _permissionService = permissionService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<LoginResponse> Handle(LoginWithCodeCommand request, CancellationToken cancellationToken)
@@ -38,7 +42,7 @@ public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginR
 
         if (user == null) throw new UnauthorizedAccessException("Invalid credentials.");
 
-        if (user.LoginCodeExpiryUtc == null || user.LoginCodeExpiryUtc < DateTime.UtcNow)
+        if (user.LoginCodeExpiryUtc == null || user.LoginCodeExpiryUtc < _dateTimeProvider.UtcNow)
         {
             throw new UnauthorizedAccessException("Code expired.");
         }
@@ -53,24 +57,25 @@ public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginR
         var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
 
         var token = _jwtTokenGenerator.GenerateToken(user);
-        var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
+
+        var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
+        var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 
         var refreshTokenEntity = RefreshToken.Create(
             user.Id,
-            refreshTokenString,
-            DateTime.UtcNow.AddDays(30)
+            hashedRefreshToken,
+            _dateTimeProvider.UtcNow.AddDays(30)
         );
 
         _context.RefreshTokens.Add(refreshTokenEntity);
-
         await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(
             user.Id,
             token,
-            refreshTokenString,
+            rawRefreshToken, 
             user.Email,
-            permissions 
+            permissions
         );
     }
 }

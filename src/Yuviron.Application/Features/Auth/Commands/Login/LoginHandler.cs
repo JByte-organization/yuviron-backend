@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Services; 
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.Login;
@@ -12,17 +13,20 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IPermissionService _permissionService;
+    private readonly IDateTimeProvider _dateTimeProvider; 
 
     public LoginHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IDateTimeProvider dateTimeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _permissionService = permissionService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -51,24 +55,25 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
 
         var token = _jwtTokenGenerator.GenerateToken(user);
 
-        var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
+        var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
+
+        var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 
         var refreshTokenEntity = RefreshToken.Create(
             user.Id,
-            refreshTokenString,
-            DateTime.UtcNow.AddDays(30)
+            hashedRefreshToken, 
+            _dateTimeProvider.UtcNow.AddDays(30) 
         );
 
         _context.RefreshTokens.Add(refreshTokenEntity);
-
         await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(
             user.Id,
             token,
-            refreshTokenString,
+            rawRefreshToken, 
             user.Email,
-            permissions 
+            permissions
         );
     }
 }
