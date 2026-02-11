@@ -41,7 +41,23 @@ public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenComma
 
         if (existingToken == null) throw new UnauthorizedAccessException("Invalid token.");
 
-        if (existingToken.RevokedAt != null) throw new UnauthorizedAccessException("Token is revoked.");
+        if (existingToken.RevokedAt != null)
+        {
+            var allUserTokens = await _context.RefreshTokens
+                .Where(x => x.UserId == existingToken.UserId && x.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var token in allUserTokens)
+            {
+                token.Revoke();
+            }
+
+            await _permissionService.InvalidatePermissionsAsync(existingToken.UserId, cancellationToken);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            throw new UnauthorizedAccessException("Security Alert: Token reuse detected. All sessions terminated.");
+        }
 
         if (existingToken.ExpiresAt < _dateTimeProvider.UtcNow) throw new UnauthorizedAccessException("Token expired.");
 
