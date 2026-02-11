@@ -20,4 +20,13 @@
     <ProjectReference Include="..\Yuviron.Infrastructure\Yuviron.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include=".ebextensions\01_redis_docker.config" />
+  </ItemGroup>
+	
+  <ItemGroup>
+	<None Update=".ebextensions\01_redis_docker.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>    
+	</None>
+  </ItemGroup>
 </Project>
