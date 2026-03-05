@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -27,12 +25,12 @@ public class ListeningEvent : Entity
         Guid? userId,
         Guid trackId,
         int msPlayed,
-        string deviceType,
+        string? deviceType,
         string? countryCode,
         string? sourceType,
-        Guid? sourceId)
+        Guid? sourceId,
+        DateTime utcNow) // Добавили проброс времени!
     {
-       
         if (msPlayed < 0) throw new ArgumentException("Cannot play negative time");
 
         return new ListeningEvent
@@ -40,11 +38,11 @@ public class ListeningEvent : Entity
             Id = Guid.NewGuid(),
             UserId = userId,
             TrackId = trackId,
-            PlayedAt = DateTime.UtcNow, 
+            PlayedAt = utcNow, // Пишем реальное время события
             MsPlayed = msPlayed,
-            DeviceType = deviceType,
-            CountryCode = countryCode,
-            SourceType = sourceType,
+            DeviceType = string.IsNullOrWhiteSpace(deviceType) ? "unknown" : deviceType.Trim(),
+            CountryCode = countryCode?.Trim().ToUpper(), // Нормализуем код страны (например, "US")
+            SourceType = sourceType?.Trim(),
             SourceId = sourceId
         };
     }

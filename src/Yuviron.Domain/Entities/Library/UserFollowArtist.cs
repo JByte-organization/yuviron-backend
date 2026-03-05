@@ -1,16 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-namespace Yuviron.Domain.Entities;
+﻿using Yuviron.Domain.Entities;
 
 public class UserFollowArtist
 {
-    public Guid UserId { get; set; }
-    public virtual User User { get; set; } = null!;
+    public Guid UserId { get; private set; }
+    public Guid ArtistId { get; private set; }
+    public DateTime FollowedAt { get; private set; }
+    public bool NotifyNewReleases { get; private set; }
 
-    public Guid ArtistId { get; set; }
-    public virtual Artist Artist { get; set; } = null!;
+    public virtual User User { get; private set; } = null!;
+    public virtual Artist Artist { get; private set; } = null!;
 
-    public DateTime FollowedAt { get; set; }
-    public bool NotifyNewReleases { get; set; }
+    private UserFollowArtist() { }
+
+    public static UserFollowArtist Create(Guid userId, Guid artistId, bool notify, DateTime utcNow)
+    {
+        return new UserFollowArtist
+        {
+            UserId = userId,
+            ArtistId = artistId,
+            NotifyNewReleases = notify,
+            FollowedAt = utcNow
+        };
+    }
 }

@@ -14,10 +14,12 @@ public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermissi
 
         builder.HasOne(rp => rp.Role)
             .WithMany(r => r.RolePermissions)
-            .HasForeignKey(rp => rp.RoleId);
+            .HasForeignKey(rp => rp.RoleId)
+            .OnDelete(DeleteBehavior.Cascade); // Добавили каскад
 
         builder.HasOne(rp => rp.Permission)
             .WithMany()
-            .HasForeignKey(rp => rp.PermissionId);
+            .HasForeignKey(rp => rp.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade); // Добавили каскад
     }
 }

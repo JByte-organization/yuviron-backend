@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -16,4 +14,22 @@ public class CustomTheme : Entity
     public virtual User User { get; private set; } = null!;
 
     private CustomTheme() { }
+
+    public static CustomTheme Create(
+        Guid userId, 
+        string primaryColor, 
+        string secondaryColor, 
+        string backgroundColor, 
+        DateTime utcNow)
+    {
+        return new CustomTheme
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PrimaryColor = primaryColor,
+            SecondaryColor = secondaryColor,
+            BackgroundColor = backgroundColor,
+            CreatedAt = utcNow
+        };
+    }
 }

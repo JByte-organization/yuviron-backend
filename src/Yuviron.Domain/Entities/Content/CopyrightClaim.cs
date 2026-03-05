@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -10,8 +8,7 @@ public enum CopyrightEntityType { Track = 1, Album = 2 }
 public class CopyrightClaim : Entity
 {
     public CopyrightEntityType EntityType { get; private set; }
-    public Guid EntityId { get; private set; } // TrackId или AlbumId
-
+    public Guid EntityId { get; private set; } 
     public Guid OwnerArtistId { get; private set; }
     public bool OwnsAllRights { get; private set; }
     public string? Notes { get; private set; }
@@ -20,4 +17,20 @@ public class CopyrightClaim : Entity
     public virtual Artist OwnerArtist { get; private set; } = null!;
 
     private CopyrightClaim() { }
+
+    public static CopyrightClaim Create(
+        CopyrightEntityType entityType, Guid entityId, Guid artistId, 
+        bool ownsAllRights, string? notes, DateTime utcNow)
+    {
+        return new CopyrightClaim
+        {
+            Id = Guid.NewGuid(),
+            EntityType = entityType,
+            EntityId = entityId,
+            OwnerArtistId = artistId,
+            OwnsAllRights = ownsAllRights,
+            Notes = notes?.Trim(),
+            CreatedAt = utcNow
+        };
+    }
 }

@@ -15,15 +15,16 @@ public class PayoutRequestConfiguration : IEntityTypeConfiguration<PayoutRequest
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.RequestedAmount).HasPrecision(18, 2);
+        builder.Property(x => x.DecisionNote).HasMaxLength(1000);
 
         builder.HasOne(x => x.Artist)
-               .WithMany()
-               .HasForeignKey(x => x.ArtistId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany()
+            .HasForeignKey(x => x.ArtistId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.Admin)
-               .WithMany()
-               .HasForeignKey(x => x.AdminId)
-               .OnDelete(DeleteBehavior.SetNull);
+            .WithMany()
+            .HasForeignKey(x => x.AdminId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

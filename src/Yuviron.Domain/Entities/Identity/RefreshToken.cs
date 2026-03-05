@@ -14,7 +14,7 @@ public class RefreshToken : Entity
 
     private RefreshToken() { }
 
-    public static RefreshToken Create(Guid userId, string token, DateTime expiresAt)
+    public static RefreshToken Create(Guid userId, string token, DateTime expiresAt, DateTime utcNow)
     {
         return new RefreshToken
         {
@@ -22,12 +22,13 @@ public class RefreshToken : Entity
             UserId = userId,
             TokenHash = token,
             ExpiresAt = expiresAt,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = utcNow 
         };
     }
 
-    public void Revoke()
+    public void Revoke(DateTime utcNow) 
     {
-        RevokedAt = DateTime.UtcNow;
+        if (RevokedAt != null) return;
+        RevokedAt = utcNow;
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
@@ -11,12 +11,48 @@ public class PlaybackSession : Entity
     public DateTime StartedAt { get; private set; }
     public DateTime? EndedAt { get; private set; }
 
-    // Контекст: откуда играет (Playlist, Album, Artist)
     public string ContextType { get; private set; } = string.Empty;
-    public Guid? ContextId { get; private set; } // ID плейлиста/альбома
+    public Guid? ContextId { get; private set; } 
 
     public virtual User User { get; private set; } = null!;
     public virtual ICollection<PlaybackQueueItem> QueueItems { get; private set; } = new List<PlaybackQueueItem>();
 
     private PlaybackSession() { }
+
+    public static PlaybackSession Create(
+        Guid userId, 
+        string contextType, 
+        Guid? contextId, 
+        DateTime utcNow)
+    {
+        if (string.IsNullOrWhiteSpace(contextType)) throw new ArgumentException("Context type is required");
+
+        return new PlaybackSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            ContextType = contextType.Trim(),
+            ContextId = contextId,
+            StartedAt = utcNow
+        };
+    }
+
+    public void EndSession(DateTime utcNow)
+    {
+        if (EndedAt != null) return; 
+        EndedAt = utcNow;
+    }
+
+    public void AddToQueue(Guid trackId, QueueType queueType, int position, Guid addedByUserId, DateTime utcNow)
+    {
+        if (EndedAt != null) throw new InvalidOperationException("Cannot add items to an ended session");
+
+        var queueItem = PlaybackQueueItem.Create(Id, trackId, queueType, position, addedByUserId, utcNow);
+        QueueItems.Add(queueItem);
+    }
+
+    public void ClearQueue()
+    {
+        QueueItems.Clear();
+    }
 }

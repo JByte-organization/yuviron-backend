@@ -15,10 +15,11 @@ public class PayoutTransactionConfiguration : IEntityTypeConfiguration<PayoutTra
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Amount).HasPrecision(18, 2);
+        builder.Property(x => x.ProviderRef).HasMaxLength(256);
 
         builder.HasOne(x => x.PayoutRequest)
-               .WithMany(r => r.Transactions)
-               .HasForeignKey(x => x.PayoutRequestId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany(r => r.Transactions)
+            .HasForeignKey(x => x.PayoutRequestId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

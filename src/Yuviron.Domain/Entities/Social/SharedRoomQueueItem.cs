@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -18,4 +16,23 @@ public class SharedRoomQueueItem : Entity
     public virtual User AddedByUser { get; private set; } = null!;
 
     private SharedRoomQueueItem() { }
+
+    public static SharedRoomQueueItem Create(Guid roomId, Guid trackId, int position, Guid addedByUserId, DateTime utcNow)
+    {
+        return new SharedRoomQueueItem
+        {
+            Id = Guid.NewGuid(),
+            RoomId = roomId,
+            TrackId = trackId,
+            Position = position,
+            AddedByUserId = addedByUserId,
+            AddedAt = utcNow
+        };
+    }
+
+    public void UpdatePosition(int newPosition)
+    {
+        if (newPosition < 0) throw new ArgumentException("Position cannot be negative");
+        Position = newPosition;
+    }
 }

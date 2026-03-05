@@ -1,14 +1,15 @@
-﻿using FluentValidation;
+using FluentValidation;
 
 namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 
-public class LoginWithCodeValidator : AbstractValidator<LoginWithCodeCommand>
+public sealed class LoginWithCodeValidator : AbstractValidator<LoginWithCodeCommand>
 {
     public LoginWithCodeValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .EmailAddress();
+            .EmailAddress()
+            .MaximumLength(320);
 
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Введіть код підтвердження.")

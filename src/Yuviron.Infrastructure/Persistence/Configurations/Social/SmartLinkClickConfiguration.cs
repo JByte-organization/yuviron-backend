@@ -7,22 +7,23 @@ using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Persistence.Configurations;
 
-public class SmartLinkConfiguration : IEntityTypeConfiguration<SmartLink>
+public class SmartLinkClickConfiguration : IEntityTypeConfiguration<SmartLinkClick>
 {
-    public void Configure(EntityTypeBuilder<SmartLink> builder)
+    public void Configure(EntityTypeBuilder<SmartLinkClick> builder)
     {
-        builder.ToTable("smart_links");
+        builder.ToTable("smart_link_clicks");
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Code).IsRequired().HasMaxLength(32);
-        builder.HasIndex(x => x.Code).IsUnique(); // Код ссылки уникален
+        builder.Property(x => x.CountryCode).HasMaxLength(2).IsFixedLength();
+        builder.Property(x => x.DeviceType).HasMaxLength(50);
+        builder.Property(x => x.Referrer).HasMaxLength(500);
 
-        // Полиморфный индекс
-        builder.HasIndex(x => new { x.EntityType, x.EntityId });
+        builder.HasIndex(x => x.ClickedAt);
+        builder.HasIndex(x => x.SmartLinkId);
 
-        builder.HasOne(x => x.CreatedByUser)
-               .WithMany() // .WithMany(u => u.SmartLinks)
-               .HasForeignKey(x => x.CreatedByUserId)
-               .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.SmartLink)
+            .WithMany(s => s.Clicks)
+            .HasForeignKey(x => x.SmartLinkId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

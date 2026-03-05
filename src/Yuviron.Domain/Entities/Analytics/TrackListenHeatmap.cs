@@ -1,8 +1,10 @@
-﻿namespace Yuviron.Domain.Entities;
+﻿using System;
+
+namespace Yuviron.Domain.Entities;
 
 public class TrackListenHeatmap
 {
-    // Ключ: Трек + Секунда
+    // Композитный ключ: TrackId + SecondIndex (настраивается в EF Core Configuration)
     public Guid TrackId { get; private set; }
     public int SecondIndex { get; private set; }
 
@@ -11,24 +13,25 @@ public class TrackListenHeatmap
 
     public virtual Track Track { get; private set; } = null!;
 
-    // Пустой конструктор для EF Core
     private TrackListenHeatmap() { }
 
-    // Наш конструктор
-    public TrackListenHeatmap(Guid trackId, int secondIndex)
+    public static TrackListenHeatmap Create(Guid trackId, int secondIndex, DateTime utcNow)
     {
         if (secondIndex < 0) throw new ArgumentException("Seconds cannot be negative");
 
-        TrackId = trackId;
-        SecondIndex = secondIndex;
-        PlaysCount = 1; // Создали - значит 1 раз уже послушали
-        UpdatedAt = DateTime.UtcNow;
+        return new TrackListenHeatmap
+        {
+            TrackId = trackId,
+            SecondIndex = secondIndex,
+            PlaysCount = 1, // Создали - значит 1 раз уже послушали
+            UpdatedAt = utcNow
+        };
     }
 
-    // Метод действия (Behavior)
-    public void IncrementPlays()
+    // Метод действия с пробросом времени
+    public void IncrementPlays(DateTime utcNow)
     {
         PlaysCount++;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = utcNow;
     }
 }

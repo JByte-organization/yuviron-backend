@@ -1,8 +1,8 @@
-﻿using FluentValidation;
+using FluentValidation;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
 
-public class RegisterValidator : AbstractValidator<RegisterCommand>
+public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterValidator()
     {
@@ -21,7 +21,7 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
             .MaximumLength(50).WithMessage("Имя не может быть длиннее 50 символов.");
 
         RuleFor(x => x.DateOfBirth)
-            .LessThan(DateTime.UtcNow.AddYears(-16))
+            .Must(BeAtLeast16YearsOld)
             .WithMessage("Вам должно быть не менее 16 лет для регистрации.");
 
         RuleFor(x => x.Gender)
@@ -29,5 +29,10 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.AcceptTerms)
             .Equal(true).WithMessage("Вы должны согласиться с Политикой конфиденциальности.");
+    }
+
+    private static bool BeAtLeast16YearsOld(DateTime dateOfBirth)
+    {
+        return dateOfBirth.Date <= DateTime.UtcNow.Date.AddYears(-16);
     }
 }

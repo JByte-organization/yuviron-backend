@@ -9,6 +9,7 @@ public enum AppPermission
     // Админка
     AccessAdminPanel,
     ManageUsers,
+    ManageCatalog,
     ViewSystemLogs,
 
     // Треки

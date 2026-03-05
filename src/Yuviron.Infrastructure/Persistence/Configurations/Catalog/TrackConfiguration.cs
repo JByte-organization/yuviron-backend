@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -15,12 +12,13 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Title).IsRequired().HasMaxLength(256);
-        builder.Property(x => x.AudioStorageKey).IsRequired();
+        builder.Property(x => x.CoverUrl).HasMaxLength(500);
+        builder.Property(x => x.AudioStorageKey).IsRequired().HasMaxLength(500);
+        builder.Property(x => x.PreviewStorageKey).HasMaxLength(500);
 
-        // Если альбом удалили, трек остается "синглом" (SetNull)
         builder.HasOne(x => x.Album)
-               .WithMany(a => a.Tracks)
-               .HasForeignKey(x => x.AlbumId)
-               .OnDelete(DeleteBehavior.SetNull);
+            .WithMany(a => a.Tracks)
+            .HasForeignKey(x => x.AlbumId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

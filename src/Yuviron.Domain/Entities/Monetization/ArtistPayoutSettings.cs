@@ -1,18 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
 
 public class ArtistPayoutSettings
 {
-    public Guid ArtistId { get; set; } // PK и FK (1:1)
+    public Guid ArtistId { get; private set; } // PK и FK (1:1)
 
-    public decimal MinWithdrawAmount { get; set; }
-    public decimal MaxWithdrawAmount { get; set; }
-    public decimal? CustomRatePerStream { get; set; } // Если у артиста спец. условия
-    public int PlatformPercent { get; set; } // Комиссия платформы (например, 30%)
+    public decimal MinWithdrawAmount { get; private set; }
+    public decimal MaxWithdrawAmount { get; private set; }
+    public decimal? CustomRatePerStream { get; private set; } 
+    public int PlatformPercent { get; private set; } 
 
-    public virtual Artist Artist { get; set; } = null!;
+    public virtual Artist Artist { get; private set; } = null!;
+
+    private ArtistPayoutSettings() { }
+
+    public static ArtistPayoutSettings Create(Guid artistId, decimal minWithdraw, decimal maxWithdraw, int platformPercent, decimal? customRate = null)
+    {
+        if (platformPercent < 0 || platformPercent > 100) throw new ArgumentException("Percent must be between 0 and 100.");
+        if (minWithdraw < 0 || maxWithdraw < minWithdraw) throw new ArgumentException("Invalid withdrawal limits.");
+
+        return new ArtistPayoutSettings
+        {
+            ArtistId = artistId,
+            MinWithdrawAmount = minWithdraw,
+            MaxWithdrawAmount = maxWithdraw,
+            PlatformPercent = platformPercent,
+            CustomRatePerStream = customRate
+        };
+    }
 }

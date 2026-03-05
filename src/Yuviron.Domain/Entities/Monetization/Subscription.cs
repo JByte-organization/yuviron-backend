@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 
@@ -15,13 +13,20 @@ public class Subscription : Entity
     public DateTime StartAt { get; private set; }
     public DateTime EndAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; } // <-- Добавили
 
     public virtual User User { get; private set; } = null!;
     public virtual Plan Plan { get; private set; } = null!;
 
     private Subscription() { }
 
-    public static Subscription Create(Guid userId, Guid planId, DateTime startAt, DateTime endAt, SubscriptionStatus status)
+    public static Subscription Create(
+        Guid userId, 
+        Guid planId, 
+        DateTime startAt, 
+        DateTime endAt, 
+        SubscriptionStatus status,
+        DateTime utcNow) // <-- Добавили проброс времени
     {
         return new Subscription
         {
@@ -31,7 +36,21 @@ public class Subscription : Entity
             StartAt = startAt,
             EndAt = endAt,
             Status = status,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = utcNow,
+            UpdatedAt = utcNow
         };
+    }
+
+    public void Cancel(DateTime utcNow, bool immediate = false)
+    {
+        if (Status == SubscriptionStatus.Cancelled) return; 
+
+        Status = SubscriptionStatus.Cancelled;
+        UpdatedAt = utcNow;
+        
+        if (immediate)
+        {
+            EndAt = utcNow; 
+        }
     }
 }

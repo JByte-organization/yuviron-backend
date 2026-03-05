@@ -14,11 +14,11 @@ namespace Yuviron.Api.Controllers;
 public class AuthController : ApiControllerBase
 {
     [HttpPost("check-email")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CheckEmailResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckEmail([FromBody] CheckEmailQuery query, CancellationToken ct)
     {
         var exists = await Mediator.Send(query, ct);
-        return Ok(new { Exists = exists });
+        return Ok(new CheckEmailResponse(exists));
     }
 
 
@@ -81,9 +81,11 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshAccessTokenCommand command)
+    public async Task<IActionResult> Refresh([FromBody] RefreshAccessTokenCommand command, CancellationToken ct)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return Ok(result);
     }
+
+    public sealed record CheckEmailResponse(bool Exists);
 }

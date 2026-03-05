@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -11,11 +9,8 @@ public enum ComplaintStatus { New = 1, InReview = 2, Approved = 3, Rejected = 4 
 public class Complaint : Entity
 {
     public Guid CreatedByUserId { get; private set; }
-
-    // Полиморфная цель
     public ComplaintTargetType TargetType { get; private set; }
     public Guid TargetId { get; private set; }
-
     public string ReasonCode { get; private set; } = string.Empty;
     public string? Comment { get; private set; }
 
@@ -30,4 +25,48 @@ public class Complaint : Entity
     public virtual User? ModeratedByAdmin { get; private set; }
 
     private Complaint() { }
+
+    public static Complaint Create(
+        Guid userId, ComplaintTargetType targetType, Guid targetId, 
+        string reasonCode, string? comment, DateTime utcNow)
+    {
+        if (string.IsNullOrWhiteSpace(reasonCode)) throw new ArgumentException("Reason code is required");
+
+        return new Complaint
+        {
+            Id = Guid.NewGuid(),
+            CreatedByUserId = userId,
+            TargetType = targetType,
+            TargetId = targetId,
+            ReasonCode = reasonCode.Trim(),
+            Comment = comment?.Trim(),
+            Status = ComplaintStatus.New,
+            CreatedAt = utcNow,
+            UpdatedAt = utcNow
+        };
+    }
+
+    public void MarkAsInReview(Guid adminId, DateTime utcNow)
+    {
+        if (Status != ComplaintStatus.New) throw new InvalidOperationException("Only new complaints can be reviewed.");
+        Status = ComplaintStatus.InReview;
+        ModeratedByAdminId = adminId;
+        UpdatedAt = utcNow;
+    }
+
+    public void Approve(Guid adminId, string? note, DateTime utcNow)
+    {
+        Status = ComplaintStatus.Approved;
+        ModeratedByAdminId = adminId;
+        ModerationNote = note?.Trim();
+        UpdatedAt = utcNow;
+    }
+
+    public void Reject(Guid adminId, string? note, DateTime utcNow)
+    {
+        Status = ComplaintStatus.Rejected;
+        ModeratedByAdminId = adminId;
+        ModerationNote = note?.Trim();
+        UpdatedAt = utcNow;
+    }
 }

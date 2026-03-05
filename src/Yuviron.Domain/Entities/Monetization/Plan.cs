@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -18,12 +16,15 @@ public class Plan : Entity
 
     public static Plan Create(string name, decimal price, string currency, PlanPeriod period)
     {
+        if (price < 0) throw new ArgumentException("Price cannot be negative.");
+        if (string.IsNullOrWhiteSpace(currency)) throw new ArgumentException("Currency is required.");
+
         return new Plan
         {
             Id = Guid.NewGuid(),
-            Name = name,
+            Name = name.Trim(),
             Price = price,
-            Currency = currency,
+            Currency = currency.Trim().ToUpper(),
             Period = period
         };
     }

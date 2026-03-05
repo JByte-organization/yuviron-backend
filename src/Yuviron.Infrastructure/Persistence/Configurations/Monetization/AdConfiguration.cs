@@ -14,7 +14,9 @@ public class AdConfiguration : IEntityTypeConfiguration<Ad>
         builder.ToTable("ads");
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Title).HasMaxLength(200);
+        builder.Property(x => x.Title).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.MediaUrl).IsRequired().HasMaxLength(500);
+        
         builder.HasIndex(x => x.IsActive);
     }
 }

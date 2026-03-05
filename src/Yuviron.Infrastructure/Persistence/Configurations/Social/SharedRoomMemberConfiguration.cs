@@ -14,14 +14,16 @@ public class SharedRoomMemberConfiguration : IEntityTypeConfiguration<SharedRoom
         builder.ToTable("shared_room_members");
         builder.HasKey(x => new { x.RoomId, x.UserId });
 
+        builder.HasIndex(x => x.UserId); 
+
         builder.HasOne(x => x.Room)
-               .WithMany(r => r.Members)
-               .HasForeignKey(x => x.RoomId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany(r => r.Members)
+            .HasForeignKey(x => x.RoomId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.User)
-               .WithMany()
-               .HasForeignKey(x => x.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

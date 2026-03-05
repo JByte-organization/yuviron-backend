@@ -1,14 +1,15 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services; 
-using Yuviron.Application.Features.Auth.Commands.Login; 
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Common;
+using Yuviron.Application.Features.Auth.Commands.Login;
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 
-public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginResponse>
+public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
@@ -32,17 +33,19 @@ public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginR
 
     public async Task<LoginResponse> Handle(LoginWithCodeCommand request, CancellationToken cancellationToken)
     {
+        var normalizedEmail = EmailNormalizer.Normalize(request.Email);
+
         var user = await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePermissions)
                         .ThenInclude(rp => rp.Permission)
             .Include(u => u.Subscriptions)
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
         if (user == null) throw new UnauthorizedAccessException("Invalid credentials.");
 
-        if (user.LoginCodeExpiryUtc == null || user.LoginCodeExpiryUtc < _dateTimeProvider.UtcNow)
+        if (string.IsNullOrEmpty(user.LoginCodeHash) || user.LoginCodeExpiryUtc == null || user.LoginCodeExpiryUtc < _dateTimeProvider.UtcNow)
         {
             throw new UnauthorizedAccessException("Code expired.");
         }
@@ -64,7 +67,8 @@ public class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginR
         var refreshTokenEntity = RefreshToken.Create(
             user.Id,
             hashedRefreshToken,
-            _dateTimeProvider.UtcNow.AddDays(30)
+            _dateTimeProvider.UtcNow.AddDays(30),
+            _dateTimeProvider.UtcNow 
         );
 
         _context.RefreshTokens.Add(refreshTokenEntity);

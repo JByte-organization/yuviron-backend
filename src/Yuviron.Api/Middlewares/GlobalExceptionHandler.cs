@@ -55,6 +55,16 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = existsEx.Message;
                 break;
 
+            case UnauthorizedAccessException unauthorizedEx:
+                var isForbidden = unauthorizedEx.Message.StartsWith("Access denied", StringComparison.OrdinalIgnoreCase);
+
+                problemDetails.Status = isForbidden
+                    ? StatusCodes.Status403Forbidden
+                    : StatusCodes.Status401Unauthorized;
+                problemDetails.Title = isForbidden ? "Forbidden" : "Unauthorized";
+                problemDetails.Detail = unauthorizedEx.Message;
+                break;
+
             // 4. Остальные бизнес-правила (400)
             case DomainException domainEx:
                 problemDetails.Status = StatusCodes.Status400BadRequest;

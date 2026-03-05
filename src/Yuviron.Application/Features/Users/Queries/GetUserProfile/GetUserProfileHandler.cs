@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
@@ -6,7 +6,7 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Users.Queries.GetUserProfile;
 
-public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserProfileDTO>
+public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserProfileDTO>
 {
     private readonly IApplicationDbContext _context;
 

@@ -1,12 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using MediatR;
 
 namespace Yuviron.Domain.Common;
 
 public abstract class Entity
 {
     public Guid Id { get; set; }
+
+    private readonly List<INotification> _domainEvents = new();
+
+    public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
+
+    public void AddDomainEvent(INotification domainEvent)
+    {
+        _domainEvents.Add(domainEvent);
+    }
+
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
+
+
     public override bool Equals(object? obj)
     {
         if (obj is null || obj.GetType() != GetType())

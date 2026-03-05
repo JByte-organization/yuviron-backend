@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -8,15 +7,44 @@ namespace Yuviron.Domain.Entities;
 public class Genre : Entity
 {
     public string Name { get; private set; } = string.Empty;
+    public string? CoverUrl { get; private set; }
+    public string? HexColor { get; private set; } 
+    
+    public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
+    public bool IsDeleted { get; private set; }
 
-    // Навигация для связи N:N
     public virtual ICollection<TrackGenre> TrackGenres { get; private set; } = new List<TrackGenre>();
 
     private Genre() { }
 
-    public Genre(string name)
+    public static Genre Create(string name, string? coverUrl, string? hexColor, DateTime utcNow)
     {
-        Id = Guid.NewGuid();
-        Name = name;
+        return new Genre
+        {
+            Id = Guid.NewGuid(),
+            Name = name.Trim(),
+            CoverUrl = coverUrl?.Trim(),
+            HexColor = hexColor?.Trim(),
+            CreatedAt = utcNow,
+            UpdatedAt = utcNow,
+            IsDeleted = false
+        };
+    }
+
+    public void Update(string name, string? coverUrl, string? hexColor, DateTime utcNow)
+    {
+        Name = name.Trim();
+        CoverUrl = coverUrl?.Trim();
+        HexColor = hexColor?.Trim();
+        UpdatedAt = utcNow;
+    }
+
+    public void Delete(DateTime utcNow)
+    {
+        if (IsDeleted) return;
+
+        IsDeleted = true;
+        UpdatedAt = utcNow;
     }
 }
