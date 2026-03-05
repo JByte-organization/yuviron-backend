@@ -7,12 +7,12 @@ using Yuviron.Application.Abstractions;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
 
-public sealed class DeleteGenreCommandHandler : IRequestHandler<DeleteGenreCommand, Unit>
+public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteGenreCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

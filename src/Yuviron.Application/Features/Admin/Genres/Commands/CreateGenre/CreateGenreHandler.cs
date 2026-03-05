@@ -9,12 +9,12 @@ using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.CreateGenre;
 
-public sealed class CreateGenreCommandHandler : IRequestHandler<CreateGenreCommand, Guid>
+public sealed class CreateGenreHandler : IRequestHandler<CreateGenreCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CreateGenreCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

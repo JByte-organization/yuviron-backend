@@ -7,12 +7,12 @@ using Yuviron.Application.Abstractions;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
 
-public sealed class UpdateGenreCommandHandler : IRequestHandler<UpdateGenreCommand, Unit>
+public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public UpdateGenreCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
