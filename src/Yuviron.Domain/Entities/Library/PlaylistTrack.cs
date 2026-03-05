@@ -1,17 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-namespace Yuviron.Domain.Entities;
-
-public class PlaylistTrack
+﻿public class PlaylistTrack
 {
-    public Guid PlaylistId { get; set; }
-    public virtual Playlist Playlist { get; set; } = null!;
+    public Guid PlaylistId { get; private set; }
+    public Guid TrackId { get; private set; }
+    public int Position { get; private set; }
+    public DateTime AddedAt { get; private set; }
+    public Guid AddedByUserId { get; private set; }
 
-    public Guid TrackId { get; set; }
-    public virtual Track Track { get; set; } = null!;
+    public virtual Playlist Playlist { get; private set; } = null!;
+    public virtual Track Track { get; private set; } = null!;
 
-    public int Position { get; set; }
-    public DateTime AddedAt { get; set; }
-    public Guid AddedByUserId { get; set; }
+    private PlaylistTrack() { }
+
+    public static PlaylistTrack Create(Guid playlistId, Guid trackId, int position, Guid addedBy, DateTime utcNow)
+    {
+        return new PlaylistTrack
+        {
+            PlaylistId = playlistId,
+            TrackId = trackId,
+            Position = position,
+            AddedByUserId = addedBy,
+            AddedAt = utcNow
+        };
+    }
+
+    public void UpdatePosition(int newPosition) => Position = newPosition;
 }

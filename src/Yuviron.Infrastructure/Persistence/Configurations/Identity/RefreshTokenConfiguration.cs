@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -13,6 +10,10 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
     {
         builder.ToTable("refresh_tokens");
         builder.HasKey(x => x.Id);
+
+        // Ограничиваем длину и ОБЯЗАТЕЛЬНО добавляем уникальный индекс для быстрого поиска!
+        builder.Property(x => x.TokenHash).IsRequired().HasMaxLength(512);
+        builder.HasIndex(x => x.TokenHash).IsUnique();
 
         builder.HasOne(x => x.User)
             .WithMany(u => u.RefreshTokens)

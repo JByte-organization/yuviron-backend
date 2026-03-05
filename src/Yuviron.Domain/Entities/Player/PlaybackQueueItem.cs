@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
-public enum QueueType { Next = 1, Normal = 2 }
 
 public class PlaybackQueueItem : Entity
 {
@@ -22,4 +20,32 @@ public class PlaybackQueueItem : Entity
     public virtual User AddedByUser { get; private set; } = null!;
 
     private PlaybackQueueItem() { }
+
+    public static PlaybackQueueItem Create(
+        Guid sessionId, 
+        Guid trackId, 
+        QueueType queueType, 
+        int position, 
+        Guid addedByUserId, 
+        DateTime utcNow)
+    {
+        if (position < 0) throw new ArgumentException("Queue position cannot be negative");
+
+        return new PlaybackQueueItem
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            TrackId = trackId,
+            QueueType = queueType,
+            Position = position,
+            AddedByUserId = addedByUserId,
+            AddedAt = utcNow
+        };
+    }
+
+    public void UpdatePosition(int newPosition)
+    {
+        if (newPosition < 0) throw new ArgumentException("Queue position cannot be negative");
+        Position = newPosition;
+    }
 }

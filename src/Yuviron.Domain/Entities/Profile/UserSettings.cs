@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
 
 public class UserSettings : Entity
 {
-    public Guid UserId { get; private set; } // PK + FK
+    public Guid UserId { get; private set; } 
     public string LanguageCode { get; private set; } = "en";
     public string ThemeMode { get; private set; } = "system"; // light, dark
-
     public Guid? CustomThemeId { get; private set; }
-
     public int AudioQualityPreference { get; private set; } = 320;
     public int CrossfadeMs { get; private set; }
     public bool PipEnabled { get; private set; }
@@ -22,4 +18,41 @@ public class UserSettings : Entity
     public virtual CustomTheme? CustomTheme { get; private set; }
 
     private UserSettings() { }
+
+    public static UserSettings Create(Guid userId, string languageCode, DateTime utcNow)
+    {
+        return new UserSettings
+        {
+            Id = userId, 
+            UserId = userId,
+            LanguageCode = languageCode,
+            ThemeMode = "system",
+            AudioQualityPreference = 320, 
+            CrossfadeMs = 0,
+            PipEnabled = false,
+            UpdatedAt = utcNow
+        };
+    }
+
+    public void UpdatePreferences(
+        string languageCode, 
+        string themeMode, 
+        int audioQuality, 
+        int crossfadeMs, 
+        bool pipEnabled, 
+        DateTime utcNow)
+    {
+        LanguageCode = languageCode;
+        ThemeMode = themeMode;
+        AudioQualityPreference = audioQuality;
+        CrossfadeMs = crossfadeMs;
+        PipEnabled = pipEnabled;
+        UpdatedAt = utcNow;
+    }
+
+    public void ApplyCustomTheme(Guid? customThemeId, DateTime utcNow)
+    {
+        CustomThemeId = customThemeId;
+        UpdatedAt = utcNow;
+    }
 }

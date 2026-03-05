@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -14,14 +11,16 @@ public class PlaybackSessionConfiguration : IEntityTypeConfiguration<PlaybackSes
         builder.ToTable("playback_sessions");
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.ContextType).HasMaxLength(50);
+        builder.Property(x => x.ContextType).IsRequired().HasMaxLength(50);
 
-        // Индекс для полиморфного контекста
+        // Индексы
+        builder.HasIndex(x => x.UserId);
+        builder.HasIndex(x => x.StartedAt);
         builder.HasIndex(x => new { x.ContextType, x.ContextId });
 
         builder.HasOne(x => x.User)
-               .WithMany() // .WithMany(u => u.Sessions)
-               .HasForeignKey(x => x.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany() 
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

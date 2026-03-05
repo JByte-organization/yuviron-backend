@@ -1,15 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Yuviron.Domain.Common;
+
 namespace Yuviron.Domain.Entities;
 
 public class UserSavedAlbum
 {
-    public Guid UserId { get; set; }
-    public virtual User User { get; set; } = null!;
+    public Guid UserId { get; private set; }
+    public Guid AlbumId { get; private set; }
+    public DateTime SavedAt { get; private set; }
 
-    public Guid AlbumId { get; set; }
-    public virtual Album Album { get; set; } = null!;
+    public virtual User User { get; private set; } = null!;
+    public virtual Album Album { get; private set; } = null!;
 
-    public DateTime SavedAt { get; set; }
+    private UserSavedAlbum() { }
+
+    public static UserSavedAlbum Create(Guid userId, Guid albumId, DateTime utcNow)
+    {
+        return new UserSavedAlbum
+        {
+            UserId = userId,
+            AlbumId = albumId,
+            SavedAt = utcNow
+        };
+    }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -22,4 +20,33 @@ public class Notification : Entity
     public virtual User User { get; private set; } = null!;
 
     private Notification() { }
+
+    public static Notification Create(
+        Guid userId, 
+        string title, 
+        string body, 
+        NotificationEntityType? entityType, 
+        Guid? entityId, 
+        DateTime utcNow)
+    {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Notification title is required");
+        if (string.IsNullOrWhiteSpace(body)) throw new ArgumentException("Notification body is required");
+
+        return new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Title = title.Trim(),
+            Body = body.Trim(),
+            EntityType = entityType,
+            EntityId = entityId,
+            IsRead = false,
+            CreatedAt = utcNow
+        };
+    }
+
+    public void MarkAsRead()
+    {
+        if (!IsRead) IsRead = true;
+    }
 }

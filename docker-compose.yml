@@ -7,3 +7,20 @@ services:
     restart: always
     ports:
       - "6379:6379"
+
+  yuviron-mysql:
+    image: mysql:8.0
+    container_name: yuviron_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_DATABASE: yuviron_db
+      MYSQL_USER: yuviron_user
+      MYSQL_PASSWORD: supersecret123
+    ports:
+      - "3306:3306"
+    volumes:
+      - yuviron_mysql_data:/var/lib/mysql
+
+volumes:
+  yuviron_mysql_data:

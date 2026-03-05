@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
@@ -7,7 +7,7 @@ using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
 
-public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenCommand, RefreshAccessTokenResponse>
+public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenCommand, RefreshAccessTokenResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -28,7 +28,7 @@ public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenComma
 
     public async Task<RefreshAccessTokenResponse> Handle(RefreshAccessTokenCommand request, CancellationToken cancellationToken)
     {
-        var requestTokenHash = _jwtTokenGenerator.HashRefreshToken(request.RefreshToken);
+        var requestTokenHash = _jwtTokenGenerator.HashRefreshToken(request.RefreshToken.Trim());
 
         var existingToken = await _context.RefreshTokens
             .Include(rt => rt.User)
@@ -49,7 +49,7 @@ public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenComma
 
             foreach (var token in allUserTokens)
             {
-                token.Revoke();
+                token.Revoke(_dateTimeProvider.UtcNow);
             }
 
             await _permissionService.InvalidatePermissionsAsync(existingToken.UserId, cancellationToken);
@@ -61,7 +61,7 @@ public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenComma
 
         if (existingToken.ExpiresAt < _dateTimeProvider.UtcNow) throw new UnauthorizedAccessException("Token expired.");
 
-        existingToken.Revoke();
+        existingToken.Revoke(_dateTimeProvider.UtcNow);
 
         var newAccessToken = _jwtTokenGenerator.GenerateToken(existingToken.User);
 
@@ -71,7 +71,8 @@ public class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenComma
         var newRefreshTokenEntity = RefreshToken.Create(
             existingToken.UserId,
             newHashedRefreshToken, 
-            _dateTimeProvider.UtcNow.AddDays(30)
+            _dateTimeProvider.UtcNow.AddDays(30),
+            _dateTimeProvider.UtcNow 
         );
 
         _context.RefreshTokens.Add(newRefreshTokenEntity);

@@ -7,18 +7,21 @@ using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Persistence.Configurations;
 
-public class SmartLinkClickConfiguration : IEntityTypeConfiguration<SmartLinkClick>
+public class SmartLinkConfiguration : IEntityTypeConfiguration<SmartLink>
 {
-    public void Configure(EntityTypeBuilder<SmartLinkClick> builder)
+    public void Configure(EntityTypeBuilder<SmartLink> builder)
     {
-        builder.ToTable("smart_link_clicks");
+        builder.ToTable("smart_links");
         builder.HasKey(x => x.Id);
 
-        builder.HasIndex(x => x.ClickedAt);
+        builder.Property(x => x.Code).IsRequired().HasMaxLength(32);
+        builder.HasIndex(x => x.Code).IsUnique();
 
-        builder.HasOne(x => x.SmartLink)
-               .WithMany(s => s.Clicks)
-               .HasForeignKey(x => x.SmartLinkId)
-               .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(x => new { x.EntityType, x.EntityId });
+
+        builder.HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

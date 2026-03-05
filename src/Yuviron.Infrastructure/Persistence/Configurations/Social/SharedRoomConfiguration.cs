@@ -16,10 +16,11 @@ public class SharedRoomConfiguration : IEntityTypeConfiguration<SharedRoom>
 
         builder.Property(x => x.Name).IsRequired().HasMaxLength(100);
         builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => x.CreatedAt);
 
         builder.HasOne(x => x.HostUser)
-               .WithMany()
-               .HasForeignKey(x => x.HostUserId)
-               .OnDelete(DeleteBehavior.Restrict); // Удаление хоста не должно молча сносить активную комнату
+            .WithMany()
+            .HasForeignKey(x => x.HostUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

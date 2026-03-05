@@ -13,6 +13,8 @@ public class ThemeConfiguration : IEntityTypeConfiguration<Theme>
     {
         builder.ToTable("themes");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Name).HasMaxLength(64);
+        
+        builder.Property(x => x.Name).IsRequired().HasMaxLength(64);
+        builder.HasIndex(x => x.Name).IsUnique();
     }
 }

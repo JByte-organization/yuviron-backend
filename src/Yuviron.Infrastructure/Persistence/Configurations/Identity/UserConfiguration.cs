@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -17,10 +14,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Email).IsRequired().HasMaxLength(320);
         builder.HasIndex(x => x.Email).IsUnique();
 
+        builder.Property(x => x.PasswordHash).IsRequired().HasMaxLength(256);
+        builder.Property(x => x.LoginCodeHash).HasMaxLength(256); // Для кодов авторизации
+
         builder.Property(x => x.AcceptMarketing).HasDefaultValue(false);
         builder.Property(x => x.AcceptTerms).IsRequired();
-
-        builder.Property(x => x.PasswordHash).IsRequired();
-        builder.Property(x => x.AccountState).IsRequired(); // Сохранится как int
+        builder.Property(x => x.AccountState).IsRequired(); 
     }
 }

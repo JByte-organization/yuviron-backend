@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -12,11 +9,13 @@ public class TrackListenHeatmapConfiguration : IEntityTypeConfiguration<TrackLis
     public void Configure(EntityTypeBuilder<TrackListenHeatmap> builder)
     {
         builder.ToTable("track_listen_heatmap");
+        
+        // Композитный первичный ключ
         builder.HasKey(x => new { x.TrackId, x.SecondIndex });
 
         builder.HasOne(x => x.Track)
-               .WithMany() // Можно добавить Track.Heatmap
-               .HasForeignKey(x => x.TrackId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithMany() 
+            .HasForeignKey(x => x.TrackId)
+            .OnDelete(DeleteBehavior.Cascade); // Удалили трек из базы — удалили и его тепловую карту
     }
 }

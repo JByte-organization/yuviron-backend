@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
@@ -12,4 +10,17 @@ public class Theme : Entity
     public bool IsPremiumOnly { get; private set; }
 
     private Theme() { }
+
+    public static Theme Create(string name, bool isSystem, bool isPremiumOnly)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Theme name is required");
+
+        return new Theme
+        {
+            Id = Guid.NewGuid(),
+            Name = name.Trim(),
+            IsSystem = isSystem,
+            IsPremiumOnly = isPremiumOnly
+        };
+    }
 }

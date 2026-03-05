@@ -1,15 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+
 namespace Yuviron.Domain.Entities;
 
 public class UserAchievement
 {
-    public Guid UserId { get; set; }
-    public virtual User User { get; set; } = null!;
+    public Guid UserId { get; private set; }
+    public Guid AchievementId { get; private set; }
+    public DateTime UnlockedAt { get; private set; }
 
-    public Guid AchievementId { get; set; }
-    public virtual Achievement Achievement { get; set; } = null!;
+    public virtual User User { get; private set; } = null!;
+    public virtual Achievement Achievement { get; private set; } = null!;
 
-    public DateTime UnlockedAt { get; set; }
+    private UserAchievement() { }
+
+    public static UserAchievement Create(Guid userId, Guid achievementId, DateTime utcNow)
+    {
+        return new UserAchievement
+        {
+            UserId = userId,
+            AchievementId = achievementId,
+            UnlockedAt = utcNow
+        };
+    }
 }

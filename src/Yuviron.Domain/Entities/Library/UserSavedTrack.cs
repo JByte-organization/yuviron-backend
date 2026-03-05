@@ -1,15 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Yuviron.Domain.Common;
+
 namespace Yuviron.Domain.Entities;
 
 public class UserSavedTrack
 {
-    public Guid UserId { get; set; }
-    public virtual User User { get; set; } = null!;
+    public Guid UserId { get; private set; }
+    public Guid TrackId { get; private set; }
+    public DateTime SavedAt { get; private set; }
 
-    public Guid TrackId { get; set; }
-    public virtual Track Track { get; set; } = null!;
+    public virtual User User { get; private set; } = null!;
+    public virtual Track Track { get; private set; } = null!;
 
-    public DateTime SavedAt { get; set; }
+    private UserSavedTrack() { }
+
+    public static UserSavedTrack Create(Guid userId, Guid trackId, DateTime utcNow)
+    {
+        return new UserSavedTrack
+        {
+            UserId = userId,
+            TrackId = trackId,
+            SavedAt = utcNow
+        };
+    }
 }

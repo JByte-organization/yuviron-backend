@@ -1,35 +1,51 @@
-﻿using MediatR;
+using System.Security.Cryptography;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 
-public class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
+public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ILogger<SendLoginCodeHandler> _logger;
+    private readonly TimeProvider _timeProvider;
 
-    public SendLoginCodeHandler(IApplicationDbContext context, IEmailService emailService, IPasswordHasher passwordHasher)
+    public SendLoginCodeHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IPasswordHasher passwordHasher,
+        ILogger<SendLoginCodeHandler> logger)
     {
         _context = context;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(SendLoginCodeCommand request, CancellationToken cancellationToken)
     {
+        var normalizedEmail = EmailNormalizer.Normalize(request.Email);
+
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (user == null) return Unit.Value;
+        if (user == null)
+        {
+            return Unit.Value;
+        }
 
-        var code = Random.Shared.Next(100000, 999999).ToString();
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var codeHash = _passwordHasher.Hash(code);
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        user.SetLoginCode(codeHash);
+        user.SetLoginCode(codeHash, utcNow); // <-- ДОБАВИТЬ utcNow
         await _context.SaveChangesAsync(cancellationToken);
 
         try
@@ -40,7 +56,10 @@ public class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
                 $"<h1>{code}</h1>",
                 cancellationToken);
         }
-        catch {  }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send login code to {Email}", user.Email);
+        }
 
         return Unit.Value;
     }

@@ -1,19 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-namespace Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
-public enum RoomRole { Host = 1, Member = 2 }
+namespace Yuviron.Domain.Entities;
 
 public class SharedRoomMember
 {
-    public Guid RoomId { get; set; }
-    public virtual SharedRoom Room { get; set; } = null!;
+    public Guid RoomId { get; private set; }
+    public Guid UserId { get; private set; }
+    public RoomRole Role { get; private set; }
+    public DateTime JoinedAt { get; private set; }
+    public DateTime? LeftAt { get; private set; }
 
-    public Guid UserId { get; set; }
-    public virtual User User { get; set; } = null!;
+    public virtual SharedRoom Room { get; private set; } = null!;
+    public virtual User User { get; private set; } = null!;
 
-    public RoomRole Role { get; set; }
-    public DateTime JoinedAt { get; set; }
-    public DateTime? LeftAt { get; set; }
+    private SharedRoomMember() { }
+
+    public static SharedRoomMember Create(Guid roomId, Guid userId, RoomRole role, DateTime utcNow)
+    {
+        return new SharedRoomMember
+        {
+            RoomId = roomId,
+            UserId = userId,
+            Role = role,
+            JoinedAt = utcNow
+        };
+    }
+
+    public void Leave(DateTime utcNow)
+    {
+        if (LeftAt != null) return;
+        LeftAt = utcNow;
+    }
 }
