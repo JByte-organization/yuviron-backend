@@ -44,6 +44,13 @@ public class User : Entity
         };
     }
 
+    public bool HasActivePremiumSubscription(DateTime currentDate)
+    {
+        return Subscriptions.Any(s =>
+            s.Status == SubscriptionStatus.Active &&
+            s.EndAt > currentDate);
+    }
+
     public void SetProfile(UserProfile profile)
     {
         Profile = profile;

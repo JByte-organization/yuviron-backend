@@ -10,7 +10,7 @@ public class Role : Entity
     public string Name { get; private set; } = string.Empty;
 
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
-
+    public virtual ICollection<RolePermission> RolePermissions { get; private set; } = new List<RolePermission>();
     private Role() { }
 
     public Role(string name)

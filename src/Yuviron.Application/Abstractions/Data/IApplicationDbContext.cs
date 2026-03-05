@@ -12,6 +12,9 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<UserRole> UserRoles { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<UserBlock> UserBlocks { get; }
+    DbSet<Permission> Permissions { get; }
+    DbSet<RolePermission> RolePermissions { get; }
+
 
     // --- Profile ---
     DbSet<UserProfile> UserProfiles { get; }

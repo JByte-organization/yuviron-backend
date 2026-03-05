@@ -26,15 +26,12 @@ public class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
 
         if (user == null) return Unit.Value;
 
-        // 1. Логика генерации
         var code = Random.Shared.Next(100000, 999999).ToString();
         var codeHash = _passwordHasher.Hash(code);
 
-        // 2. Изменение состояния (Command)
         user.SetLoginCode(codeHash);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 3. Сайд-эффект (письмо)
         try
         {
             await _emailService.SendEmailAsync(
@@ -43,7 +40,7 @@ public class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
                 $"<h1>{code}</h1>",
                 cancellationToken);
         }
-        catch { /* Логирование ошибки отправки */ }
+        catch {  }
 
         return Unit.Value;
     }

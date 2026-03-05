@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
 
@@ -16,4 +13,21 @@ public class RefreshToken : Entity
     public virtual User User { get; private set; } = null!;
 
     private RefreshToken() { }
+
+    public static RefreshToken Create(Guid userId, string token, DateTime expiresAt)
+    {
+        return new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TokenHash = token,
+            ExpiresAt = expiresAt,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    public void Revoke()
+    {
+        RevokedAt = DateTime.UtcNow;
+    }
 }

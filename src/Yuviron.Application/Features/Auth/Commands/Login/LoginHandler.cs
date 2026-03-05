@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Services; 
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.Login;
 
@@ -10,26 +12,36 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IPermissionService _permissionService;
+    private readonly IDateTimeProvider _dateTimeProvider; 
 
-    public LoginHandler(IApplicationDbContext context, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator)
+    public LoginHandler(
+        IApplicationDbContext context,
+        IPasswordHasher passwordHasher,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IPermissionService permissionService,
+        IDateTimeProvider dateTimeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _permissionService = permissionService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await _context.Users
-            .AsNoTracking()                 
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-            .Include(u => u.Subscriptions)            
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+             .AsNoTracking()
+             .Include(u => u.UserRoles)
+                 .ThenInclude(ur => ur.Role)
+                     .ThenInclude(r => r.RolePermissions)
+                         .ThenInclude(rp => rp.Permission)
+             .Include(u => u.Subscriptions)
+             .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
         if (user == null)
         {
-            
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -39,8 +51,29 @@ public class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
+        var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
+
         var token = _jwtTokenGenerator.GenerateToken(user);
 
-        return new LoginResponse(user.Id, token, user.Email);
+        var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
+
+        var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
+
+        var refreshTokenEntity = RefreshToken.Create(
+            user.Id,
+            hashedRefreshToken, 
+            _dateTimeProvider.UtcNow.AddDays(30) 
+        );
+
+        _context.RefreshTokens.Add(refreshTokenEntity);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new LoginResponse(
+            user.Id,
+            token,
+            rawRefreshToken, 
+            user.Email,
+            permissions
+        );
     }
 }

@@ -15,6 +15,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     // --- Profile ---
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
@@ -76,8 +78,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // ВАЖНО: Эта строка находит все 50+ файлов конфигурации, 
-        // которые ты создал в папке Configurations, и применяет их.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         base.OnModelCreating(modelBuilder);
