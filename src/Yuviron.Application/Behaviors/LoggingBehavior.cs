@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Threading;
-using System.Threading.Tasks;
+using Yuviron.Application.Abstractions;
 
 namespace Yuviron.Application.Behaviors;
 
@@ -19,7 +18,14 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     {
         var requestName = typeof(TRequest).Name;
 
-        _logger.LogInformation("Yuviron Request: Starting {Name} {@Request}", requestName, request);
+        if (request is ISensitiveRequest)
+        {
+            _logger.LogInformation("Yuviron Request: Starting {Name} [SENSITIVE DATA HIDDEN]", requestName);
+        }
+        else
+        {
+            _logger.LogInformation("Yuviron Request: Starting {Name} {@Request}", requestName, request);
+        }
 
         var response = await next();
 

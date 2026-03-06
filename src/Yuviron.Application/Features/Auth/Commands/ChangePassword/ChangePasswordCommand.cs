@@ -1,6 +1,8 @@
 using MediatR;
 
-public sealed record ChangePasswordCommand(
+using Yuviron.Application.Abstractions;
+
+public sealed record ChangePasswordCommand (
     string OldPassword,
     string NewPassword
-) : IRequest<Unit>;
+) : IRequest<Unit>, ISensitiveRequest;

@@ -22,5 +22,7 @@ public class ArtistConfiguration : IEntityTypeConfiguration<Artist>
             .WithOne(x => x.Artist)
             .HasForeignKey(x => x.ArtistId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

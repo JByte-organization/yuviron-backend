@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.StaticFiles;
 using Yuviron.Application.Features.Files.Commands.DeleteFile;
 using Yuviron.Application.Features.Files.Commands.UploadFile;
 
@@ -47,21 +48,27 @@ public class FilesController : ApiControllerBase
     {
         if (string.IsNullOrWhiteSpace(folder) || string.IsNullOrWhiteSpace(fileName))
         {
-            return BadRequest("Укажите папку и имя файла.");
+            return BadRequest("Specify the folder and file name.");
         }
 
         if (fileName.Contains("..") || folder.Contains(".."))
         {
-            return BadRequest("Недопустимые символы в пути.");
+            return BadRequest("Invalid characters in the path.");
         }
 
         var fullPath = Path.Combine(_storageRoot, folder, fileName);
 
         if (!System.IO.File.Exists(fullPath))
         {
-            return NotFound($"Файл не найден на сервере по пути: {fullPath}");
+            return NotFound($"The file was not found on the server at the path: {fullPath}");
         }
 
-        return PhysicalFile(fullPath, "application/octet-stream", enableRangeProcessing: true);
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(fullPath, out var contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+
+        return PhysicalFile(fullPath, contentType, fileDownloadName: fileName, enableRangeProcessing: true);
     }
 }

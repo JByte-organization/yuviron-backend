@@ -16,5 +16,7 @@ public class AlbumConfiguration : IEntityTypeConfiguration<Album>
         builder.Property(x => x.CoverUrl).HasMaxLength(500);
 
         builder.HasIndex(x => x.ReleaseDate);
+        
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }
