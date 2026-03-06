@@ -21,30 +21,33 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var result = await base.SaveChangesAsync(cancellationToken);
-
         await DispatchDomainEvents(cancellationToken);
 
-        return result;
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     private async Task DispatchDomainEvents(CancellationToken cancellationToken)
     {
-        var entities = ChangeTracker
-            .Entries<Entity>() 
-            .Where(e => e.Entity.DomainEvents.Any())
-            .Select(e => e.Entity)
-            .ToList();
-
-        var domainEvents = entities
-            .SelectMany(e => e.DomainEvents)
-            .ToList();
-
-        entities.ForEach(e => e.ClearDomainEvents());
-
-        foreach (var domainEvent in domainEvents)
+        while (true) 
         {
-            await _mediator.Publish(domainEvent, cancellationToken);
+            var entities = ChangeTracker
+                .Entries<Entity>() 
+                .Where(e => e.Entity.DomainEvents.Any())
+                .ToList();
+
+            if (!entities.Any())
+                break;
+
+            var domainEvents = entities
+                .SelectMany(e => e.Entity.DomainEvents)
+                .ToList();
+
+            entities.ForEach(e => e.Entity.ClearDomainEvents());
+
+            foreach (var domainEvent in domainEvents)
+            {
+                await _mediator.Publish(domainEvent, cancellationToken);
+            }
         }
     }
     

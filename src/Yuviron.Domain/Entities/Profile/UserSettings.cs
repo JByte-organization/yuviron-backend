@@ -5,9 +5,9 @@ namespace Yuviron.Domain.Entities;
 
 public class UserSettings : Entity
 {
-    public Guid UserId { get; private set; } 
+
     public string LanguageCode { get; private set; } = "en";
-    public string ThemeMode { get; private set; } = "system"; // light, dark
+    public string ThemeMode { get; private set; } = "system"; 
     public Guid? CustomThemeId { get; private set; }
     public int AudioQualityPreference { get; private set; } = 320;
     public int CrossfadeMs { get; private set; }
@@ -23,8 +23,7 @@ public class UserSettings : Entity
     {
         return new UserSettings
         {
-            Id = userId, 
-            UserId = userId,
+            Id = userId,
             LanguageCode = languageCode,
             ThemeMode = "system",
             AudioQualityPreference = 320, 
@@ -34,13 +33,7 @@ public class UserSettings : Entity
         };
     }
 
-    public void UpdatePreferences(
-        string languageCode, 
-        string themeMode, 
-        int audioQuality, 
-        int crossfadeMs, 
-        bool pipEnabled, 
-        DateTime utcNow)
+    public void UpdatePreferences(string languageCode, string themeMode, int audioQuality, int crossfadeMs, bool pipEnabled, DateTime utcNow)
     {
         LanguageCode = languageCode;
         ThemeMode = themeMode;

@@ -25,12 +25,12 @@ public sealed class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand,
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var profile = await _context.UserProfiles
-                          .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken)
+                          .FirstOrDefaultAsync(p => p.Id == userId, cancellationToken)
                       ?? throw new NotFoundException(nameof(UserProfile), userId);
 
         profile.UpdateDetails(
             request.DisplayName.Trim(),
-            profile.AvatarUrl, // Аватар обычно обновляется отдельным эндпоинтом загрузки файла
+            profile.AvatarUrl, 
             request.Country,
             request.Bio,
             request.DateOfBirth,

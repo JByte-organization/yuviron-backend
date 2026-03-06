@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 
 public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumCommand>
 {
-    public CreateAlbumCommandValidator()
+    public CreateAlbumCommandValidator(TimeProvider timeProvider)
     {
         RuleFor(x => x.Title)
             .NotEmpty()
@@ -38,9 +38,8 @@ public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumC
             .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled);
 
         RuleFor(x => x.ScheduledPublishAt)
-            .Must((command, scheduledAt) => scheduledAt > DateTime.UtcNow.AddMinutes(-1)) 
+            .Must((command, scheduledAt) => scheduledAt > timeProvider.GetUtcNow().UtcDateTime.AddMinutes(-1)) 
             .WithMessage("Scheduled date must be in the future.")
             .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled && x.ScheduledPublishAt.HasValue);
     }
-
 }

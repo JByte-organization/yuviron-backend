@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
+using Yuviron.Domain.Common;
 
 namespace Yuviron.Application.Features.Auth.Queries.CheckEmail;
 

@@ -1,11 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Auth.Commands.Login;
-using Yuviron.Domain.Entities;
+using Yuviron.Domain.Common;
 
 namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 
@@ -15,25 +18,42 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IPermissionService _permissionService;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly TimeProvider _timeProvider;
+    private readonly IOtpService _otpService;
 
     public LoginWithCodeHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         IPermissionService permissionService,
-        IDateTimeProvider dateTimeProvider)
+        TimeProvider timeProvider,
+        IOtpService otpService) 
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _permissionService = permissionService;
-        _dateTimeProvider = dateTimeProvider;
+        _timeProvider = timeProvider;
+        _otpService = otpService;
     }
 
     public async Task<LoginResponse> Handle(LoginWithCodeCommand request, CancellationToken cancellationToken)
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
+
+        var cachedCodeHash = await _otpService.GetLoginCodeHashAsync(normalizedEmail, cancellationToken);
+        
+        if (string.IsNullOrEmpty(cachedCodeHash))
+        {
+            throw new UnauthorizedAccessException("Code expired or not found.");
+        }
+
+        if (!_passwordHasher.Verify(request.Code, cachedCodeHash))
+        {
+            throw new UnauthorizedAccessException("Invalid code.");
+        }
+
+        await _otpService.RemoveLoginCodeAsync(normalizedEmail, cancellationToken);
 
         var user = await _context.Users
             .Include(u => u.UserRoles)
@@ -43,32 +63,21 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
             .Include(u => u.Subscriptions)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (user == null) throw new UnauthorizedAccessException("Invalid credentials.");
+        if (user == null) throw new UnauthorizedAccessException("User not found.");
 
-        if (string.IsNullOrEmpty(user.LoginCodeHash) || user.LoginCodeExpiryUtc == null || user.LoginCodeExpiryUtc < _dateTimeProvider.UtcNow)
-        {
-            throw new UnauthorizedAccessException("Code expired.");
-        }
-
-        if (!_passwordHasher.Verify(request.Code, user.LoginCodeHash!))
-        {
-            throw new UnauthorizedAccessException("Invalid code.");
-        }
-
-        user.ClearLoginCode();
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        user.UpdateLastLogin(utcNow); // Обновляем время входа
 
         var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
-
         var token = _jwtTokenGenerator.GenerateToken(user);
-
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 
-        var refreshTokenEntity = RefreshToken.Create(
+        var refreshTokenEntity = Yuviron.Domain.Entities.RefreshToken.Create(
             user.Id,
             hashedRefreshToken,
-            _dateTimeProvider.UtcNow.AddDays(30),
-            _dateTimeProvider.UtcNow 
+            utcNow.AddDays(30), 
+            utcNow            
         );
 
         _context.RefreshTokens.Add(refreshTokenEntity);

@@ -8,6 +8,8 @@ public sealed class MoodConfiguration : IEntityTypeConfiguration<Mood>
 {
     public void Configure(EntityTypeBuilder<Mood> builder)
     {
+        builder.ToTable("moods");
+
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Name)

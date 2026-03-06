@@ -46,7 +46,6 @@ public class SharedRoom : Entity
         Status = RoomStatus.Closed;
         EndedAt = utcNow;
         
-        // Автоматически "выгоняем" всех, кто еще не вышел
         foreach (var member in Members.Where(m => m.LeftAt == null))
         {
             member.Leave(utcNow);
@@ -57,7 +56,6 @@ public class SharedRoom : Entity
     {
         if (Status == RoomStatus.Closed) throw new InvalidOperationException("Cannot join a closed room");
         
-        // Если юзер уже в комнате, ничего не делаем
         if (Members.Any(m => m.UserId == userId && m.LeftAt == null)) return;
 
         Members.Add(SharedRoomMember.Create(Id, userId, role, utcNow));
@@ -67,6 +65,11 @@ public class SharedRoom : Entity
     {
         if (Status == RoomStatus.Closed) throw new InvalidOperationException("Cannot add tracks to a closed room");
         if (position < 0) throw new ArgumentException("Position cannot be negative");
+
+        if (Queue.Any(q => q.Position == position))
+        {
+            throw new InvalidOperationException($"Position {position} is already taken in the room's queue.");
+        }
 
         Queue.Add(SharedRoomQueueItem.Create(Id, trackId, position, addedByUserId, utcNow));
     }

@@ -1,5 +1,5 @@
-﻿using Yuviron.Domain.Entities;
-
+﻿
+namespace Yuviron.Domain.Entities;
 public class PlaylistTrack
 {
     public Guid PlaylistId { get; private set; }

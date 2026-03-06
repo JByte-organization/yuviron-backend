@@ -15,7 +15,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(x => x.Email).IsUnique();
 
         builder.Property(x => x.PasswordHash).IsRequired().HasMaxLength(256);
-        builder.Property(x => x.LoginCodeHash).HasMaxLength(256); // Для кодов авторизации
 
         builder.Property(x => x.AcceptMarketing).HasDefaultValue(false);
         builder.Property(x => x.AcceptTerms).IsRequired();

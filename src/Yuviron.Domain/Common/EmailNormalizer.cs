@@ -1,4 +1,4 @@
-namespace Yuviron.Application.Common;
+namespace Yuviron.Domain.Common;
 
 public static class EmailNormalizer
 {
@@ -9,6 +9,6 @@ public static class EmailNormalizer
             return string.Empty;
         }
 
-        return email.Trim().ToUpperInvariant();
+        return email.Trim().ToLowerInvariant();
     }
 }

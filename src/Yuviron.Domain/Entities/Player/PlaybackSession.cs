@@ -46,6 +46,11 @@ public class PlaybackSession : Entity
     public void AddToQueue(Guid trackId, QueueType queueType, int position, Guid addedByUserId, DateTime utcNow)
     {
         if (EndedAt != null) throw new InvalidOperationException("Cannot add items to an ended session");
+        
+        if (QueueItems.Any(q => q.Position == position))
+        {
+            throw new InvalidOperationException($"Position {position} is already taken in the queue.");
+        }
 
         var queueItem = PlaybackQueueItem.Create(Id, trackId, queueType, position, addedByUserId, utcNow);
         QueueItems.Add(queueItem);

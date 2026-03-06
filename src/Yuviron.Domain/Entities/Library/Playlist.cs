@@ -1,6 +1,5 @@
 ﻿using Yuviron.Domain.Common;
-using Yuviron.Domain.Entities;
-
+namespace Yuviron.Domain.Entities;
 public class Playlist : Entity
 {
     public Guid? UserId { get; private set; } // Null если это редакционный плейлист

@@ -12,8 +12,8 @@ using Yuviron.Infrastructure.Persistence;
 namespace Yuviron.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260304155704_UpdateDomainModels")]
-    partial class UpdateDomainModels
+    [Migration("20260306202200_InitialDDD")]
+    partial class InitialDDD
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -70,7 +70,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("MediaUrl")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -94,7 +95,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Context")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTime>("ShownAt")
                         .HasColumnType("datetime(6)");
@@ -118,7 +120,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("CoverUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -127,7 +130,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
@@ -181,13 +185,16 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("AvatarUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("BannerUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -206,9 +213,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
-                    b.Property<Guid?>("OwnerUserId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -218,8 +222,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
-
-                    b.HasIndex("OwnerUserId");
 
                     b.ToTable("artists", (string)null);
                 });
@@ -291,17 +293,47 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ArtistId");
 
                     b.ToTable("artist_social_links", (string)null);
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistTeamMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ArtistId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("artist_team_members", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Complaint", b =>
@@ -311,7 +343,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -323,11 +356,13 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("ModerationNote")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<string>("ReasonCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -418,18 +453,24 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("BackgroundColor")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(7)
+                        .HasColumnType("char(7)")
+                        .IsFixedLength();
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("PrimaryColor")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(7)
+                        .HasColumnType("char(7)")
+                        .IsFixedLength();
 
                     b.Property<string>("SecondaryColor")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(7)
+                        .HasColumnType("char(7)")
+                        .IsFixedLength();
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
@@ -447,10 +488,26 @@ namespace Yuviron.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("CoverUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("HexColor")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -467,11 +524,14 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("CountryCode")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2)
+                        .HasColumnType("char(2)")
+                        .IsFixedLength();
 
                     b.Property<string>("DeviceType")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("MsPlayed")
                         .HasColumnType("int");
@@ -483,7 +543,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("SourceType")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<Guid>("TrackId")
                         .HasColumnType("char(36)");
@@ -502,21 +563,26 @@ namespace Yuviron.Infrastructure.Migrations
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Lyrics", b =>
                 {
-                    b.Property<Guid>("TrackId")
-                        .HasColumnType("char(36)");
-
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
                     b.Property<string>("LanguageCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<string>("PlainText")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("TrackId");
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrackId")
+                        .IsUnique();
 
                     b.ToTable("lyrics", (string)null);
                 });
@@ -535,7 +601,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Text")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<Guid>("TrackId")
                         .HasColumnType("char(36)");
@@ -547,6 +614,35 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("lyrics_segments", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.Mood", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("CoverUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("moods", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -555,7 +651,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Body")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -571,12 +668,15 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("UserId", "IsRead");
 
@@ -596,7 +696,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("DecisionNote")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<decimal>("RequestedAmount")
                         .HasPrecision(18, 2)
@@ -607,6 +708,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -634,7 +738,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("ProviderRef")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -678,7 +783,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(3)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -761,6 +868,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("StartedAt");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("ContextType", "ContextId");
@@ -775,15 +884,20 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("CoverUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEditorial")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsPublic")
@@ -797,7 +911,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
@@ -850,12 +964,16 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -978,6 +1096,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("HostUserId");
 
                     b.HasIndex("Status");
@@ -1090,13 +1210,17 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CountryCode")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2)
+                        .HasColumnType("char(2)")
+                        .IsFixedLength();
 
                     b.Property<string>("DeviceType")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Referrer")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<Guid>("SmartLinkId")
                         .HasColumnType("char(36)");
@@ -1167,6 +1291,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("themes", (string)null);
                 });
 
@@ -1181,10 +1308,12 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("AudioStorageKey")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("CoverUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -1202,7 +1331,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PreviewStorageKey")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1274,6 +1404,21 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("track_listen_heatmap", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.TrackMood", b =>
+                {
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("MoodId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("TrackId", "MoodId");
+
+                    b.HasIndex("MoodId");
+
+                    b.ToTable("track_moods", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1312,11 +1457,13 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("LoginCodeHash")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1356,7 +1503,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("MetricKey")
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("MetricValue")
                         .HasColumnType("int");
@@ -1388,7 +1536,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<DateTime?>("EndsAt")
                         .HasColumnType("datetime(6)");
@@ -1398,7 +1547,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<string>("ReasonCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("StartsAt")
                         .HasColumnType("datetime(6)");
@@ -1409,6 +1559,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BlockedByAdminId");
+
+                    b.HasIndex("IsActive");
 
                     b.HasIndex("UserId");
 
@@ -1438,18 +1590,21 @@ namespace Yuviron.Infrastructure.Migrations
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserProfile", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("AvatarUrl")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<string>("Country")
                         .HasMaxLength(2)
-                        .HasColumnType("varchar(2)");
+                        .HasColumnType("char(2)")
+                        .IsFixedLength();
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("date");
@@ -1462,13 +1617,12 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("Id")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.HasKey("UserId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisplayName");
 
                     b.ToTable("user_profiles", (string)null);
                 });
@@ -1526,7 +1680,7 @@ namespace Yuviron.Infrastructure.Migrations
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserSettings", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
                     b.Property<int>("AudioQualityPreference")
@@ -1538,24 +1692,23 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid?>("CustomThemeId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid>("Id")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("LanguageCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<bool>("PipEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("ThemeMode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.HasKey("UserId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CustomThemeId");
 
@@ -1572,7 +1725,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("AdminNote")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<Guid>("ArtistId")
                         .HasColumnType("char(36)");
@@ -1641,16 +1795,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Artist");
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.Artist", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.User", "OwnerUser")
-                        .WithMany()
-                        .HasForeignKey("OwnerUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("OwnerUser");
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.ArtistPayoutSettings", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
@@ -1682,6 +1826,25 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Artist");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistTeamMember", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithMany("TeamMembers")
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Artist");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Complaint", b =>
@@ -1847,8 +2010,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
                 });
@@ -2081,6 +2243,25 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Track");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.TrackMood", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Mood", "Mood")
+                        .WithMany("TrackMoods")
+                        .HasForeignKey("MoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.Track", "Track")
+                        .WithMany("TrackMoods")
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Mood");
+
+                    b.Navigation("Track");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserAchievement", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Achievement", "Achievement")
@@ -2161,7 +2342,7 @@ namespace Yuviron.Infrastructure.Migrations
                 {
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
                         .WithOne("Profile")
-                        .HasForeignKey("Yuviron.Domain.Entities.UserProfile", "UserId")
+                        .HasForeignKey("Yuviron.Domain.Entities.UserProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2234,7 +2415,7 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
                         .WithOne("Settings")
-                        .HasForeignKey("Yuviron.Domain.Entities.UserSettings", "UserId")
+                        .HasForeignKey("Yuviron.Domain.Entities.UserSettings", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2289,12 +2470,19 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Navigation("SocialLinks");
 
+                    b.Navigation("TeamMembers");
+
                     b.Navigation("TrackArtists");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Genre", b =>
                 {
                     b.Navigation("TrackGenres");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.Mood", b =>
+                {
+                    b.Navigation("TrackMoods");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.PayoutRequest", b =>
@@ -2336,6 +2524,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("TrackArtists");
 
                     b.Navigation("TrackGenres");
+
+                    b.Navigation("TrackMoods");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.User", b =>

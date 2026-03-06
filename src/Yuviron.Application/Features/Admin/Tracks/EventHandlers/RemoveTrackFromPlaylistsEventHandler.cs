@@ -35,7 +35,5 @@ public sealed class RemoveTrackFromPlaylistsEventHandler : INotificationHandler<
         // так как хранить "мягко удаленную" связь трека и плейлиста не имеет смысла, это просто мусор.
         _context.PlaylistTracks.RemoveRange(playlistLinks);
 
-        // 3. Сохраняем изменения в базе
-        await _context.SaveChangesAsync(cancellationToken);
     }
 }

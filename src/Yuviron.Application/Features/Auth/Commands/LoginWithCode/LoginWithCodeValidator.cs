@@ -7,13 +7,13 @@ public sealed class LoginWithCodeValidator : AbstractValidator<LoginWithCodeComm
     public LoginWithCodeValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Invalid email format.")
+            .MaximumLength(320).WithMessage("Email cannot exceed 320 characters.");
 
         RuleFor(x => x.Code)
-            .NotEmpty().WithMessage("Введіть код підтвердження.")
-            .Length(6).WithMessage("Код має містити рівно 6 цифр.")
-            .Matches("^[0-9]*$").WithMessage("Код має складатися лише з цифр.");
+            .NotEmpty().WithMessage("Verification code is required.")
+            .Length(6).WithMessage("Code must be exactly 6 characters long.")
+            .Matches("^[0-9]*$").WithMessage("Code must contain only digits.");
     }
 }

@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Messaging;
-using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Auth.Commands.Login;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -22,7 +22,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
     private readonly IPasswordHasher _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly ILogger<RegisterHandler> _logger;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly TimeProvider _timeProvider; 
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IPermissionService _permissionService;
     
@@ -31,7 +31,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
         IPasswordHasher passwordHasher,
         IEmailService emailService,
         ILogger<RegisterHandler> logger,
-        IDateTimeProvider dateTimeProvider,
+        TimeProvider timeProvider, 
         IJwtTokenGenerator jwtTokenGenerator,
         IPermissionService permissionService)
     {
@@ -39,7 +39,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
         _passwordHasher = passwordHasher;
         _emailService = emailService;
         _logger = logger;
-        _dateTimeProvider = dateTimeProvider;
+        _timeProvider = timeProvider; 
         _jwtTokenGenerator = jwtTokenGenerator;
         _permissionService = permissionService;
     }
@@ -55,7 +55,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
 
         if (emailExists) throw new UserAlreadyExistsException(normalizedEmail);
 
-        // ВАЖНО: Вытягиваем роль ВМЕСТЕ с правами, чтобы авто-логин смог их закэшировать
         var defaultRole = await _context.Roles
             .Include(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
@@ -63,7 +62,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
             ?? throw new InvalidOperationException("Default role 'User' is not configured.");
 
         var passwordHash = _passwordHasher.Hash(request.Password);
-        var utcNow = _dateTimeProvider.UtcNow; 
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime; 
 
         var user = User.Create(
             normalizedEmail, passwordHash, request.AcceptMarketing, request.AcceptTerms, utcNow);
@@ -87,7 +86,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
             throw new UserAlreadyExistsException(normalizedEmail);
         }
 
-        
         var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
         var token = _jwtTokenGenerator.GenerateToken(user);
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
@@ -98,7 +96,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
 
         _context.RefreshTokens.Add(refreshTokenEntity);
         await _context.SaveChangesAsync(cancellationToken);
-
 
         try
         {

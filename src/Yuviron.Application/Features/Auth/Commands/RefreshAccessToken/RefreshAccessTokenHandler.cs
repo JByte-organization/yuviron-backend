@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System; // <-- Добавлено
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services; // Для IDateTimeProvider
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
@@ -12,18 +12,18 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
     private readonly IApplicationDbContext _context;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IPermissionService _permissionService;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly TimeProvider _timeProvider; 
 
     public RefreshAccessTokenHandler(
         IApplicationDbContext context,
         IJwtTokenGenerator jwtTokenGenerator,
         IPermissionService permissionService,
-        IDateTimeProvider dateTimeProvider)
+        TimeProvider timeProvider) 
     {
         _context = context;
         _jwtTokenGenerator = jwtTokenGenerator;
         _permissionService = permissionService;
-        _dateTimeProvider = dateTimeProvider;
+        _timeProvider = timeProvider; 
     }
 
     public async Task<RefreshAccessTokenResponse> Handle(RefreshAccessTokenCommand request, CancellationToken cancellationToken)
@@ -41,6 +41,8 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
 
         if (existingToken == null) throw new UnauthorizedAccessException("Invalid token.");
 
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
         if (existingToken.RevokedAt != null)
         {
             var allUserTokens = await _context.RefreshTokens
@@ -49,7 +51,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
 
             foreach (var token in allUserTokens)
             {
-                token.Revoke(_dateTimeProvider.UtcNow);
+                token.Revoke(utcNow);
             }
 
             await _permissionService.InvalidatePermissionsAsync(existingToken.UserId, cancellationToken);
@@ -59,9 +61,9 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
             throw new UnauthorizedAccessException("Security Alert: Token reuse detected. All sessions terminated.");
         }
 
-        if (existingToken.ExpiresAt < _dateTimeProvider.UtcNow) throw new UnauthorizedAccessException("Token expired.");
+        if (existingToken.ExpiresAt < utcNow) throw new UnauthorizedAccessException("Token expired."); 
 
-        existingToken.Revoke(_dateTimeProvider.UtcNow);
+        existingToken.Revoke(utcNow); 
 
         var newAccessToken = _jwtTokenGenerator.GenerateToken(existingToken.User);
 
@@ -71,8 +73,8 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         var newRefreshTokenEntity = RefreshToken.Create(
             existingToken.UserId,
             newHashedRefreshToken, 
-            _dateTimeProvider.UtcNow.AddDays(30),
-            _dateTimeProvider.UtcNow 
+            utcNow.AddDays(30), 
+            utcNow             
         );
 
         _context.RefreshTokens.Add(newRefreshTokenEntity);
