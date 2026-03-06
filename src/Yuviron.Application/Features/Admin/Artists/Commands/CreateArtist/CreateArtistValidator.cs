@@ -1,4 +1,5 @@
 using FluentValidation;
+using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
 
@@ -20,20 +21,16 @@ public sealed class CreateArtistCommandValidator : AbstractValidator<CreateArtis
 
         RuleFor(x => x.AvatarUrl)
             .MaximumLength(2048)
-            .Must(BeValidUrl)
+            .Must(ValidationExtensions.BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl));
 
         RuleFor(x => x.BannerUrl)
             .MaximumLength(2048)
-            .Must(BeValidUrl)
+            .Must(ValidationExtensions.BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.BannerUrl));
 
         RuleFor(x => x.VerificationStatus)
             .IsInEnum();
     }
 
-    private static bool BeValidUrl(string? url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out _);
-    }
 }

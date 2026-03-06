@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using FluentValidation;
+using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.CreateGenre;
 
@@ -17,17 +18,8 @@ public sealed class CreateGenreValidator : AbstractValidator<CreateGenreCommand>
 
         RuleFor(x => x.CoverUrl)
             .MaximumLength(500).WithMessage("Cover URL is too long.")
-            .Must(BeAValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
+            .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
             .WithMessage("Cover URL must be a valid URI.");
-
-        RuleFor(x => x.HexColor)
-            .Matches("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$").When(x => !string.IsNullOrEmpty(x.HexColor))
-            .WithMessage("Hex color must be a valid hex code (e.g., #FFFFFF or #FFF).");
     }
 
-    private bool BeAValidUrl(string? url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out var outUri) 
-               && (outUri.Scheme == Uri.UriSchemeHttp || outUri.Scheme == Uri.UriSchemeHttps);
-    }
 }

@@ -119,26 +119,26 @@ public class AppDbContextInitializer
         {
             var utcNow = DateTime.UtcNow;
             await _context.Genres.AddRangeAsync(
-                Genre.Create("Pop", null, null, utcNow), 
-                Genre.Create("Rock", null, null, utcNow), 
-                Genre.Create("Hip-Hop", null, null, utcNow),
-                Genre.Create("Rap", null, null, utcNow), 
-                Genre.Create("R&B", null, null, utcNow), 
-                Genre.Create("Electronic", null, null, utcNow),
-                Genre.Create("Techno", null, null, utcNow), 
-                Genre.Create("House", null, null, utcNow), 
-                Genre.Create("Jazz", null, null, utcNow),
-                Genre.Create("Classical", null, null, utcNow), 
-                Genre.Create("Metal", null, null, utcNow), 
-                Genre.Create("Alternative", null, null, utcNow),
-                Genre.Create("Indie", null, null, utcNow), 
-                Genre.Create("Reggae", null, null, utcNow), 
-                Genre.Create("Country", null, null, utcNow),
-                Genre.Create("Latin", null, null, utcNow), 
-                Genre.Create("Folk", null, null, utcNow), 
-                Genre.Create("Soul", null, null, utcNow),
-                Genre.Create("Blues", null, null, utcNow), 
-                Genre.Create("Punk", null, null, utcNow)
+                Genre.Create("Pop", null, utcNow), 
+                Genre.Create("Rock", null, utcNow), 
+                Genre.Create("Hip-Hop", null,  utcNow),
+                Genre.Create("Rap", null,  utcNow), 
+                Genre.Create("R&B", null,  utcNow), 
+                Genre.Create("Electronic", null,  utcNow),
+                Genre.Create("Techno", null,  utcNow), 
+                Genre.Create("House", null,  utcNow), 
+                Genre.Create("Jazz", null,  utcNow),
+                Genre.Create("Classical", null,  utcNow), 
+                Genre.Create("Metal", null,  utcNow), 
+                Genre.Create("Alternative", null,  utcNow),
+                Genre.Create("Indie", null,  utcNow), 
+                Genre.Create("Reggae", null,  utcNow), 
+                Genre.Create("Country", null, utcNow),
+                Genre.Create("Latin", null,  utcNow), 
+                Genre.Create("Folk", null,  utcNow), 
+                Genre.Create("Soul", null, utcNow),
+                Genre.Create("Blues", null,  utcNow), 
+                Genre.Create("Punk", null,  utcNow)
              );
             await _context.SaveChangesAsync();
         }

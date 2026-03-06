@@ -1,6 +1,4 @@
-﻿using Amazon.Runtime;
-using Amazon.S3;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,26 +64,14 @@ public static class DependencyInjection
                 };
             });
 
-        var awsOptions = configuration.GetAWSOptions();
 
-        var accessKey = configuration["AWS:AccessKey"];
-        var secretKey = configuration["AWS:SecretKey"];
-
-        if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
-        {
-            awsOptions.Credentials = new BasicAWSCredentials(accessKey, secretKey);
-        }
 
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Redis");
         });
 
-        services.AddDefaultAWSOptions(awsOptions);
-        services.AddAWSService<IAmazonS3>();
-
-        services.AddScoped<IFileStorageService, S3FileStorageService>();
-
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
         services.AddScoped<AppDbContextInitializer>();

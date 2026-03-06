@@ -8,5 +8,5 @@ namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumById;
 
 public sealed record GetAlbumByIdQuery(Guid AlbumId) : IRequest<AlbumDetailsDto>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

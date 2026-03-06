@@ -1,7 +1,12 @@
-﻿using Yuviron.Domain.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
+
+namespace Yuviron.Domain.Entities;
 
 public class Track : Entity
 {
@@ -21,13 +26,17 @@ public class Track : Entity
     public virtual Album? Album { get; private set; }
     public virtual ICollection<TrackArtist> TrackArtists { get; private set; } = new List<TrackArtist>();
     public virtual ICollection<TrackGenre> TrackGenres { get; private set; } = new List<TrackGenre>();
+    
+    public virtual ICollection<TrackMood> TrackMoods { get; private set; } = new List<TrackMood>();
 
     private Track() { }
 
     public static Track Create(
         Guid? albumId, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, string? previewKey, VisibilityStatus status,
-        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, DateTime utcNow)
+        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
+        IEnumerable<Guid> moodIds,
+        DateTime utcNow)
     {
         if (durationMs <= 0) throw new ArgumentException("Duration must be positive");
         if (string.IsNullOrWhiteSpace(audioKey)) throw new ArgumentException("Audio key is required");
@@ -49,13 +58,16 @@ public class Track : Entity
 
         track.SyncArtists(artistIds);
         track.SyncGenres(genreIds);
+        track.SyncMoods(moodIds);
         return track;
     }
 
     public void UpdateDetails(
         Guid? albumId, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, string? previewKey, VisibilityStatus status,
-        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, DateTime utcNow)
+        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
+        IEnumerable<Guid> moodIds,
+        DateTime utcNow)
     {
         AlbumId = albumId;
         Title = title.Trim();
@@ -69,6 +81,7 @@ public class Track : Entity
 
         SyncArtists(artistIds);
         SyncGenres(genreIds);
+        SyncMoods(moodIds);
     }
 
     private void SyncArtists(IEnumerable<Guid> ids)
@@ -93,7 +106,20 @@ public class Track : Entity
         var currentIds = TrackGenres.Select(tg => tg.GenreId).ToList();
         foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
         {
-            TrackGenres.Add(new TrackGenre { TrackId = Id, GenreId = id });
+            TrackGenres.Add(new TrackGenre(Id, id)); 
+        }
+    }
+
+    private void SyncMoods(IEnumerable<Guid> ids)
+    {
+        var newIds = ids.Distinct().ToList();
+        var toRemove = TrackMoods.Where(tm => !newIds.Contains(tm.MoodId)).ToList();
+        foreach (var item in toRemove) TrackMoods.Remove(item);
+
+        var currentIds = TrackMoods.Select(tm => tm.MoodId).ToList();
+        foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
+        {
+            TrackMoods.Add(new TrackMood(Id, id));
         }
     }
 

@@ -12,7 +12,9 @@ public sealed record GetAlbumsQuery(
     bool IncludeDeleted, 
     int Page = 1,
     int PageSize = 20
-) : IRequest<PaginatedList<AlbumListItemDto>>, ISecuredRequest
+) : PaginatedQuery(SearchTerm, IncludeDeleted, Page, PageSize),
+    IRequest<PaginatedList<AlbumListItemDto>>, 
+    ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

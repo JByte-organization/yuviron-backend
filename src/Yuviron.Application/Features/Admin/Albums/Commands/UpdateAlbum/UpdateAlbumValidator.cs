@@ -1,5 +1,6 @@
 using System;
 using FluentValidation;
+using Yuviron.Application.Common;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.UpdateAlbum;
@@ -18,7 +19,7 @@ public sealed class UpdateAlbumCommandValidator : AbstractValidator<UpdateAlbumC
             .When(x => x.Description is not null);
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
-            .Must(BeValidUrl)
+            .Must(ValidationExtensions.BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
         RuleFor(x => x.ReleaseDate)
             .NotEqual(default(DateTime));
@@ -35,13 +36,9 @@ public sealed class UpdateAlbumCommandValidator : AbstractValidator<UpdateAlbumC
             .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled);
 
         RuleFor(x => x.ScheduledPublishAt)
-            .GreaterThan(DateTime.UtcNow) 
-            .WithMessage("ScheduledPublishAt must be in the future.")
+            .Must((command, scheduledAt) => scheduledAt > DateTime.UtcNow.AddMinutes(-1)) 
+            .WithMessage("Scheduled date must be in the future.")
             .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled && x.ScheduledPublishAt.HasValue);
     }
 
-    private static bool BeValidUrl(string? url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out _);
-    }
 }

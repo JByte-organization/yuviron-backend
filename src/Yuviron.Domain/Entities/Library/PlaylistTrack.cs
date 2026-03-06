@@ -1,4 +1,6 @@
-﻿public class PlaylistTrack
+﻿using Yuviron.Domain.Entities;
+
+public class PlaylistTrack
 {
     public Guid PlaylistId { get; private set; }
     public Guid TrackId { get; private set; }

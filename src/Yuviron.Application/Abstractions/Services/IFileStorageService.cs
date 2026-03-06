@@ -6,6 +6,8 @@ namespace Yuviron.Application.Abstractions.Services;
 
 public interface IFileStorageService
 {
-    Task<string> UploadAsync(Stream stream, string fileName, string contentType, CancellationToken cancellationToken = default);
+    // Добавили параметр folder (например: "avatars", "tracks")
+    Task<string> UploadAsync(Stream stream, string folder, string fileName, string contentType, CancellationToken cancellationToken = default);
+    
     Task DeleteAsync(string fileKey, CancellationToken cancellationToken = default);
 }

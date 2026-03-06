@@ -1,14 +1,53 @@
 ﻿using System.Reflection;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext, IApplicationDbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    private readonly IMediator _mediator;
 
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        IMediator mediator) 
+        : base(options)
+    {
+        _mediator = mediator;
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        await DispatchDomainEvents(cancellationToken);
+
+        return result;
+    }
+
+    private async Task DispatchDomainEvents(CancellationToken cancellationToken)
+    {
+        var entities = ChangeTracker
+            .Entries<Entity>() 
+            .Where(e => e.Entity.DomainEvents.Any())
+            .Select(e => e.Entity)
+            .ToList();
+
+        var domainEvents = entities
+            .SelectMany(e => e.DomainEvents)
+            .ToList();
+
+        entities.ForEach(e => e.ClearDomainEvents());
+
+        foreach (var domainEvent in domainEvents)
+        {
+            await _mediator.Publish(domainEvent, cancellationToken);
+        }
+    }
+    
     // --- Identity ---
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -34,6 +73,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<AlbumArtist> AlbumArtists => Set<AlbumArtist>();
     public DbSet<TrackArtist> TrackArtists => Set<TrackArtist>();
     public DbSet<TrackGenre> TrackGenres => Set<TrackGenre>();
+    public DbSet<ArtistTeamMember> ArtistTeamMembers => Set<ArtistTeamMember>();
+    public DbSet<Mood> Moods => Set<Mood>();
 
     // --- Library ---
     public DbSet<Playlist> Playlists => Set<Playlist>();
@@ -82,4 +123,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
         base.OnModelCreating(modelBuilder);
     }
+    
+    
 }

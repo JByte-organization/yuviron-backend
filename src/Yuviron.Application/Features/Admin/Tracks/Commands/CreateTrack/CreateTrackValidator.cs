@@ -1,4 +1,5 @@
 using FluentValidation;
+using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 
 public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackCommand>
@@ -22,7 +23,7 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
             .When(x => x.PreviewStorageKey is not null);
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
-            .Must(BeValidUrl)
+            .Must(ValidationExtensions.BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();
@@ -35,5 +36,4 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
             .WithMessage("Track must have at least one genre.");
     }
 
-    private static bool BeValidUrl(string? url) => Uri.TryCreate(url, UriKind.Absolute, out _);
 }

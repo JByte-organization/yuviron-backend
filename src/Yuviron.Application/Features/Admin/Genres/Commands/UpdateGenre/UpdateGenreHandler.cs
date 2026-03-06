@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
 
@@ -21,12 +23,9 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
     public async Task<Unit> Handle(UpdateGenreCommand request, CancellationToken cancellationToken)
     {
         var genre = await _context.Genres
-            .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken);
+                        .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken)
+                    ?? throw new NotFoundException(nameof(Genre), request.GenreId);
 
-        if (genre == null)
-            throw new Exception($"Genre with ID {request.GenreId} not found.");
-
-        // Проверяем уникальность имени, ТОЛЬКО если админ решил его изменить
         if (!genre.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
         {
             if (await _context.Genres.AnyAsync(g => g.Name == request.Name, cancellationToken))
@@ -35,8 +34,7 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        // Вызываем наш инкапсулированный метод домена
-        genre.Update(request.Name, request.CoverUrl, request.HexColor, utcNow);
+        genre.Update(request.Name, request.CoverUrl, utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
 

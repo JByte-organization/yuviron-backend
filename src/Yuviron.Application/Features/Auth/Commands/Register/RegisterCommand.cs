@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Yuviron.Application.Features.Auth.Commands.Login; 
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
@@ -11,4 +12,4 @@ public record RegisterCommand(
     Gender Gender,    
     bool AcceptMarketing, 
     bool AcceptTerms    
-) : IRequest<Guid>;
+) : IRequest<LoginResponse>; // Изменили возвращаемый тип
