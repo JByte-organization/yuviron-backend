@@ -86,6 +86,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IEmailService, SmtpEmailService>();
 
