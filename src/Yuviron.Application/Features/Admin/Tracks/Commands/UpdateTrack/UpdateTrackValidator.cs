@@ -1,5 +1,6 @@
 using System;
 using FluentValidation;
+using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 
@@ -32,7 +33,7 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
 
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
-            .Must(BeValidUrl)
+            .Must(ValidationExtensions.BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
 
         RuleFor(x => x.VisibilityStatus)
@@ -48,8 +49,4 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
             .WithMessage("Track must have at least one genre.");
     }
 
-    private static bool BeValidUrl(string? url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out _);
-    }
 }

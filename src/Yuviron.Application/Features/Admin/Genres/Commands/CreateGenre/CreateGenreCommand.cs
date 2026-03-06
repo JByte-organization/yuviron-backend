@@ -4,8 +4,7 @@ using Yuviron.Domain.Enums;
 
 public sealed record CreateGenreCommand(
     string Name,
-    string? CoverUrl,
-    string? HexColor
+    string? CoverUrl
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

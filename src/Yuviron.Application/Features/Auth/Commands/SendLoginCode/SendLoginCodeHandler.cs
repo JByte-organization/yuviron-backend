@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,12 +21,14 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
         IApplicationDbContext context,
         IEmailService emailService,
         IPasswordHasher passwordHasher,
-        ILogger<SendLoginCodeHandler> logger)
+        ILogger<SendLoginCodeHandler> logger,
+        TimeProvider timeProvider) 
     {
         _context = context;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _logger = logger;
+        _timeProvider = timeProvider; 
     }
 
     public async Task<Unit> Handle(SendLoginCodeCommand request, CancellationToken cancellationToken)
@@ -45,7 +47,7 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
         var codeHash = _passwordHasher.Hash(code);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        user.SetLoginCode(codeHash, utcNow); // <-- ДОБАВИТЬ utcNow
+        user.SetLoginCode(codeHash, utcNow); 
         await _context.SaveChangesAsync(cancellationToken);
 
         try

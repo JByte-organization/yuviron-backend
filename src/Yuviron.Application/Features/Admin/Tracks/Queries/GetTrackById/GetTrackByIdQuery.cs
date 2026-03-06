@@ -8,5 +8,5 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
 
 public sealed record GetTrackByIdQuery(Guid TrackId) : IRequest<TrackDetailsDto>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

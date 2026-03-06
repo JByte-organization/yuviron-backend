@@ -32,6 +32,8 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<AlbumArtist> AlbumArtists { get; }
     DbSet<TrackArtist> TrackArtists { get; }
     DbSet<TrackGenre> TrackGenres { get; }
+    DbSet<ArtistTeamMember> ArtistTeamMembers { get; }
+    DbSet<Mood> Moods { get; }
 
     // --- Library ---
     DbSet<Playlist> Playlists { get; }

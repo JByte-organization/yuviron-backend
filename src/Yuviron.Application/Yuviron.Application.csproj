@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Admin\Moods\Queries\" />
     <Folder Include="Features\Playlists\Commands\" />
     <Folder Include="Features\Playlists\Queries\" />
   </ItemGroup>

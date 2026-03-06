@@ -18,9 +18,9 @@ public class ArtistConfiguration : IEntityTypeConfiguration<Artist>
 
         builder.HasIndex(x => x.Name);
 
-        builder.HasOne(x => x.OwnerUser)
-            .WithMany()
-            .HasForeignKey(x => x.OwnerUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasMany(x => x.TeamMembers)
+            .WithOne(x => x.Artist)
+            .HasForeignKey(x => x.ArtistId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

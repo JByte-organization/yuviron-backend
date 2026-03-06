@@ -12,8 +12,7 @@ public class GenreConfiguration : IEntityTypeConfiguration<Genre>
         builder.HasKey(x => x.Id);
         
         builder.Property(x => x.Name).IsRequired().HasMaxLength(100);
-        builder.Property(x => x.CoverUrl).HasMaxLength(500);
-        builder.Property(x => x.HexColor).HasMaxLength(7).IsFixedLength(); // Всегда 7 символов
+        builder.Property(x => x.CoverUrl).HasMaxLength(2000);
         
         builder.HasIndex(x => x.Name).IsUnique();
     }

@@ -26,7 +26,7 @@ public sealed class CreateGenreHandler : IRequestHandler<CreateGenreCommand, Gui
             throw new InvalidOperationException($"Genre '{request.Name}' already exists.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var genre = Genre.Create(request.Name, request.CoverUrl, request.HexColor, utcNow);
+        var genre = Genre.Create(request.Name, request.CoverUrl, utcNow);
 
         _context.Genres.Add(genre);
         await _context.SaveChangesAsync(cancellationToken);

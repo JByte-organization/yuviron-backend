@@ -18,25 +18,23 @@ public class Genre : Entity
 
     private Genre() { }
 
-    public static Genre Create(string name, string? coverUrl, string? hexColor, DateTime utcNow)
+    public static Genre Create(string name, string? coverUrl, DateTime utcNow)
     {
         return new Genre
         {
             Id = Guid.NewGuid(),
             Name = name.Trim(),
             CoverUrl = coverUrl?.Trim(),
-            HexColor = hexColor?.Trim(),
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
             IsDeleted = false
         };
     }
 
-    public void Update(string name, string? coverUrl, string? hexColor, DateTime utcNow)
+    public void Update(string name, string? coverUrl, DateTime utcNow)
     {
         Name = name.Trim();
         CoverUrl = coverUrl?.Trim();
-        HexColor = hexColor?.Trim();
         UpdatedAt = utcNow;
     }
 

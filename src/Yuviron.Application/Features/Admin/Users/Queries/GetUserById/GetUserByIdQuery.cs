@@ -8,5 +8,5 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUserById;
 
 public sealed record GetUserByIdQuery(Guid UserId) : IRequest<UserDetailsDto>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageUsers;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

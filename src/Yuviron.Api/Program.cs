@@ -3,6 +3,7 @@ using Yuviron.Application;
 using Yuviron.Infrastructure;
 using Yuviron.Infrastructure.Persistence;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +85,21 @@ else
 {
     app.UseHttpsRedirection();
 }
+
+var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
+                  ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
+                  ?? "/var/yuviron/storage";
+
+if (!Directory.Exists(storageRoot))
+{
+    Directory.CreateDirectory(storageRoot);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(storageRoot),
+    RequestPath = "/storage" 
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

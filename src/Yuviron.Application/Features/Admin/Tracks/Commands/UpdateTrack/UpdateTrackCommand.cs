@@ -19,7 +19,8 @@ public sealed record UpdateTrackCommand(
     string? CoverUrl,
     VisibilityStatus VisibilityStatus,
     List<Guid> ArtistIds,
-    List<Guid> GenreIds
+    List<Guid> GenreIds,
+    List<Guid> MoodIds
 ) : IRequest<Unit>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

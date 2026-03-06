@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -8,7 +9,6 @@ namespace Yuviron.Domain.Entities;
 
 public class Artist : Entity
 {
-    public Guid? OwnerUserId { get; private set; } 
     public string Name { get; private set; } = string.Empty;
     public string? Bio { get; private set; }
     public string? AvatarUrl { get; private set; }
@@ -22,7 +22,8 @@ public class Artist : Entity
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
-    public virtual User? OwnerUser { get; private set; }
+    public virtual ICollection<ArtistTeamMember> TeamMembers { get; private set; } = new List<ArtistTeamMember>();
+
     public virtual ICollection<ArtistSocialLink> SocialLinks { get; private set; } = new List<ArtistSocialLink>();
     public virtual ICollection<ArtistPin> Pins { get; private set; } = new List<ArtistPin>();
     public virtual ICollection<AlbumArtist> AlbumArtists { get; private set; } = new List<AlbumArtist>();
@@ -31,7 +32,7 @@ public class Artist : Entity
     private Artist() { }
 
     public static Artist Create(
-        Guid? ownerUserId,
+        Guid? initialOwnerUserId, 
         string name,
         string? bio,
         string? avatarUrl,
@@ -39,10 +40,9 @@ public class Artist : Entity
         VerificationStatus verificationStatus,
         DateTime utcNow)
     {
-        return new Artist
+        var artist = new Artist
         {
             Id = Guid.NewGuid(),
-            OwnerUserId = ownerUserId,
             Name = name.Trim(),
             Bio = bio?.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
@@ -53,10 +53,16 @@ public class Artist : Entity
             UpdatedAt = utcNow,
             IsDeleted = false
         };
+
+        if (initialOwnerUserId.HasValue)
+        {
+            artist.TeamMembers.Add(ArtistTeamMember.Create(artist.Id, initialOwnerUserId.Value, ArtistTeamRole.Owner, utcNow));
+        }
+
+        return artist;
     }
 
     public void UpdateDetails(
-        Guid? ownerUserId,
         string name,
         string? bio,
         string? avatarUrl,
@@ -64,7 +70,6 @@ public class Artist : Entity
         VerificationStatus verificationStatus,
         DateTime utcNow)
     {
-        OwnerUserId = ownerUserId;
         Name = name.Trim();
         Bio = bio?.Trim();
         AvatarUrl = avatarUrl?.Trim();
@@ -74,7 +79,42 @@ public class Artist : Entity
         UpdatedAt = utcNow;
     }
 
-    // ВЕРНУЛ МЕТОД DELETE ВНУТРЬ КЛАССА
+    public void AddTeamMember(Guid userId, ArtistTeamRole role, DateTime utcNow)
+    {
+        var existingMember = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
+        if (existingMember != null)
+        {
+            throw new InvalidOperationException("User is already in the team."); 
+        }
+
+        TeamMembers.Add(ArtistTeamMember.Create(this.Id, userId, role, utcNow));
+        UpdatedAt = utcNow;
+    }
+
+    public void UpdateTeamMemberRole(Guid userId, ArtistTeamRole newRole, DateTime utcNow)
+    {
+        var member = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
+        if (member == null)
+        {
+            throw new InvalidOperationException("User is not in the team.");
+        }
+
+        member.ChangeRole(newRole);
+        UpdatedAt = utcNow;
+    }
+
+    public void RemoveTeamMember(Guid userId, DateTime utcNow)
+    {
+        var member = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
+        if (member != null)
+        {
+            TeamMembers.Remove(member);
+            UpdatedAt = utcNow;
+        }
+    }
+    
+    
+
     public void Delete(DateTime utcNow)
     {
         if (IsDeleted) return;

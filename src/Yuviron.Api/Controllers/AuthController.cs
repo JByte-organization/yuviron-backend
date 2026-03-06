@@ -40,12 +40,12 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("register")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)] // <-- Изменили тип
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
     {
-        var userId = await Mediator.Send(command, ct);
-        return Ok(new { UserId = userId });
+        var result = await Mediator.Send(command, ct);
+        return Ok(result);
     }
 
     [HttpPost("login")]
