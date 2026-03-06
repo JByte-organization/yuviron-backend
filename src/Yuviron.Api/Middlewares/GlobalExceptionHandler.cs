@@ -19,7 +19,14 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Exception occurred: {Message}", exception.Message);
+        if (exception is not ValidationException && exception is not ArgumentException && exception is not InvalidOperationException && exception is not DomainException)
+        {
+            _logger.LogError(exception, "System Exception occurred: {Message}", exception.Message);
+        }
+        else
+        {
+            _logger.LogWarning("Business Rule Violation: {Message}", exception.Message);
+        }
 
         var problemDetails = new ProblemDetails
         {
@@ -28,7 +35,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         switch (exception)
         {
-            // 1. Ошибки валидации (400)
+            // 1. Ошибки валидации FluentValidation (400)
             case ValidationException validationException:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Validation Error";
@@ -41,20 +48,29 @@ public class GlobalExceptionHandler : IExceptionHandler
                     );
                 break;
 
-            // 2. Не найдено (404)
+            // 2. Стандартные системные исключения бизнес-логики (400) <-- ДОБАВИЛИ ЭТОТ БЛОК
+            case ArgumentException argEx:
+            case InvalidOperationException invalidOpEx:
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Title = "Bad Request";
+                problemDetails.Detail = exception.Message;
+                break;
+
+            // 3. Не найдено (404)
             case NotFoundException notFoundEx:
                 problemDetails.Status = StatusCodes.Status404NotFound;
                 problemDetails.Title = "Resource Not Found";
                 problemDetails.Detail = notFoundEx.Message;
                 break;
 
-
+            // 4. Конфликты (409)
             case UserAlreadyExistsException existsEx:
                 problemDetails.Status = StatusCodes.Status409Conflict;
                 problemDetails.Title = "Resource Conflict";
                 problemDetails.Detail = existsEx.Message;
                 break;
 
+            // 5. Проблемы с доступом (401 / 403)
             case UnauthorizedAccessException unauthorizedEx:
                 var isForbidden = unauthorizedEx.Message.StartsWith("Access denied", StringComparison.OrdinalIgnoreCase);
 
@@ -65,14 +81,14 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = unauthorizedEx.Message;
                 break;
 
-            // 4. Остальные бизнес-правила (400)
+            // 6. Базовые доменные ошибки (400)
             case DomainException domainEx:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Business Rule Violation";
                 problemDetails.Detail = domainEx.Message;
                 break;
 
-            // 5. Всё остальное (500)
+            // 7. Реальное падение сервера (500)
             default:
                 problemDetails.Status = StatusCodes.Status500InternalServerError;
                 problemDetails.Title = "Internal Server Error";

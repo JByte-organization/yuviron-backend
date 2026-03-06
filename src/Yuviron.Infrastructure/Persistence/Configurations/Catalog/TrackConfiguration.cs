@@ -20,5 +20,7 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
             .WithMany(a => a.Tracks)
             .HasForeignKey(x => x.AlbumId)
             .OnDelete(DeleteBehavior.SetNull);
+        
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

@@ -52,13 +52,22 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
 
         if (request.OwnerUserId.HasValue)
         {
-            if (currentOwner?.UserId != request.OwnerUserId.Value)
+            var newOwnerId = request.OwnerUserId.Value;
+
+            if (currentOwner?.UserId != newOwnerId)
             {
+                var isNewOwnerInTeam = artist.TeamMembers.Any(tm => tm.UserId == newOwnerId);
+                if (!isNewOwnerInTeam)
+                {
+                    throw new InvalidOperationException("The new owner must be an existing team member before ownership can be transferred.");
+                }
+
                 if (currentOwner != null)
                 {
                     artist.RemoveTeamMember(currentOwner.UserId, utcNow);
                 }
-                artist.UpdateTeamMemberRole(request.OwnerUserId.Value, ArtistTeamRole.Owner, utcNow);
+
+                artist.UpdateTeamMemberRole(newOwnerId, ArtistTeamRole.Owner, utcNow);
             }
         }
         else

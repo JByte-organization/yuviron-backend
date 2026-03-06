@@ -11,21 +11,18 @@ public class PlaylistConfiguration : IEntityTypeConfiguration<Playlist>
         builder.ToTable("playlists");
         builder.HasKey(x => x.Id);
 
-        // Ограничения строк
         builder.Property(x => x.Title).IsRequired().HasMaxLength(150);
         builder.Property(x => x.Description).HasMaxLength(2000); 
         builder.Property(x => x.CoverUrl).HasMaxLength(500);
 
-        // Индексы для быстрого поиска
         builder.HasIndex(x => x.IsDeleted); 
-        builder.HasIndex(x => x.UserId); // Чтобы быстро грузить "Мои плейлисты"
+        builder.HasIndex(x => x.UserId);
 
         builder.HasOne(x => x.User)
             .WithMany() 
             .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Cascade); // Удалили юзера -> удалились его плейлисты
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // Магия Soft Delete
         builder.HasQueryFilter(p => !p.IsDeleted); 
     }
 }

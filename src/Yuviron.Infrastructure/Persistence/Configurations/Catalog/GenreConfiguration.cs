@@ -15,5 +15,7 @@ public class GenreConfiguration : IEntityTypeConfiguration<Genre>
         builder.Property(x => x.CoverUrl).HasMaxLength(2000);
         
         builder.HasIndex(x => x.Name).IsUnique();
+        
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

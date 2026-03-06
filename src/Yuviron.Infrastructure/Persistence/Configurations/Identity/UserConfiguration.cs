@@ -20,5 +20,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.AcceptMarketing).HasDefaultValue(false);
         builder.Property(x => x.AcceptTerms).IsRequired();
         builder.Property(x => x.AccountState).IsRequired(); 
+        
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

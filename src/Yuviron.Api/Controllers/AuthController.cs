@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Features.Auth.Commands.Login;
 using Yuviron.Application.Features.Auth.Commands.LoginWithCode;
+using Yuviron.Application.Features.Auth.Commands.Logout;
 using Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
 using Yuviron.Application.Features.Auth.Commands.Register;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
@@ -21,6 +22,7 @@ public class AuthController : ApiControllerBase
         return Ok(new CheckEmailResponse(exists));
     }
 
+    public sealed record CheckEmailResponse(bool Exists);
 
     [HttpPost("send-code")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -86,6 +88,24 @@ public class AuthController : ApiControllerBase
         var result = await Mediator.Send(command, ct);
         return Ok(result);
     }
+    
+    [HttpPost("logout")]
+    [Authorize] // Требуем авторизацию, чтобы кто попало не спамил отзывом токенов
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout([FromBody] LogoutCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent(); // 204 No Content - идеальный ответ, когда всё прошло успешно, но возвращать нечего
+    }
 
-    public sealed record CheckEmailResponse(bool Exists);
+    [HttpPost("change-password")]
+    [Authorize] // Обязательно, так как меняем пароль текущему юзеру
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
 }

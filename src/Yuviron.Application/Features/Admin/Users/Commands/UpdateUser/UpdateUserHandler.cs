@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
@@ -17,15 +18,18 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
+    private readonly IPermissionService _permissionService;
 
     public UpdateUserCommandHandler(
         IApplicationDbContext context, 
         IPasswordHasher passwordHasher,
-        TimeProvider timeProvider) // ИСПРАВЛЕНО: Добавили в инъекцию
+        TimeProvider timeProvider,
+        IPermissionService permissionService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
-        _timeProvider = timeProvider; // ИСПРАВЛЕНО: Инициализировали
+        _timeProvider = timeProvider;
+        _permissionService = permissionService;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -66,16 +70,15 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
             user.SetProfile(UserProfile.Create(
                 user.Id,
                 request.DisplayName.Trim(),
-                null, // AvatarUrl
-                null, // Country
-                null, // Bio
+                null,
+                null,
+                null,
                 request.DateOfBirth,
                 request.Gender,
                 utcNow));
         }
         else
         {
-            // ИСПРАВЛЕНО: Теперь UpdateDetails и сохраняем старые аватарку/био/страну, чтобы не затереть
             user.Profile.UpdateDetails(
                 request.DisplayName.Trim(),
                 user.Profile.AvatarUrl,
@@ -110,6 +113,8 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
         try
         {
             await _context.SaveChangesAsync(cancellationToken);
+            
+            await _permissionService.InvalidatePermissionsAsync(user.Id, cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {
