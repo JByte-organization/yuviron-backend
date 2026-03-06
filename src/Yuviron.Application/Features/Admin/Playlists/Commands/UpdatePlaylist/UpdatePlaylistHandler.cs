@@ -34,6 +34,19 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
                            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
                        ?? throw new NotFoundException(nameof(Playlist), request.Id);
 
+        if (request.Tracks != null && request.Tracks.Any())
+        {
+            var uniqueTrackIds = request.Tracks.Select(t => t.TrackId).Distinct().ToList();
+            
+            var existingTracksCount = await _context.Tracks
+                .CountAsync(t => uniqueTrackIds.Contains(t.Id), cancellationToken);
+
+            if (existingTracksCount != uniqueTrackIds.Count)
+            {
+                throw new ArgumentException("One or more provided tracks do not exist.");
+            }
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         playlist.Update(
@@ -44,8 +57,8 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             utcNow
         );
 
-        var tracksToSync = request.Tracks
-            .Select(t => (t.TrackId, t.Position));
+        var tracksToSync = request.Tracks?
+            .Select(t => (t.TrackId, t.Position)) ?? Enumerable.Empty<(Guid, int)>();
 
         playlist.SyncTracks(
             tracksToSync, 

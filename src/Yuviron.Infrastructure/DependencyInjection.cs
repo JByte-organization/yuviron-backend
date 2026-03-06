@@ -83,10 +83,10 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IOtpService, OtpService>();
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IEmailService, SmtpEmailService>();
 

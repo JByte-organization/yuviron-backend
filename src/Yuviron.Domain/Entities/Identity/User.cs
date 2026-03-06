@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 
-// using Yuviron.Domain.Events; // На будущее
 
 namespace Yuviron.Domain.Entities;
 
@@ -19,10 +15,7 @@ public class User : Entity
     public DateTime? LastLoginAt { get; private set; }
     public bool AcceptMarketing { get; private set; }
     public bool AcceptTerms { get; private set; }
-    public string? LoginCodeHash { get; private set; }
-    public DateTime? LoginCodeExpiryUtc { get; private set; }
 
-    // --- Добавили Soft Delete ---
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
@@ -37,12 +30,13 @@ public class User : Entity
 
     public static User Create(string email, string passwordHash, bool acceptMarketing, bool acceptTerms, DateTime utcNow)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email is required");
+        var normalizedEmail = EmailNormalizer.Normalize(email);
+        if (string.IsNullOrWhiteSpace(normalizedEmail)) throw new ArgumentException("Email is required");
 
         return new User
         {
             Id = Guid.NewGuid(),
-            Email = email.ToLower().Trim(),
+            Email = normalizedEmail,
             PasswordHash = passwordHash,
             AccountState = AccountState.Active,
             AcceptMarketing = acceptMarketing,
@@ -84,7 +78,7 @@ public class User : Entity
 
     public void UpdateAdminDetails(string email, bool acceptMarketing, bool acceptTerms, AccountState accountState, DateTime utcNow)
     {
-        Email = email;
+        Email = EmailNormalizer.Normalize(email);
         AcceptMarketing = acceptMarketing;
         AcceptTerms = acceptTerms;
         AccountState = accountState;
@@ -97,19 +91,6 @@ public class User : Entity
         UpdatedAt = utcNow;
     }
 
-    public void SetLoginCode(string codeHash, DateTime utcNow)
-    {
-        LoginCodeHash = codeHash;
-        LoginCodeExpiryUtc = utcNow.AddMinutes(10);
-    }
-
-    public void ClearLoginCode()
-    {
-        LoginCodeHash = null;
-        LoginCodeExpiryUtc = null;
-    }
-
-    // --- Метод для мягкого удаления ---
     public void Delete(DateTime utcNow)
     {
         if (IsDeleted) return;
@@ -117,6 +98,8 @@ public class User : Entity
         IsDeleted = true;
         DeletedAt = utcNow;
         UpdatedAt = utcNow;
+        
+        AccountState = AccountState.Deleted;
         
         AddDomainEvent(new UserDeletedEvent(this.Id));
     }

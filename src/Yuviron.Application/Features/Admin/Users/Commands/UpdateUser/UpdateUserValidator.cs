@@ -1,10 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using FluentValidation;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 
 public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
 {
-    public UpdateUserCommandValidator()
+    public UpdateUserCommandValidator(TimeProvider timeProvider)
     {
         RuleFor(x => x.UserId)
             .NotEqual(Guid.Empty);
@@ -24,7 +27,7 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .MaximumLength(100);
 
         RuleFor(x => x.DateOfBirth)
-            .Must(BeAtLeast16YearsOld)
+            .Must(dob => BeAtLeast16YearsOld(dob, timeProvider.GetUtcNow().UtcDateTime))
             .WithMessage("User must be at least 16 years old.");
 
         RuleFor(x => x.Gender)
@@ -43,9 +46,9 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .When(x => x.RoleIds is not null);
     }
 
-    private static bool BeAtLeast16YearsOld(DateTime dateOfBirth)
+    private static bool BeAtLeast16YearsOld(DateTime dateOfBirth, DateTime utcNow)
     {
-        return dateOfBirth.Date <= DateTime.UtcNow.Date.AddYears(-16);
+        return dateOfBirth.Date <= utcNow.Date.AddYears(-16);
     }
 
     private static bool HaveDistinctRoles(IReadOnlyCollection<Guid>? roleIds)

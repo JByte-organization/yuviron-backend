@@ -39,7 +39,6 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();
 
-        // --- ДОБАВЛЕНО: Проверка коллекций ---
         RuleFor(x => x.ArtistIds)
             .NotEmpty()
             .WithMessage("Track must have at least one artist.");

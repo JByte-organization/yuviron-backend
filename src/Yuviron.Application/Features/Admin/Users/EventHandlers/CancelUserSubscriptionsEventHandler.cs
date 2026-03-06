@@ -36,6 +36,5 @@ public sealed class CancelUserSubscriptionsEventHandler : INotificationHandler<U
             subscription.Cancel(utcNow, immediate: true); 
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
     }
 }

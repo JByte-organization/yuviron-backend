@@ -1,5 +1,5 @@
 ﻿using Yuviron.Domain.Entities;
-
+namespace Yuviron.Domain.Entities;
 public class UserFollowArtist
 {
     public Guid UserId { get; private set; }

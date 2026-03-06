@@ -13,6 +13,8 @@ public class PayoutRequest : Entity
     public PayoutStatus Status { get; private set; }
 
     public DateTime RequestedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; } 
+    
     public Guid? AdminId { get; private set; } 
     public string? DecisionNote { get; private set; }
 
@@ -33,7 +35,8 @@ public class PayoutRequest : Entity
             ArtistId = artistId,
             RequestedAmount = amount,
             Status = PayoutStatus.Pending,
-            RequestedAt = utcNow
+            RequestedAt = utcNow,
+            UpdatedAt = utcNow 
         };
     }
 
@@ -42,6 +45,7 @@ public class PayoutRequest : Entity
         if (Status != PayoutStatus.Pending) throw new InvalidOperationException("Can only approve pending requests.");
         Status = PayoutStatus.Approved;
         AdminId = adminId;
+        UpdatedAt = utcNow;
     }
 
     public void Reject(Guid adminId, string note, DateTime utcNow)
@@ -50,11 +54,13 @@ public class PayoutRequest : Entity
         Status = PayoutStatus.Rejected;
         AdminId = adminId;
         DecisionNote = note;
+        UpdatedAt = utcNow; 
     }
 
-    public void MarkAsPaid()
+    public void MarkAsPaid(DateTime utcNow) 
     {
         if (Status != PayoutStatus.Approved) throw new InvalidOperationException("Must be approved before paying.");
         Status = PayoutStatus.Paid;
+        UpdatedAt = utcNow; 
     }
 }

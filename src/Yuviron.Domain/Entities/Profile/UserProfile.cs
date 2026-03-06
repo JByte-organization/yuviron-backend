@@ -6,7 +6,7 @@ namespace Yuviron.Domain.Entities;
 
 public class UserProfile : Entity
 {
-    public Guid UserId { get; private set; } 
+    
     public string DisplayName { get; private set; } = string.Empty;
     public string? AvatarUrl { get; private set; }
     public string? Country { get; private set; }
@@ -31,8 +31,7 @@ public class UserProfile : Entity
     {
         return new UserProfile
         {
-            Id = userId, // Для связи 1:1 PK совпадает с FK
-            UserId = userId,
+            Id = userId,
             DisplayName = displayName.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
             Country = country?.Trim(),

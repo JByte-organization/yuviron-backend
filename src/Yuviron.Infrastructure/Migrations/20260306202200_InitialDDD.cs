@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Yuviron.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialDDD : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,7 +40,7 @@ namespace Yuviron.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    MediaUrl = table.Column<string>(type: "longtext", nullable: false)
+                    MediaUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
@@ -57,19 +57,47 @@ namespace Yuviron.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Title = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: true)
+                    Description = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CoverUrl = table.Column<string>(type: "longtext", nullable: true)
+                    CoverUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ReleaseDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     VisibilityStatus = table.Column<int>(type: "int", nullable: false),
                     ScheduledPublishAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_albums", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "artists",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Bio = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AvatarUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BannerUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsVerified = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    VerificationStatus = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_artists", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -95,11 +123,53 @@ namespace Yuviron.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CoverUrl = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    HexColor = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_genres", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "moods",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CoverUrl = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_moods", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "permissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "varchar(250)", maxLength: 250, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_permissions", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -111,7 +181,7 @@ namespace Yuviron.Infrastructure.Migrations
                     Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Currency = table.Column<string>(type: "longtext", nullable: false)
+                    Currency = table.Column<string>(type: "char(3)", fixedLength: true, maxLength: 3, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Period = table.Column<int>(type: "int", nullable: false)
                 },
@@ -158,12 +228,19 @@ namespace Yuviron.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Email = table.Column<string>(type: "varchar(320)", maxLength: 320, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PasswordHash = table.Column<string>(type: "longtext", nullable: false)
+                    PasswordHash = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AccountState = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    LastLoginAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    LastLoginAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    AcceptMarketing = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    AcceptTerms = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    LoginCodeHash = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LoginCodeExpiryUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -181,14 +258,17 @@ namespace Yuviron.Infrastructure.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DurationMs = table.Column<int>(type: "int", nullable: false),
                     Explicit = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CoverUrl = table.Column<string>(type: "longtext", nullable: true)
+                    CoverUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    AudioStorageKey = table.Column<string>(type: "longtext", nullable: false)
+                    AudioStorageKey = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PreviewStorageKey = table.Column<string>(type: "longtext", nullable: true)
+                    PreviewStorageKey = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     VisibilityStatus = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -199,633 +279,6 @@ namespace Yuviron.Infrastructure.Migrations
                         principalTable: "albums",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ad_impressions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    AdId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    ShownAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Context = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ad_impressions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ad_impressions_ads_AdId",
-                        column: x => x.AdId,
-                        principalTable: "ads",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ad_impressions_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "artists",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    OwnerUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Bio = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AvatarUrl = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BannerUrl = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsVerified = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    VerificationStatus = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_artists", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_artists_users_OwnerUserId",
-                        column: x => x.OwnerUserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "complaints",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    CreatedByUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    TargetType = table.Column<int>(type: "int", nullable: false),
-                    TargetId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    ReasonCode = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Comment = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    ModeratedByAdminId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    ModerationNote = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_complaints", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_complaints_users_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_complaints_users_ModeratedByAdminId",
-                        column: x => x.ModeratedByAdminId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "custom_themes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    PrimaryColor = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SecondaryColor = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BackgroundColor = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_custom_themes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_custom_themes_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Title = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Body = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EntityType = table.Column<int>(type: "int", nullable: true),
-                    EntityId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    IsRead = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_notifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_notifications_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "playback_sessions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    EndedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ContextType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ContextId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_playback_sessions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_playback_sessions_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "playlists",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    OwnerUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Title = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CoverUrl = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsPublic = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_playlists", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_playlists_users_OwnerUserId",
-                        column: x => x.OwnerUserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "refresh_tokens",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    TokenHash = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_refresh_tokens", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_refresh_tokens_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "shared_rooms",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    HostUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    EndedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_shared_rooms", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_shared_rooms_users_HostUserId",
-                        column: x => x.HostUserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "smart_links",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Code = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EntityType = table.Column<int>(type: "int", nullable: false),
-                    EntityId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    CreatedByUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_smart_links", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_smart_links_users_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "subscriptions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    PlanId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    StartAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    EndAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_subscriptions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_subscriptions_plans_PlanId",
-                        column: x => x.PlanId,
-                        principalTable: "plans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_subscriptions_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_achievement_progress",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    AchievementId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    MetricKey = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MetricValue = table.Column<int>(type: "int", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_achievement_progress", x => new { x.UserId, x.AchievementId, x.MetricKey });
-                    table.ForeignKey(
-                        name: "FK_user_achievement_progress_achievements_AchievementId",
-                        column: x => x.AchievementId,
-                        principalTable: "achievements",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_user_achievement_progress_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_achievements",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    AchievementId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UnlockedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_achievements", x => new { x.UserId, x.AchievementId });
-                    table.ForeignKey(
-                        name: "FK_user_achievements_achievements_AchievementId",
-                        column: x => x.AchievementId,
-                        principalTable: "achievements",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_user_achievements_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_blocks",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    BlockType = table.Column<int>(type: "int", nullable: false),
-                    ReasonCode = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BlockedByAdminId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    StartsAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    EndsAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_blocks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_user_blocks_users_BlockedByAdminId",
-                        column: x => x.BlockedByAdminId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_user_blocks_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_profiles",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    DisplayName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AvatarUrl = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Country = table.Column<string>(type: "varchar(2)", maxLength: 2, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Bio = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_profiles", x => x.UserId);
-                    table.ForeignKey(
-                        name: "FK_user_profiles_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_roles",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    RoleId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_roles", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK_user_roles_roles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_user_roles_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_saved_albums",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    AlbumId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    SavedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_saved_albums", x => new { x.UserId, x.AlbumId });
-                    table.ForeignKey(
-                        name: "FK_user_saved_albums_albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_user_saved_albums_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "listening_events",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    PlayedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    MsPlayed = table.Column<int>(type: "int", nullable: false),
-                    DeviceType = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CountryCode = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SourceType = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SourceId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_listening_events", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_listening_events_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_listening_events_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "lyrics",
-                columns: table => new
-                {
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    LanguageCode = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PlainText = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_lyrics", x => x.TrackId);
-                    table.ForeignKey(
-                        name: "FK_lyrics_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "lyrics_segments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    StartMs = table.Column<int>(type: "int", nullable: false),
-                    EndMs = table.Column<int>(type: "int", nullable: false),
-                    Text = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_lyrics_segments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_lyrics_segments_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "track_genres",
-                columns: table => new
-                {
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    GenreId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_track_genres", x => new { x.TrackId, x.GenreId });
-                    table.ForeignKey(
-                        name: "FK_track_genres_genres_GenreId",
-                        column: x => x.GenreId,
-                        principalTable: "genres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_track_genres_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "track_listen_heatmap",
-                columns: table => new
-                {
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    SecondIndex = table.Column<int>(type: "int", nullable: false),
-                    PlaysCount = table.Column<int>(type: "int", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_track_listen_heatmap", x => new { x.TrackId, x.SecondIndex });
-                    table.ForeignKey(
-                        name: "FK_track_listen_heatmap_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "user_saved_tracks",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    SavedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_saved_tracks", x => new { x.UserId, x.TrackId });
-                    table.ForeignKey(
-                        name: "FK_user_saved_tracks_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_user_saved_tracks_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -906,9 +359,9 @@ namespace Yuviron.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Type = table.Column<string>(type: "longtext", nullable: false)
+                    Type = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Url = table.Column<string>(type: "longtext", nullable: false)
+                    Url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -945,37 +398,6 @@ namespace Yuviron.Infrastructure.Migrations
                         principalTable: "artists",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "payout_requests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    RequestedAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    AdminId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    DecisionNote = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_payout_requests", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_payout_requests_artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_payout_requests_users_AdminId",
-                        column: x => x.AdminId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -1027,26 +449,452 @@ namespace Yuviron.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "track_artists",
+                name: "role_permissions",
                 columns: table => new
                 {
-                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Role = table.Column<int>(type: "int", nullable: false)
+                    RoleId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    PermissionId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_track_artists", x => new { x.TrackId, x.ArtistId });
+                    table.PrimaryKey("PK_role_permissions", x => new { x.RoleId, x.PermissionId });
                     table.ForeignKey(
-                        name: "FK_track_artists_artists_ArtistId",
+                        name: "FK_role_permissions_permissions_PermissionId",
+                        column: x => x.PermissionId,
+                        principalTable: "permissions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_role_permissions_roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ad_impressions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    AdId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ShownAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Context = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ad_impressions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ad_impressions_ads_AdId",
+                        column: x => x.AdId,
+                        principalTable: "ads",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ad_impressions_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "artist_team_members",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_artist_team_members", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_artist_team_members_artists_ArtistId",
                         column: x => x.ArtistId,
                         principalTable: "artists",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_track_artists_tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "tracks",
+                        name: "FK_artist_team_members_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "complaints",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedByUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    TargetType = table.Column<int>(type: "int", nullable: false),
+                    TargetId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ReasonCode = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Comment = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ModeratedByAdminId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ModerationNote = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_complaints", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_complaints_users_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_complaints_users_ModeratedByAdminId",
+                        column: x => x.ModeratedByAdminId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "custom_themes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    PrimaryColor = table.Column<string>(type: "char(7)", fixedLength: true, maxLength: 7, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SecondaryColor = table.Column<string>(type: "char(7)", fixedLength: true, maxLength: 7, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BackgroundColor = table.Column<string>(type: "char(7)", fixedLength: true, maxLength: 7, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_custom_themes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_custom_themes_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Body = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityType = table.Column<int>(type: "int", nullable: true),
+                    EntityId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    IsRead = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_notifications_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "payout_requests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    RequestedAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    AdminId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    DecisionNote = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payout_requests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_payout_requests_artists_ArtistId",
+                        column: x => x.ArtistId,
+                        principalTable: "artists",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_payout_requests_users_AdminId",
+                        column: x => x.AdminId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "playback_sessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ContextType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContextId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_playback_sessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_playback_sessions_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "playlists",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    Title = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CoverUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsPublic = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsEditorial = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_playlists", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_playlists_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "refresh_tokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    TokenHash = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refresh_tokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "shared_rooms",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    HostUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_shared_rooms", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_shared_rooms_users_HostUserId",
+                        column: x => x.HostUserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "smart_links",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Code = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityType = table.Column<int>(type: "int", nullable: false),
+                    EntityId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedByUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_smart_links", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_smart_links_users_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "subscriptions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    PlanId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    StartAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_subscriptions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_subscriptions_plans_PlanId",
+                        column: x => x.PlanId,
+                        principalTable: "plans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_subscriptions_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_achievement_progress",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    AchievementId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    MetricKey = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MetricValue = table.Column<int>(type: "int", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_achievement_progress", x => new { x.UserId, x.AchievementId, x.MetricKey });
+                    table.ForeignKey(
+                        name: "FK_user_achievement_progress_achievements_AchievementId",
+                        column: x => x.AchievementId,
+                        principalTable: "achievements",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_user_achievement_progress_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_achievements",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    AchievementId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UnlockedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_achievements", x => new { x.UserId, x.AchievementId });
+                    table.ForeignKey(
+                        name: "FK_user_achievements_achievements_AchievementId",
+                        column: x => x.AchievementId,
+                        principalTable: "achievements",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_user_achievements_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_blocks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    BlockedByAdminId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    BlockType = table.Column<int>(type: "int", nullable: false),
+                    ReasonCode = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    StartsAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndsAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_blocks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_user_blocks_users_BlockedByAdminId",
+                        column: x => x.BlockedByAdminId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_user_blocks_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -1080,6 +928,86 @@ namespace Yuviron.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "user_profiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    DisplayName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AvatarUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Country = table.Column<string>(type: "char(2)", fixedLength: true, maxLength: 2, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Bio = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "date", nullable: false),
+                    Gender = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_profiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_user_profiles_users_Id",
+                        column: x => x.Id,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_roles",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    RoleId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_roles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_user_roles_roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_user_roles_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_saved_albums",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    AlbumId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    SavedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_saved_albums", x => new { x.UserId, x.AlbumId });
+                    table.ForeignKey(
+                        name: "FK_user_saved_albums_albums_AlbumId",
+                        column: x => x.AlbumId,
+                        principalTable: "albums",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_user_saved_albums_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "verification_requests",
                 columns: table => new
                 {
@@ -1088,7 +1016,7 @@ namespace Yuviron.Infrastructure.Migrations
                     SubmittedByUserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Status = table.Column<int>(type: "int", nullable: false),
                     AdminId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    AdminNote = table.Column<string>(type: "longtext", nullable: true)
+                    AdminNote = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -1118,24 +1046,227 @@ namespace Yuviron.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "user_settings",
+                name: "listening_events",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    PlayedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    MsPlayed = table.Column<int>(type: "int", nullable: false),
+                    DeviceType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CountryCode = table.Column<string>(type: "char(2)", fixedLength: true, maxLength: 2, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SourceType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SourceId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_listening_events", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_listening_events_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_listening_events_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "lyrics",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    LanguageCode = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PlainText = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lyrics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_lyrics_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "lyrics_segments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    StartMs = table.Column<int>(type: "int", nullable: false),
+                    EndMs = table.Column<int>(type: "int", nullable: false),
+                    Text = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lyrics_segments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_lyrics_segments_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "track_artists",
+                columns: table => new
+                {
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ArtistId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Role = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_track_artists", x => new { x.TrackId, x.ArtistId });
+                    table.ForeignKey(
+                        name: "FK_track_artists_artists_ArtistId",
+                        column: x => x.ArtistId,
+                        principalTable: "artists",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_track_artists_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "track_genres",
+                columns: table => new
+                {
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    GenreId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_track_genres", x => new { x.TrackId, x.GenreId });
+                    table.ForeignKey(
+                        name: "FK_track_genres_genres_GenreId",
+                        column: x => x.GenreId,
+                        principalTable: "genres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_track_genres_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "track_listen_heatmap",
+                columns: table => new
+                {
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    SecondIndex = table.Column<int>(type: "int", nullable: false),
+                    PlaysCount = table.Column<int>(type: "int", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_track_listen_heatmap", x => new { x.TrackId, x.SecondIndex });
+                    table.ForeignKey(
+                        name: "FK_track_listen_heatmap_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "track_moods",
+                columns: table => new
+                {
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    MoodId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_track_moods", x => new { x.TrackId, x.MoodId });
+                    table.ForeignKey(
+                        name: "FK_track_moods_moods_MoodId",
+                        column: x => x.MoodId,
+                        principalTable: "moods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_track_moods_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_saved_tracks",
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    LanguageCode = table.Column<string>(type: "longtext", nullable: false)
+                    TrackId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    SavedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_saved_tracks", x => new { x.UserId, x.TrackId });
+                    table.ForeignKey(
+                        name: "FK_user_saved_tracks_tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "tracks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_user_saved_tracks_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "user_settings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    LanguageCode = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ThemeMode = table.Column<string>(type: "longtext", nullable: false)
+                    ThemeMode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CustomThemeId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     AudioQualityPreference = table.Column<int>(type: "int", nullable: false),
                     CrossfadeMs = table.Column<int>(type: "int", nullable: false),
                     PipEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_user_settings", x => x.UserId);
+                    table.PrimaryKey("PK_user_settings", x => x.Id);
                     table.ForeignKey(
                         name: "FK_user_settings_custom_themes_CustomThemeId",
                         column: x => x.CustomThemeId,
@@ -1143,9 +1274,33 @@ namespace Yuviron.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_user_settings_users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_user_settings_users_Id",
+                        column: x => x.Id,
                         principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "payout_transactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    PayoutRequestId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ProviderRef = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payout_transactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_payout_transactions_payout_requests_PayoutRequestId",
+                        column: x => x.PayoutRequestId,
+                        principalTable: "payout_requests",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -1285,11 +1440,11 @@ namespace Yuviron.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     SmartLinkId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     ClickedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CountryCode = table.Column<string>(type: "longtext", nullable: true)
+                    CountryCode = table.Column<string>(type: "char(2)", fixedLength: true, maxLength: 2, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Referrer = table.Column<string>(type: "longtext", nullable: true)
+                    Referrer = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    DeviceType = table.Column<string>(type: "longtext", nullable: true)
+                    DeviceType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -1299,30 +1454,6 @@ namespace Yuviron.Infrastructure.Migrations
                         name: "FK_smart_link_clicks_smart_links_SmartLinkId",
                         column: x => x.SmartLinkId,
                         principalTable: "smart_links",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "payout_transactions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    PayoutRequestId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    PaidAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ProviderRef = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_payout_transactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_payout_transactions_payout_requests_PayoutRequestId",
-                        column: x => x.PayoutRequestId,
-                        principalTable: "payout_requests",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -1381,14 +1512,20 @@ namespace Yuviron.Infrastructure.Migrations
                 column: "ArtistId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_artist_team_members_ArtistId_UserId",
+                table: "artist_team_members",
+                columns: new[] { "ArtistId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_artist_team_members_UserId",
+                table: "artist_team_members",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_artists_Name",
                 table: "artists",
                 column: "Name");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_artists_OwnerUserId",
-                table: "artists",
-                column: "OwnerUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_complaints_CreatedByUserId",
@@ -1442,9 +1579,20 @@ namespace Yuviron.Infrastructure.Migrations
                 columns: new[] { "UserId", "PlayedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_lyrics_TrackId",
+                table: "lyrics",
+                column: "TrackId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lyrics_segments_TrackId_StartMs",
                 table: "lyrics_segments",
                 columns: new[] { "TrackId", "StartMs" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_notifications_CreatedAt",
+                table: "notifications",
+                column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_notifications_UserId_IsRead",
@@ -1465,6 +1613,12 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "IX_payout_transactions_PayoutRequestId",
                 table: "payout_transactions",
                 column: "PayoutRequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_permissions_Name",
+                table: "permissions",
+                column: "Name",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_plans_Name_Period",
@@ -1494,6 +1648,11 @@ namespace Yuviron.Infrastructure.Migrations
                 columns: new[] { "ContextType", "ContextId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_playback_sessions_StartedAt",
+                table: "playback_sessions",
+                column: "StartedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_playback_sessions_UserId",
                 table: "playback_sessions",
                 column: "UserId");
@@ -1509,9 +1668,15 @@ namespace Yuviron.Infrastructure.Migrations
                 column: "IsDeleted");
 
             migrationBuilder.CreateIndex(
-                name: "IX_playlists_OwnerUserId",
+                name: "IX_playlists_UserId",
                 table: "playlists",
-                column: "OwnerUserId");
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_TokenHash",
+                table: "refresh_tokens",
+                column: "TokenHash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_UserId",
@@ -1522,6 +1687,11 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "IX_release_notification_templates_ArtistId",
                 table: "release_notification_templates",
                 column: "ArtistId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_role_permissions_PermissionId",
+                table: "role_permissions",
+                column: "PermissionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_roles_Name",
@@ -1549,6 +1719,11 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "IX_shared_room_queue_TrackId",
                 table: "shared_room_queue",
                 column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_shared_rooms_CreatedAt",
+                table: "shared_rooms",
+                column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_shared_rooms_HostUserId",
@@ -1602,6 +1777,12 @@ namespace Yuviron.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_themes_Name",
+                table: "themes",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_track_artists_ArtistId",
                 table: "track_artists",
                 column: "ArtistId");
@@ -1610,6 +1791,11 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "IX_track_genres_GenreId",
                 table: "track_genres",
                 column: "GenreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_track_moods_MoodId",
+                table: "track_moods",
+                column: "MoodId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tracks_AlbumId",
@@ -1632,6 +1818,11 @@ namespace Yuviron.Infrastructure.Migrations
                 column: "BlockedByAdminId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_user_blocks_IsActive",
+                table: "user_blocks",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_blocks_UserId",
                 table: "user_blocks",
                 column: "UserId");
@@ -1640,6 +1831,11 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "IX_user_follow_artists_ArtistId",
                 table: "user_follow_artists",
                 column: "ArtistId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_profiles_DisplayName",
+                table: "user_profiles",
+                column: "DisplayName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_roles_RoleId",
@@ -1712,6 +1908,9 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "artist_social_links");
 
             migrationBuilder.DropTable(
+                name: "artist_team_members");
+
+            migrationBuilder.DropTable(
                 name: "complaint_counters");
 
             migrationBuilder.DropTable(
@@ -1748,6 +1947,9 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "release_notification_templates");
 
             migrationBuilder.DropTable(
+                name: "role_permissions");
+
+            migrationBuilder.DropTable(
                 name: "royalty_accruals_daily");
 
             migrationBuilder.DropTable(
@@ -1773,6 +1975,9 @@ namespace Yuviron.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "track_listen_heatmap");
+
+            migrationBuilder.DropTable(
+                name: "track_moods");
 
             migrationBuilder.DropTable(
                 name: "user_achievement_progress");
@@ -1817,6 +2022,9 @@ namespace Yuviron.Infrastructure.Migrations
                 name: "playlists");
 
             migrationBuilder.DropTable(
+                name: "permissions");
+
+            migrationBuilder.DropTable(
                 name: "shared_rooms");
 
             migrationBuilder.DropTable(
@@ -1827,6 +2035,9 @@ namespace Yuviron.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "genres");
+
+            migrationBuilder.DropTable(
+                name: "moods");
 
             migrationBuilder.DropTable(
                 name: "achievements");

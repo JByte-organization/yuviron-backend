@@ -1,7 +1,6 @@
 using FluentValidation;
 using Yuviron.Application.Common;
-using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
-
+namespace Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackCommand>
 {
     public CreateTrackCommandValidator()

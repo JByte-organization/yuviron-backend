@@ -5,23 +5,22 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Enums;
+
 
 namespace Yuviron.Infrastructure.Authentication;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
     private readonly JwtSettings _jwtSettings;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly TimeProvider _timeProvider;
 
     public JwtTokenGenerator(
         IOptions<JwtSettings> jwtOptions,
-        IDateTimeProvider dateTimeProvider)
+        TimeProvider timeProvider)
     {
         _jwtSettings = jwtOptions.Value;
-        _dateTimeProvider = dateTimeProvider;
+        _timeProvider = timeProvider;
     }
 
     public string GenerateToken(User user)
@@ -45,7 +44,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             }
         }
 
-        if (user.Subscriptions != null && user.HasActivePremiumSubscription(_dateTimeProvider.UtcNow))
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
+        if (user.Subscriptions != null && user.HasActivePremiumSubscription(utcNow))
         {
             claims.Add(new Claim("is_premium", "true"));
         }
@@ -54,7 +55,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            expires: utcNow.AddMinutes(_jwtSettings.ExpiryMinutes), 
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

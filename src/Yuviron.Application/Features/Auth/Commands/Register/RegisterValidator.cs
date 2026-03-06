@@ -1,38 +1,47 @@
 using FluentValidation;
+using System;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterValidator()
+    private readonly TimeProvider _timeProvider;
+
+    public RegisterValidator(TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider;
+
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email обязателен.")
-            .EmailAddress().WithMessage("Некорректный формат Email.")
-            .MaximumLength(320).WithMessage("Email слишком длинный.");
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Invalid email format.")
+            .MaximumLength(320).WithMessage("Email cannot exceed 320 characters.");
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Пароль обязателен.")
-            .MinimumLength(6).WithMessage("Пароль должен быть длиннее 6 символов.")
+            .NotEmpty().WithMessage("Password is required.")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
+            .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+            .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+            .Matches("[0-9]").WithMessage("Password must contain at least one number.")
             .MaximumLength(100);
 
         RuleFor(x => x.FirstName)
-            .NotEmpty().WithMessage("Имя обязательно.")
-            .MaximumLength(50).WithMessage("Имя не может быть длиннее 50 символов.");
+            .NotEmpty().WithMessage("First name is required.")
+            .MaximumLength(50).WithMessage("First name cannot exceed 50 characters.");
 
         RuleFor(x => x.DateOfBirth)
             .Must(BeAtLeast16YearsOld)
-            .WithMessage("Вам должно быть не менее 16 лет для регистрации.");
+            .WithMessage("You must be at least 16 years old to register.");
 
         RuleFor(x => x.Gender)
-            .IsInEnum().WithMessage("Выберите пол из списка.");
+            .IsInEnum().WithMessage("Please select a valid gender.");
 
         RuleFor(x => x.AcceptTerms)
-            .Equal(true).WithMessage("Вы должны согласиться с Политикой конфиденциальности.");
+            .Equal(true).WithMessage("You must agree to the Privacy Policy.");
     }
 
-    private static bool BeAtLeast16YearsOld(DateTime dateOfBirth)
+    private bool BeAtLeast16YearsOld(DateTime dateOfBirth)
     {
-        return dateOfBirth.Date <= DateTime.UtcNow.Date.AddYears(-16);
+        var today = _timeProvider.GetUtcNow().DateTime.Date;
+        return dateOfBirth.Date <= today.AddYears(-16);
     }
 }

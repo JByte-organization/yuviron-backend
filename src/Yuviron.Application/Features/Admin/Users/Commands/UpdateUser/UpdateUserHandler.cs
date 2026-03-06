@@ -1,13 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Common;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 

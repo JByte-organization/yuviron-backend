@@ -42,7 +42,5 @@ public sealed class HideArtistAlbumsEventHandler : INotificationHandler<ArtistDe
             album.Delete(utcNow);
         }
 
-        // 3. Сохраняем изменения (это сохранит альбомы и отправит новые события)
-        await _context.SaveChangesAsync(cancellationToken);
     }
 }

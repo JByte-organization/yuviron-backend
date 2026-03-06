@@ -39,6 +39,5 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
             track.Delete(utcNow); 
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
     }
 }
