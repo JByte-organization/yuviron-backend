@@ -1,14 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Common;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.CreateUser;
@@ -18,6 +15,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
+
 
     public CreateUserCommandHandler(
         IApplicationDbContext context, 
@@ -93,19 +91,23 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         }
         else
         {
+            var userRoleStr = nameof(RoleName.User); 
+            
             var defaultRoleId = await _context.Roles
                 .AsNoTracking()
-                .Where(r => r.Name == "User")
+                .Where(r => r.Name == userRoleStr)
                 .Select(r => r.Id)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (defaultRoleId == Guid.Empty)
             {
-                throw new NotFoundException(nameof(Role), "User");
+                throw new NotFoundException(nameof(Role), userRoleStr);
             }
 
-            user.UserRoles.Add(UserRole.Create(user.Id, defaultRoleId));
+            user.SyncRoles(new[] { defaultRoleId });
         }
+
+        user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
 
         _context.Users.Add(user);
 
@@ -117,6 +119,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         {
             throw new UserAlreadyExistsException(normalizedEmail);
         }
+
 
         return user.Id;
     }

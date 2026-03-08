@@ -18,15 +18,10 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
 
     public async Task Handle(AlbumDeletedEvent notification, CancellationToken cancellationToken)
     {
-        // 1. Ищем все треки, которые принадлежат удаленному альбому
-        // Используем IgnoreQueryFilters() на случай, если какие-то треки уже были удалены, 
-        // чтобы не тратить на них время, или наоборот, чтобы убедиться, что мы обрабатываем всё.
-        // Но для простоты пока берем просто активные.
         var tracks = await _context.Tracks
             .Where(t => t.AlbumId == notification.AlbumId && !t.IsDeleted) 
             .ToListAsync(cancellationToken);
 
-        // Если треков в альбоме не было, просто выходим
         if (!tracks.Any())
         {
             return;
@@ -38,6 +33,6 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
         {
             track.Delete(utcNow); 
         }
-
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

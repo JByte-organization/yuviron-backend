@@ -4,7 +4,7 @@ using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
-using System; // Добавлено для TimeProvider
+using System; 
 
 namespace Yuviron.Infrastructure.Identity;
 
@@ -48,14 +48,13 @@ public class PermissionService : IPermissionService
         await _cacheService.RemoveAsync(key, cancellationToken);
     }
 
-    public async Task<HashSet<string>> CachePermissionsAsync(User user, CancellationToken cancellationToken = default)
+    public HashSet<string> CalculateUserPermissions(User user, DateTime utcNow)
     {
         var permissions = new HashSet<string>();
 
         if (user.AccountState == AccountState.Banned || user.AccountState == AccountState.Deleted)
         {
-            await _cacheService.SetAsync($"user:perms:{user.Id}", permissions, TimeSpan.FromMinutes(10), cancellationToken);
-            return permissions;
+            return permissions; 
         }
 
         if (user.UserRoles != null)
@@ -72,8 +71,6 @@ public class PermissionService : IPermissionService
             }
         }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
         if (user.Subscriptions != null && user.HasActivePremiumSubscription(utcNow))
         {
             var premiumFlags = new[]
@@ -88,11 +85,20 @@ public class PermissionService : IPermissionService
             }
         }
 
-        await _cacheService.SetAsync(
-            $"user:perms:{user.Id}",
-            permissions,
-            TimeSpan.FromHours(1),
-            cancellationToken);
+        return permissions;
+    }
+
+    public async Task<HashSet<string>> CachePermissionsAsync(User user, CancellationToken cancellationToken = default)
+    {
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        
+        var permissions = CalculateUserPermissions(user, utcNow);
+
+        var expiration = (user.AccountState == AccountState.Banned || user.AccountState == AccountState.Deleted) 
+            ? TimeSpan.FromMinutes(10) 
+            : TimeSpan.FromHours(1);
+
+        await _cacheService.SetAsync($"user:perms:{user.Id}", permissions, expiration, cancellationToken);
 
         return permissions;
     }

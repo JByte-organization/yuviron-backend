@@ -29,7 +29,7 @@ public sealed class UpdateAlbumCommandHandler : IRequestHandler<UpdateAlbumComma
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
-            throw new ArgumentException("One or more provided artists do not exist.");
+            throw new NotFoundException(nameof(Artist), "One or more provided IDs"); 
         }
 
         var album = await _context.Albums

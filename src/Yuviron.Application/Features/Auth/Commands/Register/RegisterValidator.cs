@@ -37,6 +37,11 @@ public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.AcceptTerms)
             .Equal(true).WithMessage("You must agree to the Privacy Policy.");
+        
+        RuleFor(x => x.ArtistName)
+            .NotEmpty().WithMessage("Artist name is required when registering as an artist.")
+            .MaximumLength(200).WithMessage("Artist name cannot exceed 200 characters.")
+            .When(x => x.IsArtist == true); 
     }
 
     private bool BeAtLeast16YearsOld(DateTime dateOfBirth)

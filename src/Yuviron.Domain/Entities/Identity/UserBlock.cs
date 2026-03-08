@@ -47,8 +47,9 @@ public class UserBlock : Entity
         };
     }
 
-    public void Deactivate()
+    public void Deactivate(DateTime utcNow)
     {
         IsActive = false;
+        EndsAt = utcNow; 
     }
 }

@@ -26,6 +26,7 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
             .Select(tm => new ArtistTeamMemberDto(
                 tm.UserId,
                 tm.User.Email,
+                tm.User.Profile != null ? tm.User.Profile.DisplayName : null, 
                 tm.Role
             ))
             .ToListAsync(cancellationToken);

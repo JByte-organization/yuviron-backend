@@ -58,7 +58,7 @@ public class SharedRoom : Entity
         
         if (Members.Any(m => m.UserId == userId && m.LeftAt == null)) return;
 
-        Members.Add(SharedRoomMember.Create(Id, userId, role, utcNow));
+        Members.Add(new SharedRoomMember(Id, userId, role, utcNow));
     }
 
     public void EnqueueTrack(Guid trackId, int position, Guid addedByUserId, DateTime utcNow)

@@ -23,7 +23,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(p => p.Title.Contains(request.SearchTerm));
+            query = query.Where(p => p.Title.StartsWith(request.SearchTerm));
         }
 
         var projectedQuery = query

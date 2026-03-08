@@ -17,7 +17,7 @@ public sealed class MoodConfiguration : IEntityTypeConfiguration<Mood>
             .HasMaxLength(100);
 
         builder.Property(m => m.CoverUrl)
-            .HasMaxLength(2000);
+            .HasMaxLength(2048);
 
         builder.HasQueryFilter(m => !m.IsDeleted);
     }

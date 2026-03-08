@@ -22,25 +22,32 @@ public sealed class HideArtistAlbumsEventHandler : INotificationHandler<ArtistDe
 
     public async Task Handle(ArtistDeletedEvent notification, CancellationToken cancellationToken)
     {
-        // 1. Ищем все альбомы, в которых этот артист принимал участие
-        var albumsToHide = await _context.Albums
+        var affectedAlbums = await _context.Albums
+            .Include(a => a.AlbumArtists)
             .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == notification.ArtistId) && !a.IsDeleted)
             .ToListAsync(cancellationToken);
 
-        if (!albumsToHide.Any())
+        if (!affectedAlbums.Any())
         {
-            return; // Если альбомов нет, ничего не делаем
+            return; 
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        // 2. Делаем Soft Delete каждому альбому.
-        // ВНИМАНИЕ: Внутри метода Delete() альбом сгенерирует AlbumDeletedEvent,
-        // который автоматически удалит все треки этого альбома! Магия! 🪄
-        foreach (var album in albumsToHide)
+        foreach (var album in affectedAlbums)
         {
-            album.Delete(utcNow);
+            if (album.AlbumArtists.Count == 1)
+            {
+                album.Delete(utcNow);
+            }
+            else
+            {
+                var linkToRemove = album.AlbumArtists.First(aa => aa.ArtistId == notification.ArtistId);
+                album.AlbumArtists.Remove(linkToRemove);
+                
+            }
         }
 
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

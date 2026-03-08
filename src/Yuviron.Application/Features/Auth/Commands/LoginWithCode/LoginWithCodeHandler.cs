@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq; 
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
@@ -9,6 +10,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Auth.Commands.Login;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 
@@ -17,24 +19,24 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
-    private readonly IPermissionService _permissionService;
     private readonly TimeProvider _timeProvider;
     private readonly IOtpService _otpService;
+    private readonly IPermissionService _permissionService; 
 
     public LoginWithCodeHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IPermissionService permissionService,
         TimeProvider timeProvider,
-        IOtpService otpService) 
+        IOtpService otpService,
+        IPermissionService permissionService) 
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
-        _permissionService = permissionService;
         _timeProvider = timeProvider;
         _otpService = otpService;
+        _permissionService = permissionService;
     }
 
     public async Task<LoginResponse> Handle(LoginWithCodeCommand request, CancellationToken cancellationToken)
@@ -65,10 +67,16 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
 
         if (user == null) throw new UnauthorizedAccessException("User not found.");
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        user.UpdateLastLogin(utcNow); // Обновляем время входа
+        if (user.AccountState == AccountState.Banned || user.AccountState == AccountState.Deleted)
+        {
+            throw new UnauthorizedAccessException("This account has been banned or deleted.");
+        }
 
-        var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        user.UpdateLastLogin(utcNow);
+
+        var permissions = _permissionService.CalculateUserPermissions(user, utcNow);
+
         var token = _jwtTokenGenerator.GenerateToken(user);
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
@@ -81,6 +89,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
         );
 
         _context.RefreshTokens.Add(refreshTokenEntity);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(

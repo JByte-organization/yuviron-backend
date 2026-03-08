@@ -1,11 +1,10 @@
 ﻿using System;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums; // <-- Подключили енамку
 
 namespace Yuviron.Domain.Entities;
 
-public enum CopyrightEntityType { Track = 1, Album = 2 }
-
-public class CopyrightClaim : Entity
+public sealed class CopyrightClaim : Entity // <-- Добавили sealed
 {
     public CopyrightEntityType EntityType { get; private set; }
     public Guid EntityId { get; private set; } 
@@ -14,7 +13,7 @@ public class CopyrightClaim : Entity
     public string? Notes { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public virtual Artist OwnerArtist { get; private set; } = null!;
+    public Artist OwnerArtist { get; private set; } = null!;
 
     private CopyrightClaim() { }
 

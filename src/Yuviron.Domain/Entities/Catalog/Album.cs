@@ -72,7 +72,7 @@ public class Album : Entity
         var currentIds = AlbumArtists.Select(aa => aa.ArtistId).ToList();
         foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
         {
-            AlbumArtists.Add(new AlbumArtist { AlbumId = Id, ArtistId = id, Role = ArtistRole.Main });
+            AlbumArtists.Add(new AlbumArtist(Id, id, ArtistRole.Main));
         }
     }
 

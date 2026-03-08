@@ -1,10 +1,9 @@
 ﻿using System;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
-public enum ComplaintTargetType { Track = 1, Album = 2, Artist = 3 }
-public enum ComplaintStatus { New = 1, InReview = 2, Approved = 3, Rejected = 4 }
 
 public class Complaint : Entity
 {

@@ -10,6 +10,7 @@ public class ArtistSocialLink : Entity
     public Guid ArtistId { get; private set; }
     public string Type { get; private set; } = string.Empty;
     public string Url { get; private set; } = string.Empty;
+    public DateTime CreatedAt { get; private set; }
     public virtual Artist Artist { get; private set; } = null!;
 
     private ArtistSocialLink() { }

@@ -23,7 +23,6 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
     {
         var album = await _context.Albums
             .AsNoTracking()
-            .IgnoreQueryFilters() 
             .Where(a => a.Id == request.AlbumId)
             .Select(a => new AlbumDetailsDto(
                 a.Id,

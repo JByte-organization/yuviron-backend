@@ -1,5 +1,4 @@
 ﻿using System;
-
 namespace Yuviron.Domain.Entities;
 
 public class UserAchievement
@@ -13,13 +12,10 @@ public class UserAchievement
 
     private UserAchievement() { }
 
-    public static UserAchievement Create(Guid userId, Guid achievementId, DateTime utcNow)
+    public UserAchievement(Guid userId, Guid achievementId, DateTime utcNow)
     {
-        return new UserAchievement
-        {
-            UserId = userId,
-            AchievementId = achievementId,
-            UnlockedAt = utcNow
-        };
+        UserId = userId;
+        AchievementId = achievementId;
+        UnlockedAt = utcNow;
     }
 }

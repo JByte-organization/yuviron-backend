@@ -1,8 +1,9 @@
 ﻿using Yuviron.Domain.Common;
+using System;
 
 namespace Yuviron.Domain.Entities;
 
-public class RefreshToken : Entity
+public sealed class RefreshToken : Entity 
 {
     public Guid UserId { get; private set; }
     public string TokenHash { get; private set; } = string.Empty;
@@ -10,7 +11,7 @@ public class RefreshToken : Entity
     public DateTime? RevokedAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public virtual User User { get; private set; } = null!;
+    public User User { get; private set; } = null!;
 
     private RefreshToken() { }
 
@@ -30,5 +31,14 @@ public class RefreshToken : Entity
     {
         if (RevokedAt != null) return;
         RevokedAt = utcNow;
+    }
+
+    public bool IsRevoked => RevokedAt.HasValue;
+    
+    public bool IsExpired(DateTime utcNow) => ExpiresAt < utcNow;
+    
+    public bool IsInGracePeriod(DateTime utcNow) 
+    {
+        return IsRevoked && utcNow <= RevokedAt!.Value.AddMinutes(1);
     }
 }

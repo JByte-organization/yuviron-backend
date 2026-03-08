@@ -31,15 +31,15 @@ public sealed class CreateTrackCommandHandler : IRequestHandler<CreateTrackComma
 
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
-        if (existingArtistsCount != uniqueArtistIds.Count) throw new ArgumentException("Invalid artists provided.");
+        if (existingArtistsCount != uniqueArtistIds.Count) throw new NotFoundException(nameof(Mood), "One or more provided IDs");
 
         var uniqueGenreIds = request.GenreIds.Distinct().ToList();
         var existingGenresCount = await _context.Genres.CountAsync(g => uniqueGenreIds.Contains(g.Id), cancellationToken);
-        if (existingGenresCount != uniqueGenreIds.Count) throw new ArgumentException("Invalid genres provided.");
+        if (existingGenresCount != uniqueGenreIds.Count) throw new NotFoundException(nameof(Mood), "One or more provided IDs");
 
         var uniqueMoodIds = request.MoodIds.Distinct().ToList();
         var existingMoodsCount = await _context.Moods.CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
-        if (existingMoodsCount != uniqueMoodIds.Count) throw new ArgumentException("Invalid moods provided.");
+        if (existingMoodsCount != uniqueMoodIds.Count) throw new NotFoundException(nameof(Mood), "One or more provided IDs");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 

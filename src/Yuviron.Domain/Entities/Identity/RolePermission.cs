@@ -10,14 +10,11 @@ public class RolePermission
     public virtual Role Role { get; private set; } = null!;
     public virtual Permission Permission { get; private set; } = null!;
 
-    private RolePermission() { }
+    private RolePermission() { } 
 
-    public static RolePermission Create(Guid roleId, Guid permissionId)
+    public RolePermission(Guid roleId, Guid permissionId)
     {
-        return new RolePermission
-        {
-            RoleId = roleId,
-            PermissionId = permissionId
-        };
+        RoleId = roleId;
+        PermissionId = permissionId;
     }
 }

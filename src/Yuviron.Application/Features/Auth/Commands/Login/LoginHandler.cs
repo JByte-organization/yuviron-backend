@@ -1,10 +1,15 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Common;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Auth.Commands.Login;
 
@@ -13,21 +18,21 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
-    private readonly IPermissionService _permissionService;
     private readonly TimeProvider _timeProvider;
+    private readonly IPermissionService _permissionService;
 
     public LoginHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IPermissionService permissionService,
-        TimeProvider timeProvider) 
+        TimeProvider timeProvider,
+        IPermissionService permissionService) 
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
-        _permissionService = permissionService;
         _timeProvider = timeProvider;
+        _permissionService = permissionService;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -42,22 +47,21 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
              .Include(u => u.Subscriptions)
              .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (user == null)
-        {
-            throw new UnauthorizedAccessException("Invalid credentials.");
-        }
+        if (user == null) throw new UnauthorizedAccessException("Invalid credentials.");
 
         bool isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash);
-        if (!isPasswordValid)
+        if (!isPasswordValid) throw new UnauthorizedAccessException("Invalid credentials.");
+
+        if (user.AccountState == AccountState.Banned || user.AccountState == AccountState.Deleted)
         {
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new UnauthorizedAccessException("This account has been banned or deleted.");
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         user.UpdateLastLogin(utcNow);
 
-        var permissions = await _permissionService.CachePermissionsAsync(user, cancellationToken);
+        var permissions = _permissionService.CalculateUserPermissions(user, utcNow);
 
         var token = _jwtTokenGenerator.GenerateToken(user);
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();

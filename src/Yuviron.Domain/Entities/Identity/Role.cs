@@ -26,7 +26,7 @@ public class Role : Entity
         var currentIds = RolePermissions.Select(rp => rp.PermissionId).ToList();
         foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
         {
-            RolePermissions.Add(RolePermission.Create(Id, id));
+            RolePermissions.Add(new RolePermission(Id, id));
         }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
 
@@ -34,7 +35,7 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
 
             if (existingTracksCount != uniqueTrackIds.Count)
             {
-                throw new ArgumentException("One or more provided tracks do not exist.");
+                throw new NotFoundException(nameof(Track), "One or more provided IDs");
             }
         }
 

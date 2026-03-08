@@ -1,5 +1,6 @@
-﻿
+﻿using System;
 namespace Yuviron.Domain.Entities;
+
 public class PlaylistTrack
 {
     public Guid PlaylistId { get; private set; }
@@ -13,16 +14,14 @@ public class PlaylistTrack
 
     private PlaylistTrack() { }
 
-    public static PlaylistTrack Create(Guid playlistId, Guid trackId, int position, Guid addedBy, DateTime utcNow)
+    // ИСПОЛЬЗУЕМ КОНСТРУКТОР
+    public PlaylistTrack(Guid playlistId, Guid trackId, int position, Guid addedBy, DateTime utcNow)
     {
-        return new PlaylistTrack
-        {
-            PlaylistId = playlistId,
-            TrackId = trackId,
-            Position = position,
-            AddedByUserId = addedBy,
-            AddedAt = utcNow
-        };
+        PlaylistId = playlistId;
+        TrackId = trackId;
+        Position = position;
+        AddedByUserId = addedBy;
+        AddedAt = utcNow;
     }
 
     public void UpdatePosition(int newPosition) => Position = newPosition;

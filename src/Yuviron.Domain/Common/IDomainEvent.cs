@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using MediatR; 
 
-namespace Yuviron.Domain.Common
+namespace Yuviron.Domain.Common;
+
+public interface IDomainEvent : INotification
 {
-    internal interface IDomainEvent
-    {
-    }
 }

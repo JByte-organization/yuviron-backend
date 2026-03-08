@@ -21,6 +21,7 @@ public sealed class GetRolesHandler : IRequestHandler<GetRolesQuery, List<RoleDt
     {
         return await _context.Roles
             .AsNoTracking()
+            .OrderBy(r => r.Name) 
             .Select(r => new RoleDto(
                 r.Id, 
                 r.Name, 

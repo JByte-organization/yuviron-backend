@@ -19,28 +19,28 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
     {
         var playlist = await _context.Playlists
                            .AsNoTracking()
-                           .Include(p => p.PlaylistTracks)
-                           .ThenInclude(pt => pt.Track)
-                           .ThenInclude(t => t.TrackArtists)
-                           .ThenInclude(ta => ta.Artist)
-                           .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
+                           .Where(p => p.Id == request.Id)
+                           .Select(p => new PlaylistDetailsDto(
+                               p.Id,
+                               p.Title,
+                               p.Description,
+                               p.CoverUrl,
+                               p.IsPublic,
+                               p.IsEditorial,
+                               p.PlaylistTracks
+                                   .OrderBy(pt => pt.Position)
+                                   .Select(pt => new PlaylistTrackDto(
+                                       pt.TrackId,
+                                       pt.Track.Title,
+                                       pt.Track.TrackArtists.FirstOrDefault() != null 
+                                           ? pt.Track.TrackArtists.FirstOrDefault()!.Artist.Name 
+                                           : null,
+                                       pt.Position
+                                   )).ToList()
+                           ))
+                           .FirstOrDefaultAsync(cancellationToken)
                        ?? throw new NotFoundException(nameof(Playlist), request.Id);
 
-        return new PlaylistDetailsDto(
-            playlist.Id,
-            playlist.Title,
-            playlist.Description,
-            playlist.CoverUrl,
-            playlist.IsPublic,
-            playlist.IsEditorial,
-            playlist.PlaylistTracks
-                .OrderBy(pt => pt.Position)
-                .Select(pt => new PlaylistTrackDto(
-                    pt.TrackId,
-                    pt.Track.Title,
-                    pt.Track.TrackArtists.FirstOrDefault()?.Artist.Name,
-                    pt.Position
-                )).ToList()
-        );
+        return playlist;
     }
 }

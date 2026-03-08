@@ -3,8 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging; 
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication; 
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateTeamMemberRole;
@@ -13,11 +16,19 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IPermissionService _permissionService;
+    private readonly ILogger<UpdateTeamMemberRoleHandler> _logger; 
 
-    public UpdateTeamMemberRoleHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateTeamMemberRoleHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IPermissionService permissionService,
+        ILogger<UpdateTeamMemberRoleHandler> logger)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _permissionService = permissionService;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(UpdateTeamMemberRoleCommand request, CancellationToken cancellationToken)
@@ -31,7 +42,18 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
 
         artist.UpdateTeamMemberRole(request.UserId, request.NewRole, utcNow);
 
+        artist.AddDomainEvent(new UserPermissionsChangedEvent(request.UserId));
+
         await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _permissionService.InvalidatePermissionsAsync(request.UserId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to invalidate cache synchronously for User {UserId}. Outbox worker will retry.", request.UserId);
+        }
 
         return Unit.Value;
     }

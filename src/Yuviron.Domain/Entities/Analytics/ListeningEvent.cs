@@ -1,23 +1,24 @@
 ﻿using System;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
-public class ListeningEvent : Entity
+public sealed class ListeningEvent : Entity
 {
-    public Guid? UserId { get; private set; } // Null если гость
+    public Guid? UserId { get; private set; } 
     public Guid TrackId { get; private set; }
     public DateTime PlayedAt { get; private set; }
     public int MsPlayed { get; private set; }
 
-    public string DeviceType { get; private set; } = "unknown";
+    public PlaybackDeviceType DeviceType { get; private set; } 
     public string? CountryCode { get; private set; }
 
-    public string? SourceType { get; private set; } // Playlist, Album
+    public PlaybackSourceType SourceType { get; private set; } 
     public Guid? SourceId { get; private set; }
 
-    public virtual User? User { get; private set; }
-    public virtual Track Track { get; private set; } = null!;
+    public User? User { get; private set; }
+    public Track Track { get; private set; } = null!;
 
     private ListeningEvent() { }
 
@@ -25,12 +26,13 @@ public class ListeningEvent : Entity
         Guid? userId,
         Guid trackId,
         int msPlayed,
-        string? deviceType,
+        PlaybackDeviceType deviceType, 
         string? countryCode,
-        string? sourceType,
+        PlaybackSourceType sourceType, 
         Guid? sourceId,
-        DateTime utcNow) // Добавили проброс времени!
+        DateTime utcNow) 
     {
+        if (trackId == Guid.Empty) throw new ArgumentException("TrackId cannot be empty");
         if (msPlayed < 0) throw new ArgumentException("Cannot play negative time");
 
         return new ListeningEvent
@@ -38,11 +40,11 @@ public class ListeningEvent : Entity
             Id = Guid.NewGuid(),
             UserId = userId,
             TrackId = trackId,
-            PlayedAt = utcNow, // Пишем реальное время события
+            PlayedAt = utcNow,
             MsPlayed = msPlayed,
-            DeviceType = string.IsNullOrWhiteSpace(deviceType) ? "unknown" : deviceType.Trim(),
-            CountryCode = countryCode?.Trim().ToUpper(), // Нормализуем код страны (например, "US")
-            SourceType = sourceType?.Trim(),
+            DeviceType = deviceType, 
+            CountryCode = countryCode?.Trim().ToUpper(), 
+            SourceType = sourceType,
             SourceId = sourceId
         };
     }

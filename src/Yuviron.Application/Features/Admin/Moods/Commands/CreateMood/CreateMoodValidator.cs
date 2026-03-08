@@ -11,6 +11,6 @@ public sealed class CreateMoodValidator : AbstractValidator<CreateMoodCommand>
             .MaximumLength(100).WithMessage("Name must not exceed 100 characters");
 
         RuleFor(v => v.CoverUrl)
-            .MaximumLength(2000).WithMessage("Cover URL is too long");
+            .MaximumLength(2048).WithMessage("Cover URL is too long");
     }
 }

@@ -23,7 +23,6 @@ public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserD
     {
         var user = await _context.Users
             .AsNoTracking()
-            .IgnoreQueryFilters() // Админ должен видеть даже удаленного юзера
             .Where(u => u.Id == request.UserId)
             .Select(u => new UserDetailsDto(
                 u.Id,

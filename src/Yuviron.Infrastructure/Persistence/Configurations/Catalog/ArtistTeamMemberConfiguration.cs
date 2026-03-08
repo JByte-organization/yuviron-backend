@@ -10,12 +10,16 @@ public class ArtistTeamMemberConfiguration : IEntityTypeConfiguration<ArtistTeam
     {
         builder.ToTable("artist_team_members");
         builder.HasKey(x => x.Id);
+        
+        builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.Role).IsRequired();
 
-        builder.Property(x => x.Role)
-            .IsRequired();
+        builder.HasIndex(x => new { x.ArtistId, x.UserId }).IsUnique();
 
-        builder.HasIndex(x => new { x.ArtistId, x.UserId })
-            .IsUnique();
+        builder.Property<int?>("OwnerUniqueConstraint")
+            .HasComputedColumnSql("CASE WHEN Role = 1 THEN 1 ELSE NULL END", stored: true);
+
+        builder.HasIndex("ArtistId", "OwnerUniqueConstraint").IsUnique();
 
         builder.HasOne(x => x.User)
             .WithMany() 

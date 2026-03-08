@@ -25,14 +25,13 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
     {
         var artist = await _context.Artists
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Where(a => a.Id == request.ArtistId)
             .Select(a => new ArtistDetailsDto(
                 a.Id,
                 a.TeamMembers
                     .Where(tm => tm.Role == ArtistTeamRole.Owner)
                     .Select(tm => (Guid?)tm.UserId)
-                    .FirstOrDefault(), 
+                    .FirstOrDefault(),
                 a.Name,
                 a.Bio,
                 a.AvatarUrl,

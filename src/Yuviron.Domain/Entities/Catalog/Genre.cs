@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Domain.Entities;
 
@@ -44,5 +45,10 @@ public class Genre : Entity
 
         IsDeleted = true;
         UpdatedAt = utcNow;
+
+        var suffix = $"_del_{Id.ToString()[..8]}";
+        Name = $"{Name[..Math.Min(Name.Length, 100 - suffix.Length)]}{suffix}";
+        
+        AddDomainEvent(new GenreDeletedEvent(this.Id));
     }
 }

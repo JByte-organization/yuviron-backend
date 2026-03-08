@@ -19,7 +19,7 @@ public sealed class UpdateGenreValidator : AbstractValidator<UpdateGenreCommand>
             .WithMessage("Genre name must contain at least one letter.");
 
         RuleFor(x => x.CoverUrl)
-            .MaximumLength(500)
+            .MaximumLength(2048)
             .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
             .WithMessage("Cover URL must be a valid URI.");
 

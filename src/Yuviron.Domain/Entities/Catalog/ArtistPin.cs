@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
-public enum ArtistPinType { Track = 1, Album = 2 }
 
 public class ArtistPin : Entity
 {

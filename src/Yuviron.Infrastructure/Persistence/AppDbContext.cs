@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -21,7 +22,32 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents(cancellationToken);
+        var domainEntities = ChangeTracker
+            .Entries<Entity>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .ToList();
+
+        var outboxMessages = domainEntities.SelectMany(e =>
+            {
+                var domainEvents = e.Entity.DomainEvents.ToList();
+                e.Entity.ClearDomainEvents();
+
+                return domainEvents.Select(domainEvent => 
+                {
+                    var type = domainEvent.GetType();
+                    var typeName = $"{type.FullName}, {type.Assembly.GetName().Name}";
+
+                    var content = JsonSerializer.Serialize(domainEvent, type);
+                    
+                    return OutboxMessage.Create(typeName, content, DateTime.UtcNow);
+                });
+            })
+            .ToList();
+
+        if (outboxMessages.Any())
+        {
+            OutboxMessages.AddRange(outboxMessages);
+        }
 
         return await base.SaveChangesAsync(cancellationToken);
     }
@@ -51,7 +77,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
         }
     }
     
-    // --- Identity ---
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
@@ -59,14 +85,10 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
-
-    // --- Profile ---
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<Theme> Themes => Set<Theme>();
     public DbSet<CustomTheme> CustomThemes => Set<CustomTheme>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
-
-    // --- Catalog ---
     public DbSet<Artist> Artists => Set<Artist>();
     public DbSet<ArtistSocialLink> ArtistSocialLinks => Set<ArtistSocialLink>();
     public DbSet<ArtistPin> ArtistPins => Set<ArtistPin>();
@@ -76,17 +98,14 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<AlbumArtist> AlbumArtists => Set<AlbumArtist>();
     public DbSet<TrackArtist> TrackArtists => Set<TrackArtist>();
     public DbSet<TrackGenre> TrackGenres => Set<TrackGenre>();
+    public DbSet<TrackMood> TrackMoods=> Set<TrackMood>();
     public DbSet<ArtistTeamMember> ArtistTeamMembers => Set<ArtistTeamMember>();
     public DbSet<Mood> Moods => Set<Mood>();
-
-    // --- Library ---
     public DbSet<Playlist> Playlists => Set<Playlist>();
     public DbSet<PlaylistTrack> PlaylistTracks => Set<PlaylistTrack>();
     public DbSet<UserSavedTrack> UserSavedTracks => Set<UserSavedTrack>();
     public DbSet<UserSavedAlbum> UserSavedAlbums => Set<UserSavedAlbum>();
     public DbSet<UserFollowArtist> UserFollowArtists => Set<UserFollowArtist>();
-
-    // --- Monetization ---
     public DbSet<Plan> Plans => Set<Plan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Ad> Ads => Set<Ad>();
@@ -95,8 +114,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<RoyaltyAccrualDaily> RoyaltyAccrualsDaily => Set<RoyaltyAccrualDaily>();
     public DbSet<PayoutRequest> PayoutRequests => Set<PayoutRequest>();
     public DbSet<PayoutTransaction> PayoutTransactions => Set<PayoutTransaction>();
-
-    // --- Player & Social ---
     public DbSet<PlaybackSession> PlaybackSessions => Set<PlaybackSession>();
     public DbSet<PlaybackQueueItem> PlaybackQueueItems => Set<PlaybackQueueItem>();
     public DbSet<SharedRoom> SharedRooms => Set<SharedRoom>();
@@ -104,8 +121,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SharedRoomQueueItem> SharedRoomQueueItems => Set<SharedRoomQueueItem>();
     public DbSet<SmartLink> SmartLinks => Set<SmartLink>();
     public DbSet<SmartLinkClick> SmartLinkClicks => Set<SmartLinkClick>();
-
-    // --- Content & Analytics & Gamification ---
     public DbSet<Lyrics> Lyrics => Set<Lyrics>();
     public DbSet<LyricsSegment> LyricsSegments => Set<LyricsSegment>();
     public DbSet<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();
@@ -126,6 +141,4 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
         base.OnModelCreating(modelBuilder);
     }
-    
-    
 }

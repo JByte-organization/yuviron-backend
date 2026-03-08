@@ -31,8 +31,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(u => 
-                u.Email.Contains(request.SearchTerm) || 
-                (u.Profile != null && u.Profile.DisplayName.Contains(request.SearchTerm)));
+                u.Email.StartsWith(request.SearchTerm) || 
+                (u.Profile != null && u.Profile.DisplayName.StartsWith(request.SearchTerm)));
         }
 
         if (request.AccountState.HasValue)
@@ -48,7 +48,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
                 u.Profile != null ? u.Profile.DisplayName : null,
                 u.AccountState,
                 u.IsDeleted,
-                u.CreatedAt
+                u.CreatedAt,
+                u.UserRoles.Select(ur => ur.Role.Name).ToList()
             ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
