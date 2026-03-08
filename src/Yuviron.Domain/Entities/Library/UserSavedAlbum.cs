@@ -1,6 +1,4 @@
 ﻿using System;
-using Yuviron.Domain.Common;
-
 namespace Yuviron.Domain.Entities;
 
 public class UserSavedAlbum
@@ -14,13 +12,10 @@ public class UserSavedAlbum
 
     private UserSavedAlbum() { }
 
-    public static UserSavedAlbum Create(Guid userId, Guid albumId, DateTime utcNow)
+    public UserSavedAlbum(Guid userId, Guid albumId, DateTime utcNow)
     {
-        return new UserSavedAlbum
-        {
-            UserId = userId,
-            AlbumId = albumId,
-            SavedAt = utcNow
-        };
+        UserId = userId;
+        AlbumId = albumId;
+        SavedAt = utcNow;
     }
 }

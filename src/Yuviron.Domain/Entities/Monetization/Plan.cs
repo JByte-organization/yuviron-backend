@@ -1,11 +1,10 @@
 ﻿using System;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 
-public enum PlanPeriod { Month = 1, Year = 2 }
-
-public class Plan : Entity
+public sealed class Plan : Entity 
 {
     public string Name { get; private set; } = string.Empty;
     public decimal Price { get; private set; }

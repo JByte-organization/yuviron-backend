@@ -27,7 +27,7 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(g => g.Name.Contains(request.SearchTerm));
+            query = query.Where(g => g.Name.StartsWith(request.SearchTerm));
         }
 
         var projectedQuery = query

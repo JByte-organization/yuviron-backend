@@ -1,6 +1,4 @@
 ﻿using System;
-using Yuviron.Domain.Common;
-
 namespace Yuviron.Domain.Entities;
 
 public class UserSavedTrack
@@ -14,13 +12,10 @@ public class UserSavedTrack
 
     private UserSavedTrack() { }
 
-    public static UserSavedTrack Create(Guid userId, Guid trackId, DateTime utcNow)
+    public UserSavedTrack(Guid userId, Guid trackId, DateTime utcNow)
     {
-        return new UserSavedTrack
-        {
-            UserId = userId,
-            TrackId = trackId,
-            SavedAt = utcNow
-        };
+        UserId = userId;
+        TrackId = trackId;
+        SavedAt = utcNow;
     }
 }

@@ -5,11 +5,20 @@ namespace Yuviron.Domain.Entities;
 
 public class TrackArtist
 {
-    public Guid TrackId { get; set; }
-    public virtual Track Track { get; set; } = null!;
+    public Guid TrackId { get; private set; }
+    public virtual Track Track { get; private set; } = null!;
 
-    public Guid ArtistId { get; set; }
-    public virtual Artist Artist { get; set; } = null!;
+    public Guid ArtistId { get; private set; }
+    public virtual Artist Artist { get; private set; } = null!;
 
-    public ArtistRole Role { get; set; }
+    public ArtistRole Role { get; private set; } 
+
+    private TrackArtist() { }
+
+    public TrackArtist(Guid trackId, Guid artistId, ArtistRole role)
+    {
+        TrackId = trackId;
+        ArtistId = artistId;
+        Role = role;
+    }
 }

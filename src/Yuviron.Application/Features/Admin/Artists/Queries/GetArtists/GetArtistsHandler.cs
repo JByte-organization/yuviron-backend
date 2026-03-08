@@ -30,7 +30,7 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(a => a.Name.Contains(request.SearchTerm));
+            query = query.Where(a => a.Name.StartsWith(request.SearchTerm));
         }
 
         if (request.VerificationStatus.HasValue)

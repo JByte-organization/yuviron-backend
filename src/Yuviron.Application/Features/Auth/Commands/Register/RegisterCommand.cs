@@ -12,5 +12,7 @@ public record RegisterCommand(
     DateTime DateOfBirth, 
     Gender Gender,    
     bool AcceptMarketing, 
-    bool AcceptTerms    
-) : IRequest<LoginResponse>, ISensitiveRequest; // Изменили возвращаемый тип
+    bool AcceptTerms,
+    bool IsArtist,
+    string? ArtistName    
+) : IRequest<LoginResponse>, ISensitiveRequest;

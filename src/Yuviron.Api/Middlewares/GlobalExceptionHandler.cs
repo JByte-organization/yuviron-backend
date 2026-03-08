@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Domain.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Yuviron.Api.Middlewares;
 
@@ -88,7 +89,26 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = domainEx.Message;
                 break;
 
-            // 7. Реальное падение сервера (500)
+            // 7. Ловим гонки и дубликаты из базы (409)
+            case DbUpdateException dbUpdateEx:
+                var innerMsg = dbUpdateEx.InnerException?.Message ?? dbUpdateEx.Message;
+                
+                if (innerMsg.Contains("Duplicate entry", StringComparison.OrdinalIgnoreCase) ||
+                    innerMsg.Contains("UNIQUE constraint", StringComparison.OrdinalIgnoreCase) ||
+                    innerMsg.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
+                {
+                    problemDetails.Status = StatusCodes.Status409Conflict;
+                    problemDetails.Title = "Resource Conflict";
+                    problemDetails.Detail = "A concurrent update or duplicate record was detected. Please try again.";
+                }
+                else
+                {
+                    problemDetails.Status = StatusCodes.Status500InternalServerError;
+                    problemDetails.Title = "Database Error";
+                    problemDetails.Detail = "An error occurred while saving to the database.";
+                }
+                break;
+
             default:
                 problemDetails.Status = StatusCodes.Status500InternalServerError;
                 problemDetails.Title = "Internal Server Error";

@@ -33,6 +33,9 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
         RuleFor(x => x.GenreIds)
             .NotEmpty()
             .WithMessage("Track must have at least one genre.");
+        RuleFor(x => x.MoodIds)
+            .NotEmpty()
+            .WithMessage("Track must have at least one mood.");
     }
 
 }

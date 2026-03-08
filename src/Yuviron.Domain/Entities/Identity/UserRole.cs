@@ -10,14 +10,11 @@ public class UserRole
     public virtual User User { get; private set; } = null!;
     public virtual Role Role { get; private set; } = null!;
 
-    private UserRole() { }
+    private UserRole() { } 
 
-    public static UserRole Create(Guid userId, Guid roleId)
+    public UserRole(Guid userId, Guid roleId)
     {
-        return new UserRole
-        {
-            UserId = userId,
-            RoleId = roleId
-        };
+        UserId = userId;
+        RoleId = roleId;
     }
 }

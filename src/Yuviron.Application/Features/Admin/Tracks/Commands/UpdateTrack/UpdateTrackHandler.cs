@@ -23,8 +23,6 @@ public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackComma
 
     public async Task<Unit> Handle(UpdateTrackCommand request, CancellationToken cancellationToken)
     {
-        // 1. Ищем трек вместе со ВСЕМИ связями (Artists, Genres + Moods)
-        // Если не сделать Include для Moods, SyncMoods не сможет удалить старые связи
         var track = await _context.Tracks
                         .Include(t => t.TrackArtists)
                         .Include(t => t.TrackGenres)
@@ -35,29 +33,38 @@ public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackComma
         // 2. Валидация альбома
         if (request.AlbumId.HasValue)
         {
-            var albumExists = await _context.Albums.AsNoTracking()
+            var albumExists = await _context.Albums
+                .AsNoTracking()
                 .AnyAsync(a => a.Id == request.AlbumId.Value, cancellationToken);
             if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId.Value);
         }
 
         // 3. Валидация артистов
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
-        var existingArtists = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+        var existingArtists = await _context.Artists
+            .AsNoTracking()
+            .CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+            
         if (existingArtists != uniqueArtistIds.Count) throw new ArgumentException("Invalid artists provided.");
 
         // 4. Валидация жанров
         var uniqueGenreIds = request.GenreIds.Distinct().ToList();
-        var existingGenres = await _context.Genres.CountAsync(g => uniqueGenreIds.Contains(g.Id), cancellationToken);
+        var existingGenres = await _context.Genres
+            .AsNoTracking()
+            .CountAsync(g => uniqueGenreIds.Contains(g.Id), cancellationToken);
+            
         if (existingGenres != uniqueGenreIds.Count) throw new ArgumentException("Invalid genres provided.");
 
-        // 5. Валидация настроений (Moods) — ДОБАВЛЕНО
+        // 5. Валидация настроений
         var uniqueMoodIds = request.MoodIds.Distinct().ToList();
-        var existingMoods = await _context.Moods.CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
+        var existingMoods = await _context.Moods
+            .AsNoTracking()
+            .CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
+            
         if (existingMoods != uniqueMoodIds.Count) throw new ArgumentException("Invalid moods provided.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        // 6. Обновляем доменную сущность (теперь со всеми параметрами)
         track.UpdateDetails(
             request.AlbumId,
             request.Title,
@@ -69,7 +76,7 @@ public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackComma
             request.VisibilityStatus,
             uniqueArtistIds,
             uniqueGenreIds,
-            uniqueMoodIds, // Передаем настроения в домен
+            uniqueMoodIds, 
             utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);

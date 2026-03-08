@@ -23,7 +23,7 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(m => m.Name.Contains(request.SearchTerm));
+            query = query.Where(m => m.Name.StartsWith(request.SearchTerm));
         }
 
         var projectedQuery = query

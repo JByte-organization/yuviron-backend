@@ -1,4 +1,5 @@
 using FluentValidation;
+using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.UpdatePlaylist;
 
@@ -14,6 +15,11 @@ public sealed class UpdatePlaylistValidator : AbstractValidator<UpdatePlaylistCo
 
         RuleFor(v => v.Description)
             .MaximumLength(2000);
+        
+        RuleFor(v => v.CoverUrl)
+            .MaximumLength(2048).WithMessage("Cover URL is too long")
+            .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
+            .WithMessage("Cover URL must be a valid URI.");
 
         RuleForEach(v => v.Tracks).ChildRules(track =>
         {

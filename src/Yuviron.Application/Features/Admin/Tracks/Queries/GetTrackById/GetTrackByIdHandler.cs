@@ -23,7 +23,6 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
     {
         var track = await _context.Tracks
             .AsNoTracking()
-            .IgnoreQueryFilters() 
             .Where(t => t.Id == request.TrackId)
             .Select(t => new TrackDetailsDto(
                 t.Id,

@@ -1,6 +1,5 @@
 ﻿using System;
 using Yuviron.Domain.Enums;
-
 namespace Yuviron.Domain.Entities;
 
 public class SharedRoomMember
@@ -16,15 +15,12 @@ public class SharedRoomMember
 
     private SharedRoomMember() { }
 
-    public static SharedRoomMember Create(Guid roomId, Guid userId, RoomRole role, DateTime utcNow)
+    public SharedRoomMember(Guid roomId, Guid userId, RoomRole role, DateTime utcNow)
     {
-        return new SharedRoomMember
-        {
-            RoomId = roomId,
-            UserId = userId,
-            Role = role,
-            JoinedAt = utcNow
-        };
+        RoomId = roomId;
+        UserId = userId;
+        Role = role;
+        JoinedAt = utcNow;
     }
 
     public void Leave(DateTime utcNow)

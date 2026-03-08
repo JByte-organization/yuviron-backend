@@ -1,5 +1,6 @@
-﻿using Yuviron.Domain.Entities;
+﻿using System;
 namespace Yuviron.Domain.Entities;
+
 public class UserFollowArtist
 {
     public Guid UserId { get; private set; }
@@ -12,14 +13,11 @@ public class UserFollowArtist
 
     private UserFollowArtist() { }
 
-    public static UserFollowArtist Create(Guid userId, Guid artistId, bool notify, DateTime utcNow)
+    public UserFollowArtist(Guid userId, Guid artistId, bool notify, DateTime utcNow)
     {
-        return new UserFollowArtist
-        {
-            UserId = userId,
-            ArtistId = artistId,
-            NotifyNewReleases = notify,
-            FollowedAt = utcNow
-        };
+        UserId = userId;
+        ArtistId = artistId;
+        NotifyNewReleases = notify;
+        FollowedAt = utcNow;
     }
 }

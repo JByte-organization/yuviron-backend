@@ -1,11 +1,10 @@
 ﻿using System;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums; // <-- Подключили енамку
 
 namespace Yuviron.Domain.Entities;
 
-public enum NotificationEntityType { Track = 1, Album = 2, Artist = 3, System = 99 }
-
-public class Notification : Entity
+public sealed class Notification : Entity // <-- Добавили sealed
 {
     public Guid UserId { get; private set; }
     public string Title { get; private set; } = string.Empty;
@@ -17,7 +16,7 @@ public class Notification : Entity
     public bool IsRead { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public virtual User User { get; private set; } = null!;
+    public User User { get; private set; } = null!; // <-- Убрали virtual за ненадобностью
 
     private Notification() { }
 

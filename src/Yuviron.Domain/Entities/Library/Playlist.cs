@@ -56,7 +56,7 @@ public class Playlist : Entity
             else
             {
                 // Если трека не было, создаем новую связь
-                PlaylistTracks.Add(PlaylistTrack.Create(Id, trackId, position, actorUserId, utcNow));
+                PlaylistTracks.Add(new PlaylistTrack(Id, trackId, position, actorUserId, utcNow));
             }
         }
         

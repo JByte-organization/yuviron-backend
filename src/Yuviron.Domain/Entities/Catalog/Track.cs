@@ -85,17 +85,20 @@ public class Track : Entity
     }
 
     private void SyncArtists(IEnumerable<Guid> ids)
-    {
-        var newIds = ids.Distinct().ToList();
-        var toRemove = TrackArtists.Where(ta => !newIds.Contains(ta.ArtistId)).ToList();
-        foreach (var item in toRemove) TrackArtists.Remove(item);
+{
+    var newIds = ids.Distinct().ToList();
+    
+    var toRemove = TrackArtists.Where(ta => !newIds.Contains(ta.ArtistId)).ToList();
+    foreach (var item in toRemove) TrackArtists.Remove(item);
 
-        var currentIds = TrackArtists.Select(ta => ta.ArtistId).ToList();
-        foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
-        {
-            TrackArtists.Add(new TrackArtist { TrackId = Id, ArtistId = id, Role = ArtistRole.Main });
-        }
+    var currentIds = TrackArtists.Select(ta => ta.ArtistId).ToList();
+    
+    foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
+    {
+        // Используем конструктор
+        TrackArtists.Add(new TrackArtist(this.Id, id, ArtistRole.Main));
     }
+}
 
     private void SyncGenres(IEnumerable<Guid> ids)
     {

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateArtist;
@@ -16,7 +17,9 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public UpdateArtistHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateArtistHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -57,25 +60,29 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             if (currentOwner?.UserId != newOwnerId)
             {
                 var isNewOwnerInTeam = artist.TeamMembers.Any(tm => tm.UserId == newOwnerId);
-                if (!isNewOwnerInTeam)
+                if (!isNewOwnerInTeam) throw new InvalidOperationException("The new owner must be an existing team member before ownership can be transferred.");
+
+                artist.UpdateTeamMemberRole(newOwnerId, ArtistTeamRole.Owner, utcNow);
+                
+                var newOwnerUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == newOwnerId, cancellationToken);
+                if (newOwnerUser != null)
                 {
-                    throw new InvalidOperationException("The new owner must be an existing team member before ownership can be transferred.");
+                    newOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(newOwnerId));
                 }
 
                 if (currentOwner != null)
                 {
-                    artist.RemoveTeamMember(currentOwner.UserId, utcNow);
+                    var oldOwnerUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentOwner.UserId, cancellationToken);
+                    if (oldOwnerUser != null)
+                    {
+                        oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
+                    }
                 }
-
-                artist.UpdateTeamMemberRole(newOwnerId, ArtistTeamRole.Owner, utcNow);
             }
         }
         else
         {
-            if (currentOwner != null)
-            {
-                artist.RemoveTeamMember(currentOwner.UserId, utcNow);
-            }
+            throw new InvalidOperationException("An artist must always have an owner.");
         }
 
         await _context.SaveChangesAsync(cancellationToken);

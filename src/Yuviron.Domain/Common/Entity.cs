@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using MediatR;
 
 namespace Yuviron.Domain.Common;
 
@@ -8,11 +7,11 @@ public abstract class Entity
 {
     public Guid Id { get; set; }
 
-    private readonly List<INotification> _domainEvents = new();
+    private readonly List<IDomainEvent> _domainEvents = new();
 
-    public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    public void AddDomainEvent(INotification domainEvent)
+    public void AddDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }
@@ -21,7 +20,6 @@ public abstract class Entity
     {
         _domainEvents.Clear();
     }
-
 
     public override bool Equals(object? obj)
     {

@@ -8,5 +8,6 @@ public record UserListItemDto(
     string? DisplayName, // Берем из профиля
     AccountState AccountState,
     bool IsDeleted,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    List<string> Roles
 );

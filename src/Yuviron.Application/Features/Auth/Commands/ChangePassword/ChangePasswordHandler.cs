@@ -5,6 +5,7 @@ using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Auth.Commands.ChangePassword;
 
@@ -38,6 +39,8 @@ public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordComman
 
         var newHash = _passwordHasher.Hash(request.NewPassword);
         user.SetPasswordHash(newHash, _timeProvider.GetUtcNow().UtcDateTime);
+        
+        user.AddDomainEvent(new UserPasswordChangedEvent(userId));
 
         await _context.SaveChangesAsync(cancellationToken);
         return Unit.Value;

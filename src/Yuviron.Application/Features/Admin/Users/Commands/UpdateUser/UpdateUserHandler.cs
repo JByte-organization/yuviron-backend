@@ -4,6 +4,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
@@ -13,18 +14,16 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
-    private readonly IPermissionService _permissionService;
+
 
     public UpdateUserCommandHandler(
         IApplicationDbContext context, 
         IPasswordHasher passwordHasher,
-        TimeProvider timeProvider,
-        IPermissionService permissionService)
+        TimeProvider timeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _timeProvider = timeProvider;
-        _permissionService = permissionService;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -107,14 +106,15 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
 
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id)); 
             
-            await _permissionService.InvalidatePermissionsAsync(user.Id, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {
             throw new UserAlreadyExistsException(normalizedEmail);
         }
+
 
         return Unit.Value;
     }

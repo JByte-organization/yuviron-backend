@@ -1,20 +1,23 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
 
-public sealed class CreateArtistCommandHandler : IRequestHandler<CreateArtistCommand, Guid>
+public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CreateArtistCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateArtistHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -22,13 +25,14 @@ public sealed class CreateArtistCommandHandler : IRequestHandler<CreateArtistCom
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
     {
+        User? ownerUser = null;
+
         if (request.OwnerUserId.HasValue)
         {
-            var ownerExists = await _context.Users
-                .AsNoTracking()
-                .AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
-
-            if (!ownerExists) throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
+            ownerUser = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken)
+                ?? throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -43,6 +47,26 @@ public sealed class CreateArtistCommandHandler : IRequestHandler<CreateArtistCom
             utcNow);
 
         _context.Artists.Add(artist);
+
+        if (ownerUser != null)
+        {
+            var managementRoleStr = nameof(RoleName.ManagementUser);
+            var managementRole = await _context.Roles
+                .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
+                ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
+
+            var currentRoleIds = ownerUser.UserRoles.Select(ur => ur.RoleId).ToList();
+            
+            if (!currentRoleIds.Contains(managementRole.Id))
+            {
+                currentRoleIds.Add(managementRole.Id);
+                
+                ownerUser.SyncRoles(currentRoleIds);
+                
+                ownerUser.AddDomainEvent(new UserPermissionsChangedEvent(ownerUser.Id));
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return artist.Id;

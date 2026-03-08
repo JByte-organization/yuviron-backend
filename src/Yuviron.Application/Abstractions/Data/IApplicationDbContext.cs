@@ -6,6 +6,9 @@ namespace Yuviron.Application.Abstractions;
 
 public interface IApplicationDbContext : IUnitOfWork
 {
+    
+    DbSet<OutboxMessage> OutboxMessages { get; }
+    
     // --- Identity ---
     DbSet<User> Users { get; }
     DbSet<Role> Roles { get; }
@@ -32,6 +35,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<AlbumArtist> AlbumArtists { get; }
     DbSet<TrackArtist> TrackArtists { get; }
     DbSet<TrackGenre> TrackGenres { get; }
+    DbSet<TrackMood> TrackMoods  { get; }
     DbSet<ArtistTeamMember> ArtistTeamMembers { get; }
     DbSet<Mood> Moods { get; }
 

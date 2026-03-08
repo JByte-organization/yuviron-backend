@@ -57,9 +57,10 @@ public class User : Entity
         var currentIds = UserRoles.Select(ur => ur.RoleId).ToList();
         foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
         {
-            UserRoles.Add(UserRole.Create(Id, id));
+            UserRoles.Add(new UserRole(Id, id));
         }
     }
+
 
     public void UpdateLastLogin(DateTime utcNow)
     {
@@ -89,6 +90,8 @@ public class User : Entity
     {
         PasswordHash = passwordHash;
         UpdatedAt = utcNow;
+        
+        AddDomainEvent(new UserPasswordChangedEvent(this.Id));
     }
 
     public void Delete(DateTime utcNow)
@@ -98,9 +101,11 @@ public class User : Entity
         IsDeleted = true;
         DeletedAt = utcNow;
         UpdatedAt = utcNow;
-        
         AccountState = AccountState.Deleted;
-        
+
+        var suffix = $"_del_{Id.ToString()[..8]}"; 
+        Email = $"{Email[..Math.Min(Email.Length, 320 - suffix.Length)]}{suffix}";
+
         AddDomainEvent(new UserDeletedEvent(this.Id));
     }
 }

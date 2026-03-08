@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 
@@ -29,7 +30,7 @@ public sealed class CreateAlbumCommandHandler : IRequestHandler<CreateAlbumComma
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
-            throw new ArgumentException("One or more provided artists do not exist.");
+            throw new NotFoundException(nameof(Artist), "One or more provided IDs"); 
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;

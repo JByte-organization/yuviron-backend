@@ -11,6 +11,7 @@ using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Infrastructure.Authentication;
+using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
@@ -79,7 +80,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
-
+        services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IPermissionService, PermissionService>();

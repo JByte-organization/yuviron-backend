@@ -81,36 +81,62 @@ public class Artist : Entity
 
     public void AddTeamMember(Guid userId, ArtistTeamRole role, DateTime utcNow)
     {
-        var existingMember = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
-        if (existingMember != null)
+        if (role == ArtistTeamRole.Owner && TeamMembers.Any(tm => tm.Role == ArtistTeamRole.Owner))
         {
-            throw new InvalidOperationException("User is already in the team."); 
+            throw new InvalidOperationException("An artist can have only one owner.");
         }
 
-        TeamMembers.Add(ArtistTeamMember.Create(this.Id, userId, role, utcNow));
+        var existingMember = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
+    
+        if (existingMember != null)
+        {
+            existingMember.ChangeRole(role);
+        }
+        else
+        {
+            TeamMembers.Add(ArtistTeamMember.Create(this.Id, userId, role, utcNow));
+        }
+    
         UpdatedAt = utcNow;
     }
 
-    public void UpdateTeamMemberRole(Guid userId, ArtistTeamRole newRole, DateTime utcNow)
+    public void UpdateTeamMemberRole(Guid targetUserId, ArtistTeamRole newRole, DateTime utcNow)
     {
-        var member = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
-        if (member == null)
+        var targetMember = TeamMembers.FirstOrDefault(tm => tm.UserId == targetUserId);
+        if (targetMember == null)
         {
             throw new InvalidOperationException("User is not in the team.");
         }
 
-        member.ChangeRole(newRole);
+        if (newRole == ArtistTeamRole.Owner && targetMember.Role != ArtistTeamRole.Owner)
+        {
+            var currentOwner = TeamMembers.FirstOrDefault(tm => tm.Role == ArtistTeamRole.Owner);
+            
+            if (currentOwner != null)
+            {
+                currentOwner.ChangeRole(ArtistTeamRole.Manager);
+            }
+        }
+        targetMember.ChangeRole(newRole);
         UpdatedAt = utcNow;
     }
 
-    public void RemoveTeamMember(Guid userId, DateTime utcNow)
+    public bool RemoveTeamMember(Guid userId, DateTime utcNow)
     {
         var member = TeamMembers.FirstOrDefault(tm => tm.UserId == userId);
         if (member != null)
         {
+            if (member.Role == ArtistTeamRole.Owner)
+            {
+                throw new InvalidOperationException("Cannot remove the owner. Transfer ownership to another member first.");
+            }
+
             TeamMembers.Remove(member);
             UpdatedAt = utcNow;
+            return true; 
         }
+    
+        return false; 
     }
     
     

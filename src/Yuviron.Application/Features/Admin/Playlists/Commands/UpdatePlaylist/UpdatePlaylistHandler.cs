@@ -43,7 +43,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
 
             if (existingTracksCount != uniqueTrackIds.Count)
             {
-                throw new ArgumentException("One or more provided tracks do not exist.");
+                throw new NotFoundException(nameof(Track), "One or more provided IDs");
             }
         }
 

@@ -64,13 +64,17 @@ public class AppDbContextInitializer
             await _context.SaveChangesAsync();
         }
 
-        if (!await _context.Roles.AnyAsync())
+        var requiredRoles = new[] { "User", "ManagementUser", "Admin" };
+        var existingRoleNames = await _context.Roles.Select(r => r.Name).ToListAsync();
+        
+        var missingRoles = requiredRoles
+            .Except(existingRoleNames)
+            .Select(name => Role.Create(name))
+            .ToList();
+
+        if (missingRoles.Any())
         {
-            await _context.Roles.AddRangeAsync(
-                Role.Create("User"),
-                Role.Create("ManagementUser"),
-                Role.Create("Admin")
-            );
+            await _context.Roles.AddRangeAsync(missingRoles);
             await _context.SaveChangesAsync();
         }
 
@@ -89,7 +93,6 @@ public class AppDbContextInitializer
             { "User", new[]
                 {
                     nameof(AppPermission.CreatePlaylist),
-                    nameof(AppPermission.TracksUpload)
                 }
             }
         };
@@ -109,7 +112,7 @@ public class AppDbContextInitializer
                 var perm = allDbPerms.FirstOrDefault(p => p.Name == permName);
                 if (perm != null && !role.RolePermissions.Any(rp => rp.PermissionId == perm.Id))
                 {
-                    _context.RolePermissions.Add(RolePermission.Create(role.Id, perm.Id));
+                    _context.RolePermissions.Add(new RolePermission(role.Id, perm.Id));
                 }
             }
         }
@@ -163,22 +166,22 @@ public class AppDbContextInitializer
 
             var adminUser = User.Create("admin@yuviron.com", _passwordHasher.Hash("Admin123!"), false, true, utcNow);
             await _context.Users.AddAsync(adminUser);
-            await _context.UserRoles.AddAsync(UserRole.Create(adminUser.Id, adminRole.Id));
+            await _context.UserRoles.AddAsync(new UserRole(adminUser.Id, adminRole.Id));
             adminUser.SetProfile(UserProfile.Create(adminUser.Id, "Admin", null, null, null, utcNow.AddYears(-30), Gender.NotSpecified, utcNow));
 
             var managerUser = User.Create("manager@yuviron.com", _passwordHasher.Hash("Manager123!"), false, true, utcNow);
             await _context.Users.AddAsync(managerUser);
-            await _context.UserRoles.AddAsync(UserRole.Create(managerUser.Id, managerRole.Id));
+            await _context.UserRoles.AddAsync(new UserRole(managerUser.Id, managerRole.Id));
             managerUser.SetProfile(UserProfile.Create(managerUser.Id, "Manager", null, null, null, utcNow.AddYears(-25), Gender.NotSpecified, utcNow));
 
             var simpleUser = User.Create("user@yuviron.com", _passwordHasher.Hash("User123!"), true, true, utcNow);
             await _context.Users.AddAsync(simpleUser);
-            await _context.UserRoles.AddAsync(UserRole.Create(simpleUser.Id, userRole.Id));
+            await _context.UserRoles.AddAsync(new UserRole(simpleUser.Id, userRole.Id));
             simpleUser.SetProfile(UserProfile.Create(simpleUser.Id, "Simple User", null, null, null, utcNow.AddYears(-20), Gender.Male, utcNow));
 
             var premiumUser = User.Create("premium@yuviron.com", _passwordHasher.Hash("Premium123!"), false, true, utcNow);
             await _context.Users.AddAsync(premiumUser);
-            await _context.UserRoles.AddAsync(UserRole.Create(premiumUser.Id, userRole.Id));
+            await _context.UserRoles.AddAsync(new UserRole(premiumUser.Id, userRole.Id));
             premiumUser.SetProfile(UserProfile.Create(premiumUser.Id, "Premium User", null, null, null, utcNow.AddYears(-22), Gender.Female, utcNow));
 
             var lifetimePlan = await _context.Plans.FirstAsync(p => p.Name == "Lifetime Access");
