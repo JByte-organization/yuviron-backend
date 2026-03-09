@@ -16,8 +16,17 @@ jobs:
 
       - name: Apply EF Core migrations
         run: |
-          cd /opt/yuviron/src/yuviron-backend
-          dotnet ef database update -p src/Yuviron.Infrastructure -s src/Yuviron.Api
+          docker run --rm \
+            --network host \
+            -v /opt/yuviron/src/yuviron-backend:/src \
+            -w /src \
+            mcr.microsoft.com/dotnet/sdk:9.0 \
+            bash -lc '
+              dotnet tool install --global dotnet-ef || dotnet tool update --global dotnet-ef
+              export PATH="$PATH:/root/.dotnet/tools"
+              dotnet restore
+              dotnet ef database update -p src/Yuviron.Infrastructure -s src/Yuviron.Api
+            '
 
       - name: Rebuild backend
         run: |
