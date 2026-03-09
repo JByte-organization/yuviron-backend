@@ -14,7 +14,12 @@ jobs:
           cd /opt/yuviron/src/yuviron-backend
           git pull origin dev
 
+      - name: Apply EF Core migrations
+        run: |
+          cd /opt/yuviron/src/yuviron-backend
+          dotnet ef database update -p src/Yuviron.Infrastructure -s src/Yuviron.Api
+
       - name: Rebuild backend
         run: |
           cd /opt/yuviron/infra
-          docker compose -f compose.dev.yml up -d --build yuviron-dev-backend
+          docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend
