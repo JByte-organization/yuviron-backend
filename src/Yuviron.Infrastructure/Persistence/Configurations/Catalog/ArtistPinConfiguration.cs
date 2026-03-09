@@ -14,9 +14,8 @@ public class ArtistPinConfiguration : IEntityTypeConfiguration<ArtistPin>
         builder.ToTable("artist_pins");
         builder.HasKey(x => x.Id);
 
-        builder.HasIndex(x => new { x.ArtistId, x.Position }).IsUnique(); // Уникальность позиции
+        builder.HasIndex(x => new { x.ArtistId, x.Position }).IsUnique();
 
-        // Индекс для полиморфного поиска
         builder.HasIndex(x => new { x.EntityType, x.EntityId });
 
         builder.HasOne(x => x.Artist)

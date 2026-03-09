@@ -48,6 +48,5 @@ public class Mood : Entity
         var suffix = $"_del_{Id.ToString()[..8]}";
         Name = $"{Name[..Math.Min(Name.Length, 100 - suffix.Length)]}{suffix}";
 
-        AddDomainEvent(new MoodDeletedEvent(this.Id));
     }
 }

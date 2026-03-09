@@ -28,7 +28,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
     private readonly TimeProvider _timeProvider; 
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     
-    // УБРАЛИ IPermissionService
 
     public RegisterHandler(
         IApplicationDbContext context,
