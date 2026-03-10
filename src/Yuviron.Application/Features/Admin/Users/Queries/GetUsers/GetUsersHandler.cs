@@ -31,8 +31,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(u => 
-                u.Email.StartsWith(request.SearchTerm) || 
-                (u.Profile != null && u.Profile.DisplayName.StartsWith(request.SearchTerm)));
+                u.Email.Contains(request.SearchTerm) || 
+                (u.Profile != null && u.Profile.DisplayName.Contains(request.SearchTerm)));
         }
 
         if (request.AccountState.HasValue)

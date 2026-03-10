@@ -30,7 +30,7 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(a => a.Title.StartsWith(request.SearchTerm));
+            query = query.Where(a => a.Title.Contains(request.SearchTerm));
         }
 
         if (request.Status.HasValue)
