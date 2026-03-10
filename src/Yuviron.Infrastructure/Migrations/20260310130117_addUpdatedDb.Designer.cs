@@ -12,8 +12,8 @@ using Yuviron.Infrastructure.Persistence;
 namespace Yuviron.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260308211142_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260310130117_addUpdatedDb")]
+    partial class addUpdatedDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
