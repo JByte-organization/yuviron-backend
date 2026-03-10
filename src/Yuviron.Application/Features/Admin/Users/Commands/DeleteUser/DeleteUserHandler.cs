@@ -35,6 +35,7 @@ public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand
         user.Delete(utcNow);
         
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
+        user.AddDomainEvent(new UserDeletedEvent(user.Id));
         
         await _context.SaveChangesAsync(cancellationToken);
 

@@ -45,15 +45,14 @@ public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackComma
             .AsNoTracking()
             .CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
             
-        if (existingArtists != uniqueArtistIds.Count) throw new ArgumentException("Invalid artists provided.");
-
+        if (existingArtists != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "Invalid artists provided.");
         // 4. Валидация жанров
         var uniqueGenreIds = request.GenreIds.Distinct().ToList();
         var existingGenres = await _context.Genres
             .AsNoTracking()
             .CountAsync(g => uniqueGenreIds.Contains(g.Id), cancellationToken);
             
-        if (existingGenres != uniqueGenreIds.Count) throw new ArgumentException("Invalid genres provided.");
+        if (existingGenres != uniqueGenreIds.Count) throw new NotFoundException(nameof(Genre), "Invalid genres provided.");
 
         // 5. Валидация настроений
         var uniqueMoodIds = request.MoodIds.Distinct().ToList();
@@ -61,7 +60,7 @@ public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackComma
             .AsNoTracking()
             .CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
             
-        if (existingMoods != uniqueMoodIds.Count) throw new ArgumentException("Invalid moods provided.");
+        if (existingMoods != uniqueMoodIds.Count) throw new NotFoundException(nameof(Mood), "Invalid moods provided.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 

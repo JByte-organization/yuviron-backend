@@ -52,30 +52,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task DispatchDomainEvents(CancellationToken cancellationToken)
-    {
-        while (true) 
-        {
-            var entities = ChangeTracker
-                .Entries<Entity>() 
-                .Where(e => e.Entity.DomainEvents.Any())
-                .ToList();
-
-            if (!entities.Any())
-                break;
-
-            var domainEvents = entities
-                .SelectMany(e => e.Entity.DomainEvents)
-                .ToList();
-
-            entities.ForEach(e => e.Entity.ClearDomainEvents());
-
-            foreach (var domainEvent in domainEvents)
-            {
-                await _mediator.Publish(domainEvent, cancellationToken);
-            }
-        }
-    }
     
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();

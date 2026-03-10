@@ -27,6 +27,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
     private readonly ILogger<RegisterHandler> _logger;
     private readonly TimeProvider _timeProvider; 
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IPermissionService _permissionService;
     
 
     public RegisterHandler(
@@ -35,7 +36,8 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
         IEmailService emailService,
         ILogger<RegisterHandler> logger,
         TimeProvider timeProvider, 
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IPermissionService permissionService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
@@ -43,6 +45,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
         _logger = logger;
         _timeProvider = timeProvider; 
         _jwtTokenGenerator = jwtTokenGenerator;
+        _permissionService = permissionService;
     }
 
     public async Task<LoginResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -114,9 +117,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, LoginResp
 
         _context.RefreshTokens.Add(refreshTokenEntity);
 
-        var permissions = rolesToAssign
-            .SelectMany(r => r.RolePermissions.Select(rp => rp.Permission.Name))
-            .ToHashSet();
+        var permissions = _permissionService.CalculateUserPermissions(user, utcNow);
 
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
 
