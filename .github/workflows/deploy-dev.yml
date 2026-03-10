@@ -9,26 +9,22 @@ jobs:
     runs-on: [self-hosted, yuviron]
 
     steps:
-      - name: Pull repo
+      - name: Update backend source
         run: |
+          set -e
           cd /opt/yuviron/src/yuviron-backend
-          git pull origin dev
+          git fetch origin dev
+          git reset --hard origin/dev
+          git clean -fd
 
       - name: Apply EF Core migrations
         run: |
-          docker run --rm \
-            --network host \
-            -v /opt/yuviron/src/yuviron-backend:/src \
-            -w /src \
-            mcr.microsoft.com/dotnet/sdk:9.0 \
-            bash -lc '
-              dotnet tool install --global dotnet-ef || dotnet tool update --global dotnet-ef
-              export PATH="$PATH:/root/.dotnet/tools"
-              dotnet restore
-              dotnet ef database update -p src/Yuviron.Infrastructure -s src/Yuviron.Api
-            '
-
-      - name: Rebuild backend
-        run: |
+          set -e
           cd /opt/yuviron/infra
-          docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend
+          docker compose -f compose.dev.yml run --rm yuviron-dev-migrator
+
+      - name: Rebuild and restart services
+        run: |
+          set -e
+          cd /opt/yuviron/infra
+          docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend yuviron-dev-frontend yuviron-dev-nginx
