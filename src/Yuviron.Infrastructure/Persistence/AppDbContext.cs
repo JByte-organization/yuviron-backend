@@ -52,7 +52,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    
+    public DbSet<TrackTest> TrackTests => Set<TrackTest>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
