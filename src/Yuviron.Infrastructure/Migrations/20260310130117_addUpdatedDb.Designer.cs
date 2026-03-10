@@ -12,8 +12,8 @@ using Yuviron.Infrastructure.Persistence;
 namespace Yuviron.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260310123146_фÐAddOutboxMessages")]
-    partial class фÐAddOutboxMessages
+    [Migration("20260310130117_addUpdatedDb")]
+    partial class addUpdatedDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
