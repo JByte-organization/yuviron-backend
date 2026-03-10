@@ -30,7 +30,7 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(t => t.Title.StartsWith(request.SearchTerm));
+            query = query.Where(t => t.Title.Contains(request.SearchTerm));
         }
 
         if (request.AlbumId.HasValue)

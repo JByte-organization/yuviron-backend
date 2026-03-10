@@ -57,6 +57,7 @@ using (var scope = app.Services.CreateScope())
         await initializer.InitialiseAsync();
 
         await initializer.SeedAsync();
+        
     }
     catch (Exception ex)
     {
