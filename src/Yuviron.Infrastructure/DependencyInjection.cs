@@ -16,6 +16,9 @@ using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
+using Yuviron.Infrastructure.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using StackExchange.Redis;
 
 namespace Yuviron.Infrastructure;
 
@@ -67,10 +70,25 @@ public static class DependencyInjection
 
 
 
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = configuration.GetConnectionString("Redis");
+            options.Configuration = redisConnectionString;
         });
+        
+        services.AddSingleton<IConnectionMultiplexer>(_ => 
+        {
+            var options = ConfigurationOptions.Parse(redisConnectionString!);
+            options.AbortOnConnectFail = false; 
+            
+            return ConnectionMultiplexer.Connect(options);
+        });
+        
+        services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" })
+            .AddCheck<DatabaseHealthCheck>("mysql", tags: new[] { "ready" })
+            .AddCheck<RedisHealthCheck>("redis", tags: new[] { "ready" });
 
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
@@ -84,6 +102,7 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.AddScoped<IOtpService, OtpService>();
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();

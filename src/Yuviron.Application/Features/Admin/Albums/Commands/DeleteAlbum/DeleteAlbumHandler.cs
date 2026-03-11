@@ -9,12 +9,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.DeleteAlbum;
 
-public sealed class DeleteAlbumCommandHandler : IRequestHandler<DeleteAlbumCommand, Unit>
+public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
-    private readonly TimeProvider _timeProvider; // Внедряем контроль времени
+    private readonly TimeProvider _timeProvider; 
 
-    public DeleteAlbumCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteAlbumHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

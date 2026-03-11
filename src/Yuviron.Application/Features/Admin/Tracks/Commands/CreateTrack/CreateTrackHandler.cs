@@ -10,12 +10,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 
-public sealed class CreateTrackCommandHandler : IRequestHandler<CreateTrackCommand, Guid>
+public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CreateTrackCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateTrackHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

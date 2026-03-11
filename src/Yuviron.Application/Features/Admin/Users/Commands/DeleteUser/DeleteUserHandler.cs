@@ -11,12 +11,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.DeleteUser;
 
-public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
+public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteUserCommandHandler(
+    public DeleteUserHandler(
         IApplicationDbContext context,
         TimeProvider timeProvider)
     {

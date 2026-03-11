@@ -10,12 +10,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 
-public sealed class CreateAlbumCommandHandler : IRequestHandler<CreateAlbumCommand, Guid>
+public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CreateAlbumCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateAlbumHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

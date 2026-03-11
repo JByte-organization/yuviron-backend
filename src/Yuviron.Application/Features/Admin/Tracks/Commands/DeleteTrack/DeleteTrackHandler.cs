@@ -6,12 +6,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrack;
 
-public sealed class DeleteTrackCommandHandler : IRequestHandler<DeleteTrackCommand, Unit>
+public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteTrackCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteTrackHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

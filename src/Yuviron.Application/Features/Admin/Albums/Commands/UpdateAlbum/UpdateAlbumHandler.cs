@@ -10,12 +10,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.UpdateAlbum;
 
-public sealed class UpdateAlbumCommandHandler : IRequestHandler<UpdateAlbumCommand, Unit>
+public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public UpdateAlbumCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateAlbumHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

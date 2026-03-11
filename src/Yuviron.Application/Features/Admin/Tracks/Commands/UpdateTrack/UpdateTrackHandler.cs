@@ -10,12 +10,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 
-public sealed class UpdateTrackCommandHandler : IRequestHandler<UpdateTrackCommand, Unit>
+public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public UpdateTrackCommandHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateTrackHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

@@ -8,7 +8,6 @@ public interface IApplicationDbContext : IUnitOfWork
 {
     
     DbSet<OutboxMessage> OutboxMessages { get; }
-    DbSet<TrackTest> TrackTests { get; }
     
     // --- Identity ---
     DbSet<User> Users { get; }
