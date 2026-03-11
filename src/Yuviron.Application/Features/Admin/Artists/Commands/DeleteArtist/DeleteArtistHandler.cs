@@ -12,12 +12,12 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.DeleteArtist;
 
-public sealed class DeleteArtistCommandHandler : IRequestHandler<DeleteArtistCommand, Unit>
+public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteArtistCommandHandler(
+    public DeleteArtistHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider)
     {

@@ -10,14 +10,14 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.CreateUser;
 
-public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
+public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
 
-    public CreateUserCommandHandler(
+    public CreateUserHandler(
         IApplicationDbContext context, 
         IPasswordHasher passwordHasher,
         TimeProvider timeProvider)

@@ -9,14 +9,14 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 
-public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
+public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
 
-    public UpdateUserCommandHandler(
+    public UpdateUserHandler(
         IApplicationDbContext context, 
         IPasswordHasher passwordHasher,
         TimeProvider timeProvider)
