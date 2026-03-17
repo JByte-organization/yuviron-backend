@@ -20,16 +20,13 @@ jobs:
       - name: Generate Secrets Config
         run: |
           set -e
+          ENV_FILE="Development"
 
-          if [ "${{ github.ref_name }}" = "dev" ]; then
-            ENV_FILE="Development"
-          else
-            ENV_FILE="Production"
-          fi
-          
           CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ENV_FILE}.json"
-          
-          cat <<EOF > $CONFIG_PATH
+
+          mkdir -p "$(dirname "$CONFIG_PATH")"
+
+          cat <<EOF > "$CONFIG_PATH"
           {
             "JwtSettings": {
               "Secret": "${{ secrets.JWT_SECRET }}",
@@ -51,6 +48,7 @@ jobs:
             }
           }
           EOF
+
           echo "✅ Configuration generated for environment: ${ENV_FILE}"
 
       - name: Apply EF Core migrations
@@ -63,4 +61,4 @@ jobs:
         run: |
           set -e
           cd /opt/yuviron-server/infra
-          docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend yuviron-dev-frontend yuviron-dev-nginx
+          docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend yuviron-dev-frontend
