@@ -26,12 +26,10 @@ jobs:
           else
             ENV_FILE="Production"
           fi
-
+          
           CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ENV_FILE}.json"
-
-          mkdir -p "$(dirname "$CONFIG_PATH")"
-
-          cat <<EOF > "$CONFIG_PATH"
+          
+          cat <<EOF > $CONFIG_PATH
           {
             "JwtSettings": {
               "Secret": "${{ secrets.JWT_SECRET }}",
@@ -53,7 +51,6 @@ jobs:
             }
           }
           EOF
-
           echo "✅ Configuration generated for environment: ${ENV_FILE}"
 
       - name: Apply EF Core migrations

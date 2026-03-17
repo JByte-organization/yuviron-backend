@@ -20,11 +20,5 @@ public sealed class UpdatePlaylistValidator : AbstractValidator<UpdatePlaylistCo
             .MaximumLength(2048).WithMessage("Cover URL is too long")
             .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
             .WithMessage("Cover URL must be a valid URI.");
-
-        RuleForEach(v => v.Tracks).ChildRules(track =>
-        {
-            track.RuleFor(t => t.TrackId).NotEmpty();
-            track.RuleFor(t => t.Position).GreaterThanOrEqualTo(0);
-        });
     }
 }

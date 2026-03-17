@@ -43,10 +43,7 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
             .Select(a => new ArtistListItemDto(
                 a.Id,
                 a.Name,
-                a.AvatarUrl,
-                a.IsVerified,
                 a.VerificationStatus,
-                a.IsDeleted,
                 a.CreatedAt
             ));
 

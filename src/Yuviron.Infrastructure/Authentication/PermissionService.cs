@@ -59,13 +59,16 @@ public class PermissionService : IPermissionService
 
         if (user.UserRoles != null)
         {
-            foreach (var role in user.UserRoles.Select(ur => ur.Role))
+            foreach (var ur in user.UserRoles)
             {
-                if (role.RolePermissions != null)
+                if (ur.Role?.RolePermissions != null)
                 {
-                    foreach (var rp in role.RolePermissions)
+                    foreach (var rp in ur.Role.RolePermissions)
                     {
-                        permissions.Add(rp.Permission.Name);
+                        if (rp.Permission != null)
+                        {
+                            permissions.Add(rp.Permission.Name);
+                        }
                     }
                 }
             }

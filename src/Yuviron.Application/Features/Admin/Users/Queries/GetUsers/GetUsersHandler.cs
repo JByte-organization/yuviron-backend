@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,16 +8,19 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Users.Queries.DTOs;
+using Yuviron.Domain.Enums; // Если потребуется для SubscriptionStatus
 
 namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 
 public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedList<UserListItemDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly TimeProvider _timeProvider; // <-- Добавили для проверки премиума
 
-    public GetUsersHandler(IApplicationDbContext context)
+    public GetUsersHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
+        _timeProvider = timeProvider;
     }
 
     public async Task<PaginatedList<UserListItemDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
@@ -40,6 +44,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
             query = query.Where(u => u.AccountState == request.AccountState.Value);
         }
         
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
         var projectedQuery = query
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => new UserListItemDto(
@@ -47,8 +53,9 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
                 u.Email,
                 u.Profile != null ? u.Profile.DisplayName : null,
                 u.AccountState,
-                u.IsDeleted,
+                u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
                 u.CreatedAt,
+                u.UpdatedAt,
                 u.UserRoles.Select(ur => ur.Role.Name).ToList()
             ));
 

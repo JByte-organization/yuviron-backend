@@ -23,11 +23,8 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 
     public async Task<Guid> Handle(CreateTrackCommand request, CancellationToken cancellationToken)
     {
-        if (request.AlbumId.HasValue)
-        {
-            var albumExists = await _context.Albums.AnyAsync(a => a.Id == request.AlbumId.Value, cancellationToken);
-            if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId.Value);
-        }
+        var albumExists = await _context.Albums.AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
+        if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
@@ -45,6 +42,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 
         var track = Track.Create(
             request.AlbumId,
+            request.AlbumPosition,
             request.Title,
             request.DurationMs,
             request.Explicit,

@@ -24,19 +24,10 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                p.Id,
                                p.Title,
                                p.Description,
-                               p.CoverUrl,
-                               p.IsPublic,
+                               p.CoverUrl != null ? $"/storage/{p.CoverUrl}" : null,
+                               p.Visibility,
                                p.IsEditorial,
-                               p.PlaylistTracks
-                                   .OrderBy(pt => pt.Position)
-                                   .Select(pt => new PlaylistTrackDto(
-                                       pt.TrackId,
-                                       pt.Track.Title,
-                                       pt.Track.TrackArtists.FirstOrDefault() != null 
-                                           ? pt.Track.TrackArtists.FirstOrDefault()!.Artist.Name 
-                                           : null,
-                                       pt.Position
-                                   )).ToList()
+                               p.IsEditorial ? "YUVIRON" : (p.User != null ? p.User.Email : "Unknown") 
                            ))
                            .FirstOrDefaultAsync(cancellationToken)
                        ?? throw new NotFoundException(nameof(Playlist), request.Id);

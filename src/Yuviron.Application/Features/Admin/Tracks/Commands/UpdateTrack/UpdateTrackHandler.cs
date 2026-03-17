@@ -31,13 +31,10 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
         // 2. Валидация альбома
-        if (request.AlbumId.HasValue)
-        {
-            var albumExists = await _context.Albums
-                .AsNoTracking()
-                .AnyAsync(a => a.Id == request.AlbumId.Value, cancellationToken);
-            if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId.Value);
-        }
+        var albumExists = await _context.Albums
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
+        if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         // 3. Валидация артистов
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
@@ -66,6 +63,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
 
         track.UpdateDetails(
             request.AlbumId,
+            request.AlbumPosition,
             request.Title,
             request.DurationMs,
             request.Explicit,

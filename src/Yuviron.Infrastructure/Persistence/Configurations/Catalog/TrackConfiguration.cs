@@ -16,10 +16,13 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.Property(x => x.AudioStorageKey).IsRequired().HasMaxLength(500);
         builder.Property(x => x.PreviewStorageKey).HasMaxLength(500);
 
+        builder.Property(x => x.PlayCount).HasDefaultValue(0);
+        
         builder.HasOne(x => x.Album)
             .WithMany(a => a.Tracks)
             .HasForeignKey(x => x.AlbumId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .IsRequired() 
+            .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasQueryFilter(x => !x.IsDeleted);
     }

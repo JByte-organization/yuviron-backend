@@ -5,9 +5,10 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.DTOs;
 public record UserListItemDto(
     Guid Id,
     string Email,
-    string? DisplayName, // Берем из профиля
+    string? DisplayName,
     AccountState AccountState,
-    bool IsDeleted,
+    bool HasActivePremium,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     List<string> Roles
 );

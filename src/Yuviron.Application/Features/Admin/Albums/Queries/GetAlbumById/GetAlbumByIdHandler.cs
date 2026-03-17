@@ -32,10 +32,11 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                 a.ReleaseDate,
                 a.VisibilityStatus,
                 a.ScheduledPublishAt,
-                a.IsDeleted,
                 a.CreatedAt,
                 a.UpdatedAt,
-                a.AlbumArtists.Select(aa => aa.ArtistId).ToList() 
+                a.AlbumArtists.Select(aa => new ArtistSimpleDto(
+                    aa.ArtistId, 
+                    aa.Artist.Name)).ToList()
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

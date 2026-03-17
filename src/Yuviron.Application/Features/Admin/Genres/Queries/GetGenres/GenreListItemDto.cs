@@ -2,10 +2,9 @@ using System;
 
 namespace Yuviron.Application.Features.Admin.Genres.Queries.DTOs;
 
-public record GenreDto(
+public record GenreListItemDto(
     Guid Id,
     string Name,
-    string? CoverUrl,
-    bool IsDeleted,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );

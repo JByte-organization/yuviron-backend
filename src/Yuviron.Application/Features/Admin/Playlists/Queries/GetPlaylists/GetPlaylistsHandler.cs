@@ -31,13 +31,11 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             .Select(p => new PlaylistDto(
                 p.Id,
                 p.Title,
-                p.Description,
-                p.CoverUrl,
-                p.IsPublic,
-                p.IsEditorial,
-                p.IsDeleted,
+                p.Visibility,
+                p.IsEditorial ? "YUVIRON" : (p.User != null ? p.User.Email : "Unknown"), // <-- CreatorName
+                p.PlaylistTracks.Count,
                 p.CreatedAt,
-                p.PlaylistTracks.Count
+                p.UpdatedAt
             ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

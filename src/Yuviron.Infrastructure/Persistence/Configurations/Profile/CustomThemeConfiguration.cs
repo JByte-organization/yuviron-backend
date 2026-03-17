@@ -14,7 +14,6 @@ public class CustomThemeConfiguration : IEntityTypeConfiguration<CustomTheme>
         builder.ToTable("custom_themes");
         builder.HasKey(x => x.Id);
 
-        // HEX цвета: #RRGGBB (7 символов)
         builder.Property(x => x.PrimaryColor).IsRequired().HasMaxLength(7).IsFixedLength();
         builder.Property(x => x.SecondaryColor).IsRequired().HasMaxLength(7).IsFixedLength();
         builder.Property(x => x.BackgroundColor).IsRequired().HasMaxLength(7).IsFixedLength();

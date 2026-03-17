@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -14,11 +15,15 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-
-    public UpdateAlbumHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    private readonly IFileStorageService _fileStorageService;
+    
+    public UpdateAlbumHandler(IApplicationDbContext context,
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(UpdateAlbumCommand request, CancellationToken cancellationToken)
@@ -26,6 +31,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtistsCount = await _context.Artists
             .CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+        
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
@@ -36,6 +42,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
                         .Include(a => a.AlbumArtists) 
                         .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken)
                     ?? throw new NotFoundException(nameof(Album), request.AlbumId);
+        var oldCoverUrl = album.CoverUrl;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -50,6 +57,12 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
             utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
+        
+        if (!string.Equals(oldCoverUrl, request.CoverUrl, StringComparison.OrdinalIgnoreCase) 
+            && !string.IsNullOrWhiteSpace(oldCoverUrl))
+        {
+            await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);
+        }
 
         return Unit.Value;
     }

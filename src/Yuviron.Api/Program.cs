@@ -82,10 +82,6 @@ if (swaggerEnabled)
 
 if (!app.Environment.IsDevelopment())
 {
-    // app.UseHttpsRedirection();
-}
-else
-{
     app.UseHttpsRedirection();
 }
 

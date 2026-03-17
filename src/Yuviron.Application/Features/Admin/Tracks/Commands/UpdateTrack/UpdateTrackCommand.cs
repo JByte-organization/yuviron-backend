@@ -10,7 +10,8 @@ namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 
 public sealed record UpdateTrackCommand(
     Guid TrackId,
-    Guid? AlbumId,
+    Guid AlbumId,
+    int AlbumPosition,
     string Title,
     int DurationMs,
     bool Explicit,

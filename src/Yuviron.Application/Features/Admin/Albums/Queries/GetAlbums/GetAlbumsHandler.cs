@@ -46,7 +46,6 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
                 a.CoverUrl,
                 a.ReleaseDate,
                 a.VisibilityStatus,
-                a.IsDeleted,
                 a.CreatedAt
             ));
 

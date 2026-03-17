@@ -209,9 +209,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1359,8 +1356,11 @@ namespace Yuviron.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("AlbumId")
+                    b.Property<Guid>("AlbumId")
                         .HasColumnType("char(36)");
+
+                    b.Property<int>("AlbumPosition")
+                        .HasColumnType("int");
 
                     b.Property<string>("AudioStorageKey")
                         .IsRequired()
@@ -1385,6 +1385,11 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("PlayCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("PreviewStorageKey")
                         .HasMaxLength(500)
@@ -2238,7 +2243,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasOne("Yuviron.Domain.Entities.Album", "Album")
                         .WithMany("Tracks")
                         .HasForeignKey("AlbumId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Album");
                 });

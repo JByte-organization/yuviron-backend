@@ -4,7 +4,8 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
 
 public record TrackDetailsDto(
     Guid Id,
-    Guid? AlbumId,
+    Guid AlbumId,
+    int AlbumPosition,
     string Title,
     int DurationMs,
     bool Explicit,
@@ -12,9 +13,6 @@ public record TrackDetailsDto(
     string AudioStorageKey,
     string? PreviewStorageKey,
     VisibilityStatus VisibilityStatus,
-    bool IsDeleted,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
     List<Guid> ArtistIds, 
     List<Guid> GenreIds,
     List<Guid> MoodIds

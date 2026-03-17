@@ -30,15 +30,17 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                 a.Id,
                 a.TeamMembers
                     .Where(tm => tm.Role == ArtistTeamRole.Owner)
-                    .Select(tm => (Guid?)tm.UserId)
-                    .FirstOrDefault(),
+                    .Select(tm => new ArtistOwnerDto(
+                        tm.UserId,
+                        tm.User.Email,
+                        tm.User.Profile != null ? tm.User.Profile.DisplayName : null
+                    ))
+                    .First(), 
                 a.Name,
                 a.Bio,
-                a.AvatarUrl,
-                a.BannerUrl,
-                a.IsVerified,
+                a.AvatarUrl != null ? $"/storage/{a.AvatarUrl}" : null,
+                a.BannerUrl != null ? $"/storage/{a.BannerUrl}" : null,
                 a.VerificationStatus,
-                a.IsDeleted,
                 a.CreatedAt,
                 a.UpdatedAt
             ))
