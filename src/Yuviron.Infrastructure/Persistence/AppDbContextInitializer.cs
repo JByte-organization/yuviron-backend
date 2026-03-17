@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Entities;
@@ -12,12 +13,18 @@ public class AppDbContextInitializer
     private readonly ILogger<AppDbContextInitializer> _logger;
     private readonly AppDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IConfiguration _configuration;
 
-    public AppDbContextInitializer(ILogger<AppDbContextInitializer> logger, AppDbContext context, IPasswordHasher passwordHasher)
+    public AppDbContextInitializer(
+        ILogger<AppDbContextInitializer> logger, 
+        AppDbContext context, 
+        IPasswordHasher passwordHasher,
+        IConfiguration configuration)
     {
         _logger = logger;
         _context = context;
         _passwordHasher = passwordHasher;
+        _configuration = configuration;
     }
 
     public async Task InitialiseAsync()
@@ -40,7 +47,12 @@ public class AppDbContextInitializer
     {
         try
         {
-            await TrySeedAsync();
+            await SeedEssentialDataAsync();
+
+            await SeedUserFromConfigAsync("Admin", "SeedUsers:Admin", "Admin", Gender.NotSpecified, -30, isPremium: false);
+            await SeedUserFromConfigAsync("ManagementUser", "SeedUsers:Manager", "Manager", Gender.NotSpecified, -25, isPremium: false);
+            await SeedUserFromConfigAsync("User", "SeedUsers:User", "Simple User", Gender.Male, -20, isPremium: false);
+            await SeedUserFromConfigAsync("User", "SeedUsers:Premium", "Premium User", Gender.Female, -22, isPremium: true);
         }
         catch (Exception ex)
         {
@@ -49,14 +61,11 @@ public class AppDbContextInitializer
         }
     }
 
-    public async Task TrySeedAsync()
+    private async Task SeedEssentialDataAsync()
     {
         var allPerms = Enum.GetNames(typeof(AppPermission));
-
         var existingPerms = await _context.Permissions.Select(p => p.Name).ToListAsync();
-
-        var newPerms = allPerms.Except(existingPerms)
-            .Select(name => Permission.Create(name, $"System permission: {name}"));
+        var newPerms = allPerms.Except(existingPerms).Select(name => Permission.Create(name, $"System permission: {name}"));
 
         if (newPerms.Any())
         {
@@ -66,11 +75,7 @@ public class AppDbContextInitializer
 
         var requiredRoles = new[] { "User", "ManagementUser", "Admin" };
         var existingRoleNames = await _context.Roles.Select(r => r.Name).ToListAsync();
-        
-        var missingRoles = requiredRoles
-            .Except(existingRoleNames)
-            .Select(name => Role.Create(name))
-            .ToList();
+        var missingRoles = requiredRoles.Except(existingRoleNames).Select(name => Role.Create(name)).ToList();
 
         if (missingRoles.Any())
         {
@@ -81,20 +86,8 @@ public class AppDbContextInitializer
         var roleConfig = new Dictionary<string, string[]>
         {
             { "Admin", allPerms },
-            { "ManagementUser", new[]
-                {
-                    nameof(AppPermission.TracksUpload),
-                    nameof(AppPermission.TracksEdit),
-                    nameof(AppPermission.TracksDelete),
-                    nameof(AppPermission.TracksBlock),
-                    nameof(AppPermission.AnalyticsView)
-                }
-            },
-            { "User", new[]
-                {
-                    nameof(AppPermission.CreatePlaylist),
-                }
-            }
+            { "ManagementUser", new[] { nameof(AppPermission.TracksUpload), nameof(AppPermission.TracksEdit), nameof(AppPermission.TracksDelete), nameof(AppPermission.TracksBlock), nameof(AppPermission.AnalyticsView) } },
+            { "User", new[] { nameof(AppPermission.CreatePlaylist) } }
         };
 
         var allDbPerms = await _context.Permissions.ToListAsync();
@@ -106,7 +99,6 @@ public class AppDbContextInitializer
             if (role == null) continue;
 
             var requiredPermNames = roleConfig[roleName];
-
             foreach (var permName in requiredPermNames)
             {
                 var perm = allDbPerms.FirstOrDefault(p => p.Name == permName);
@@ -118,33 +110,6 @@ public class AppDbContextInitializer
         }
         await _context.SaveChangesAsync();
 
-        if (!await _context.Genres.AnyAsync())
-        {
-            var utcNow = DateTime.UtcNow;
-            await _context.Genres.AddRangeAsync(
-                Genre.Create("Pop", null, utcNow), 
-                Genre.Create("Rock", null, utcNow), 
-                Genre.Create("Hip-Hop", null,  utcNow),
-                Genre.Create("Rap", null,  utcNow), 
-                Genre.Create("R&B", null,  utcNow), 
-                Genre.Create("Electronic", null,  utcNow),
-                Genre.Create("Techno", null,  utcNow), 
-                Genre.Create("House", null,  utcNow), 
-                Genre.Create("Jazz", null,  utcNow),
-                Genre.Create("Classical", null,  utcNow), 
-                Genre.Create("Metal", null,  utcNow), 
-                Genre.Create("Alternative", null,  utcNow),
-                Genre.Create("Indie", null,  utcNow), 
-                Genre.Create("Reggae", null,  utcNow), 
-                Genre.Create("Country", null, utcNow),
-                Genre.Create("Latin", null,  utcNow), 
-                Genre.Create("Folk", null,  utcNow), 
-                Genre.Create("Soul", null, utcNow),
-                Genre.Create("Blues", null,  utcNow), 
-                Genre.Create("Punk", null,  utcNow)
-             );
-            await _context.SaveChangesAsync();
-        }
 
         if (!await _context.Plans.AnyAsync())
         {
@@ -155,38 +120,34 @@ public class AppDbContextInitializer
             );
             await _context.SaveChangesAsync();
         }
+    }
 
-        if (!await _context.Users.AnyAsync())
+    private async Task SeedUserFromConfigAsync(string roleName, string configSection, string displayName, Gender gender, int ageOffset, bool isPremium)
+    {
+        var email = _configuration[$"{configSection}:Email"];
+        var password = _configuration[$"{configSection}:Password"];
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            var adminRole = await _context.Roles.FirstAsync(r => r.Name == "Admin");
-            var managerRole = await _context.Roles.FirstAsync(r => r.Name == "ManagementUser");
-            var userRole = await _context.Roles.FirstAsync(r => r.Name == "User");
-            
+            return;
+        }
+
+        if (!await _context.Users.AnyAsync(u => u.Email == email))
+        {
+            var role = await _context.Roles.FirstAsync(r => r.Name == roleName);
             var utcNow = DateTime.UtcNow;
 
-            var adminUser = User.Create("admin@yuviron.com", _passwordHasher.Hash("Admin123!"), false, true, utcNow);
-            await _context.Users.AddAsync(adminUser);
-            await _context.UserRoles.AddAsync(new UserRole(adminUser.Id, adminRole.Id));
-            adminUser.SetProfile(UserProfile.Create(adminUser.Id, "Admin", null, null, null, utcNow.AddYears(-30), Gender.NotSpecified, utcNow));
+            var user = User.Create(email, _passwordHasher.Hash(password), false, true, utcNow);
+            await _context.Users.AddAsync(user);
+            await _context.UserRoles.AddAsync(new UserRole(user.Id, role.Id));
+            user.SetProfile(UserProfile.Create(user.Id, displayName, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
 
-            var managerUser = User.Create("manager@yuviron.com", _passwordHasher.Hash("Manager123!"), false, true, utcNow);
-            await _context.Users.AddAsync(managerUser);
-            await _context.UserRoles.AddAsync(new UserRole(managerUser.Id, managerRole.Id));
-            managerUser.SetProfile(UserProfile.Create(managerUser.Id, "Manager", null, null, null, utcNow.AddYears(-25), Gender.NotSpecified, utcNow));
-
-            var simpleUser = User.Create("user@yuviron.com", _passwordHasher.Hash("User123!"), true, true, utcNow);
-            await _context.Users.AddAsync(simpleUser);
-            await _context.UserRoles.AddAsync(new UserRole(simpleUser.Id, userRole.Id));
-            simpleUser.SetProfile(UserProfile.Create(simpleUser.Id, "Simple User", null, null, null, utcNow.AddYears(-20), Gender.Male, utcNow));
-
-            var premiumUser = User.Create("premium@yuviron.com", _passwordHasher.Hash("Premium123!"), false, true, utcNow);
-            await _context.Users.AddAsync(premiumUser);
-            await _context.UserRoles.AddAsync(new UserRole(premiumUser.Id, userRole.Id));
-            premiumUser.SetProfile(UserProfile.Create(premiumUser.Id, "Premium User", null, null, null, utcNow.AddYears(-22), Gender.Female, utcNow));
-
-            var lifetimePlan = await _context.Plans.FirstAsync(p => p.Name == "Lifetime Access");
-            var infiniteSubscription = Subscription.Create(premiumUser.Id, lifetimePlan.Id, utcNow, utcNow.AddYears(100), SubscriptionStatus.Active, utcNow);
-            await _context.Subscriptions.AddAsync(infiniteSubscription);
+            if (isPremium)
+            {
+                var lifetimePlan = await _context.Plans.FirstAsync(p => p.Name == "Lifetime Access");
+                var infiniteSubscription = Subscription.Create(user.Id, lifetimePlan.Id, utcNow, utcNow.AddYears(100), SubscriptionStatus.Active, utcNow);
+                await _context.Subscriptions.AddAsync(infiniteSubscription);
+            }
 
             await _context.SaveChangesAsync();
         }

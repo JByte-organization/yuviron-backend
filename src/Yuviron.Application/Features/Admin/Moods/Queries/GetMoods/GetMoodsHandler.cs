@@ -30,10 +30,9 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
             .OrderBy(m => m.Name) 
             .Select(m => new MoodDto(
                 m.Id, 
-                m.Name, 
-                m.CoverUrl, 
-                m.IsDeleted, 
-                m.CreatedAt
+                m.Name,
+                m.CreatedAt,
+                m.UpdatedAt
             ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

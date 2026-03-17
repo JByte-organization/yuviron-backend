@@ -17,6 +17,41 @@ jobs:
           git reset --hard origin/dev
           git clean -fd
 
+      - name: Generate Secrets Config
+        run: |
+          set -e
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            ENV_FILE="Development"
+          else
+            ENV_FILE="Production"
+          fi
+          
+          CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ENV_FILE}.json"
+          
+          cat <<EOF > $CONFIG_PATH
+          {
+            "JwtSettings": {
+              "Secret": "${{ secrets.JWT_SECRET }}",
+              "Issuer": "YuvironApi",
+              "Audience": "YuvironClient",
+              "ExpiryMinutes": 60
+            },
+            "Email": {
+              "Host": "smtp.gmail.com",
+              "Port": 587,
+              "Username": "${{ secrets.EMAIL_USERNAME }}",
+              "Password": "${{ secrets.EMAIL_PASSWORD }}"
+            },
+            "SeedUsers": {
+              "Admin": { "Email": "${{ secrets.SEED_ADMIN_EMAIL }}", "Password": "${{ secrets.SEED_ADMIN_PASSWORD }}" },
+              "Manager": { "Email": "${{ secrets.SEED_MANAGER_EMAIL }}", "Password": "${{ secrets.SEED_MANAGER_PASSWORD }}" },
+              "User": { "Email": "${{ secrets.SEED_USER_EMAIL }}", "Password": "${{ secrets.SEED_USER_PASSWORD }}" },
+              "Premium": { "Email": "${{ secrets.SEED_PREMIUM_EMAIL }}", "Password": "${{ secrets.SEED_PREMIUM_PASSWORD }}" }
+            }
+          }
+          EOF
+          echo "✅ Configuration generated for environment: ${ENV_FILE}"
+
       - name: Apply EF Core migrations
         run: |
           set -e

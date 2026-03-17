@@ -5,9 +5,10 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
 {
     public CreateTrackCommandValidator()
     {
-        RuleFor(x => x.AlbumId).
-            NotEqual(Guid.Empty)
-            .When(x => x.AlbumId.HasValue);
+        RuleFor(x => x.AlbumId)
+            .NotEqual(Guid.Empty);
+        RuleFor(x => x.AlbumPosition)
+            .GreaterThan(0);
         RuleFor(x => x.Title)
             .NotEmpty()
             .MaximumLength(256);

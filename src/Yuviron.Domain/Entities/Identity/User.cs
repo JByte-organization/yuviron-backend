@@ -94,6 +94,16 @@ public class User : Entity
         AddDomainEvent(new UserPasswordChangedEvent(this.Id));
     }
 
+    public void SetAccountState(AccountState newState, DateTime utcNow)
+    {
+        if (AccountState == newState) return;
+        
+        AccountState = newState;
+        UpdatedAt = utcNow;
+        
+        AddDomainEvent(new UserPermissionsChangedEvent(this.Id));
+    }
+    
     public void Delete(DateTime utcNow)
     {
         if (IsDeleted) return;

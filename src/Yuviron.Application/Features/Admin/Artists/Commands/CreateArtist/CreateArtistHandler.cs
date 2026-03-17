@@ -25,18 +25,14 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
     {
-        User? ownerUser = null;
-
-        if (request.OwnerUserId.HasValue)
-        {
-            ownerUser = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken)
-                ?? throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
-        }
+        var ownerUser = await _context.Users
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == request.OwnerUserId, cancellationToken)
+            ?? throw new NotFoundException(nameof(User), request.OwnerUserId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
+        
         var artist = Artist.Create(
             request.OwnerUserId,
             request.Name,
@@ -48,23 +44,21 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 
         _context.Artists.Add(artist);
 
-        if (ownerUser != null)
-        {
-            var managementRoleStr = nameof(RoleName.ManagementUser);
-            var managementRole = await _context.Roles
-                .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
-                ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
+        
+        var managementRoleStr = nameof(RoleName.ManagementUser);
+        var managementRole = await _context.Roles
+            .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
+            ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
 
-            var currentRoleIds = ownerUser.UserRoles.Select(ur => ur.RoleId).ToList();
+        var currentRoleIds = ownerUser.UserRoles.Select(ur => ur.RoleId).ToList();
+        
+        if (!currentRoleIds.Contains(managementRole.Id))
+        {
+            currentRoleIds.Add(managementRole.Id);
             
-            if (!currentRoleIds.Contains(managementRole.Id))
-            {
-                currentRoleIds.Add(managementRole.Id);
-                
-                ownerUser.SyncRoles(currentRoleIds);
-                
-                ownerUser.AddDomainEvent(new UserPermissionsChangedEvent(ownerUser.Id));
-            }
+            ownerUser.SyncRoles(currentRoleIds);
+            
+            ownerUser.AddDomainEvent(new UserPermissionsChangedEvent(ownerUser.Id));
         }
 
         await _context.SaveChangesAsync(cancellationToken);

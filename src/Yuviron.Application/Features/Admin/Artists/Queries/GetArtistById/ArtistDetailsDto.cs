@@ -1,17 +1,21 @@
 using Yuviron.Domain.Enums;
 
-namespace Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
+namespace Yuviron.Application.Features.Admin.Artists.Queries;
+
+public record ArtistOwnerDto(
+    Guid UserId, 
+    string Email, 
+    string? DisplayName
+);
 
 public record ArtistDetailsDto(
     Guid Id,
-    Guid? OwnerUserId, // Если артист привязан к аккаунту юзера
+    ArtistOwnerDto Owner,
     string Name,
     string? Bio,
     string? AvatarUrl,
     string? BannerUrl,
-    bool IsVerified,
     VerificationStatus VerificationStatus,
-    bool IsDeleted,
     DateTime CreatedAt,
     DateTime UpdatedAt
-);
+); 

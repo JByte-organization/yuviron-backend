@@ -12,14 +12,17 @@ public class LocalFileStorageService : IFileStorageService
         _storageRoot = configuration["FILE_STORAGE_ROOT"] 
                        ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
                        ?? "/var/yuviron/storage";
+        
+        _storageRoot = Path.GetFullPath(_storageRoot);
     }
 
     public async Task<string> UploadAsync(Stream stream, string folder, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
+        var targetDirectory = GetValidatedFullPath(folder);
+
         var extension = Path.GetExtension(fileName);
         var uniqueFileName = $"{Guid.NewGuid()}{extension}";
         
-        var targetDirectory = Path.Combine(_storageRoot, folder);
         if (!Directory.Exists(targetDirectory))
         {
             Directory.CreateDirectory(targetDirectory);
@@ -39,7 +42,7 @@ public class LocalFileStorageService : IFileStorageService
     {
         if (string.IsNullOrWhiteSpace(fileKey)) return Task.CompletedTask;
 
-        var fullPath = Path.Combine(_storageRoot, fileKey);
+        var fullPath = GetValidatedFullPath(fileKey);
 
         if (File.Exists(fullPath))
         {
@@ -47,5 +50,23 @@ public class LocalFileStorageService : IFileStorageService
         }
 
         return Task.CompletedTask;
+    }
+
+    private string GetValidatedFullPath(string subPath)
+    {
+        if (subPath.Contains(".."))
+        {
+            throw new ArgumentException("Directory traversal characters ('..') are not allowed.");
+        }
+
+        var combinedPath = Path.Combine(_storageRoot, subPath);
+        var fullPath = Path.GetFullPath(combinedPath);
+
+        if (!fullPath.StartsWith(_storageRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException("Access to the requested path is denied.");
+        }
+
+        return fullPath;
     }
 }

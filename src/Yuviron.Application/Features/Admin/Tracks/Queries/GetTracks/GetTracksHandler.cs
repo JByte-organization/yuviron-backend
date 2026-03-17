@@ -44,16 +44,19 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
         }
 
         var projectedQuery = query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderBy(t => t.AlbumId)
+            .ThenBy(t => t.AlbumPosition)
+            .ThenByDescending(t => t.CreatedAt)
             .Select(t => new TrackListItemDto(
                 t.Id,
                 t.AlbumId,
+                t.AlbumPosition,
                 t.Title,
                 t.DurationMs,
                 t.Explicit,
                 t.VisibilityStatus,
-                t.IsDeleted,
-                t.CreatedAt
+                t.CreatedAt,
+                t.UpdatedAt
             ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

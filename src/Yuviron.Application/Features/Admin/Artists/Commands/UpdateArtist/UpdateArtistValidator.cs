@@ -12,7 +12,7 @@ public sealed class UpdateArtistCommandValidator : AbstractValidator<UpdateArtis
 
         RuleFor(x => x.OwnerUserId)
             .NotEqual(Guid.Empty)
-            .When(x => x.OwnerUserId.HasValue);
+            .WithMessage("Owner user ID is required.");
 
         RuleFor(x => x.Name)
             .NotEmpty()

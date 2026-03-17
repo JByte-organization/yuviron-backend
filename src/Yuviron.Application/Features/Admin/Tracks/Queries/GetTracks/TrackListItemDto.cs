@@ -4,11 +4,12 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
 
 public record TrackListItemDto(
     Guid Id,
-    Guid? AlbumId,
+    Guid AlbumId,
+    int AlbumPosition,
     string Title,
     int DurationMs,
     bool Explicit,
     VisibilityStatus VisibilityStatus,
-    bool IsDeleted,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );
