@@ -12,8 +12,10 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
             .NotEqual(Guid.Empty);
 
         RuleFor(x => x.AlbumId)
-            .NotEqual(Guid.Empty)
-            .When(x => x.AlbumId.HasValue);
+            .NotEqual(Guid.Empty);
+        
+        RuleFor(x => x.AlbumPosition)
+            .GreaterThan(0);
 
         RuleFor(x => x.Title)
             .NotEmpty()

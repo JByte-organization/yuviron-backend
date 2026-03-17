@@ -12,7 +12,7 @@ public sealed record GetGenresQuery(
     int Page = 1,
     int PageSize = 50 
 ) : PaginatedQuery(SearchTerm, IncludeDeleted, Page, PageSize), 
-    IRequest<PaginatedList<GenreDto>>, 
+    IRequest<PaginatedList<GenreListItemDto>>, 
     ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;

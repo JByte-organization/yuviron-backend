@@ -13,7 +13,6 @@ public class Artist : Entity
     public string? Bio { get; private set; }
     public string? AvatarUrl { get; private set; }
     public string? BannerUrl { get; private set; }
-    public bool IsVerified { get; private set; }
     public VerificationStatus VerificationStatus { get; private set; }
     
     public DateTime CreatedAt { get; private set; }
@@ -48,7 +47,6 @@ public class Artist : Entity
             AvatarUrl = avatarUrl?.Trim(),
             BannerUrl = bannerUrl?.Trim(),
             VerificationStatus = verificationStatus,
-            IsVerified = verificationStatus == VerificationStatus.Verified,
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
             IsDeleted = false
@@ -75,7 +73,6 @@ public class Artist : Entity
         AvatarUrl = avatarUrl?.Trim();
         BannerUrl = bannerUrl?.Trim();
         VerificationStatus = verificationStatus;
-        IsVerified = verificationStatus == VerificationStatus.Verified;
         UpdatedAt = utcNow;
     }
 

@@ -8,6 +8,5 @@ public record AlbumListItemDto(
     string? CoverUrl,
     DateTime ReleaseDate,
     VisibilityStatus VisibilityStatus,
-    bool IsDeleted,
     DateTime CreatedAt
 );

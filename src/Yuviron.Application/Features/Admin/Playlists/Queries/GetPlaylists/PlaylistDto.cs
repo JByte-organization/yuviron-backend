@@ -1,15 +1,14 @@
 using System;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries;
 
 public sealed record PlaylistDto(
     Guid Id,
     string Title,
-    string? Description,
-    string? CoverUrl,
-    bool IsPublic,
-    bool IsEditorial,
-    bool IsDeleted,
+    PlaylistVisibility Visibility,
+    string CreatorName,
+    int TracksCount,
     DateTime CreatedAt,
-    int TracksCount 
+    DateTime UpdatedAt
 );

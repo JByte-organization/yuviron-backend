@@ -27,6 +27,7 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
             .Select(t => new TrackDetailsDto(
                 t.Id,
                 t.AlbumId,
+                t.AlbumPosition,
                 t.Title,
                 t.DurationMs,
                 t.Explicit,
@@ -34,9 +35,6 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
                 t.AudioStorageKey,
                 t.PreviewStorageKey,
                 t.VisibilityStatus,
-                t.IsDeleted,
-                t.CreatedAt,
-                t.UpdatedAt,
                 t.TrackArtists.Select(ta => ta.ArtistId).ToList(), // Вытаскиваем только ID артистов
                 t.TrackGenres.Select(tg => tg.GenreId).ToList(),
                 t.TrackMoods.Select(tg => tg.MoodId).ToList() // Вытаскиваем только ID жанров

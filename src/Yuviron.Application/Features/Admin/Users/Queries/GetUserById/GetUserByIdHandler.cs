@@ -29,14 +29,10 @@ public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserD
                 u.Email,
                 u.AccountState,
                 u.AcceptMarketing,
-                u.AcceptTerms,
                 u.Profile != null ? u.Profile.DisplayName : null,
                 u.Profile != null ? u.Profile.DateOfBirth : default,
                 u.Profile != null ? u.Profile.Gender : default,
-                u.IsDeleted,
-                u.CreatedAt,
-                u.UpdatedAt,
-                u.UserRoles.Select(ur => ur.RoleId).ToList() // Достаем список ролей
+                u.UserRoles.Select(ur => ur.RoleId).ToList()
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

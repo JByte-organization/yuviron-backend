@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistById;
 
@@ -8,14 +8,7 @@ public sealed record PlaylistDetailsDto(
     string Title,
     string? Description,
     string? CoverUrl,
-    bool IsPublic,
+    PlaylistVisibility Visibility,
     bool IsEditorial,
-    List<PlaylistTrackDto> Tracks
-);
-
-public sealed record PlaylistTrackDto(
-    Guid TrackId,
-    string Title,
-    string? ArtistName,
-    int Position
+    string CreatorName
 );

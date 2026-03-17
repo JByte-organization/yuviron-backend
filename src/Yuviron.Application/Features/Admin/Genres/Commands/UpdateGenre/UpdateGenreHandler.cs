@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services; // <-- Добавили
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -13,11 +14,16 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
-    public UpdateGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public UpdateGenreHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(UpdateGenreCommand request, CancellationToken cancellationToken)
@@ -32,11 +38,18 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
                 throw new InvalidOperationException($"Genre '{request.Name}' already exists.");
         }
 
+        var oldCoverUrl = genre.CoverUrl; 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
         genre.Update(request.Name, request.CoverUrl, utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (!string.Equals(oldCoverUrl, request.CoverUrl, StringComparison.OrdinalIgnoreCase) 
+            && !string.IsNullOrWhiteSpace(oldCoverUrl))
+        {
+            await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);
+        }
 
         return Unit.Value;
     }

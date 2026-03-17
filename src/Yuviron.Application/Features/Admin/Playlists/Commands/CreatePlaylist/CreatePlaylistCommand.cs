@@ -6,15 +6,12 @@ using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
 
-public sealed record CreateTrackOrderInput(Guid TrackId, int Position);
-
 public sealed record CreatePlaylistCommand(
     string Title,
     string? Description,
     string? CoverUrl,
-    bool IsPublic,
-    bool IsEditorial,
-    List<CreateTrackOrderInput> Tracks
+    PlaylistVisibility Visibility,
+    bool IsEditorial
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

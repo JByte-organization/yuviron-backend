@@ -9,7 +9,8 @@ using Yuviron.Domain.Exceptions;
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 
 public sealed record CreateTrackCommand(
-    Guid? AlbumId,
+    Guid AlbumId,
+    int AlbumPosition,
     string Title,
     int DurationMs,
     bool Explicit,
