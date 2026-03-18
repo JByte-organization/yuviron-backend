@@ -37,9 +37,9 @@ public sealed class UpdateAlbumCommandValidator : AbstractValidator<UpdateAlbumC
             .WithMessage("The album must belong to at least one artist.");
 
         RuleFor(x => x.ScheduledPublishAt)
-            .NotEmpty()
-            .WithMessage("ScheduledPublishAt is required when visibility is Scheduled.")
-            .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled);
+            .Must((command, scheduledAt) => scheduledAt.HasValue && scheduledAt.Value > timeProvider.GetUtcNow().UtcDateTime.AddMinutes(-1))
+            .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled && x.ScheduledPublishAt.HasValue)
+            .WithMessage("Scheduled date must be in the future.");
 
         RuleFor(x => x.ScheduledPublishAt)
             .Must((command, scheduledAt) => scheduledAt > timeProvider.GetUtcNow().UtcDateTime.AddMinutes(-1)) 

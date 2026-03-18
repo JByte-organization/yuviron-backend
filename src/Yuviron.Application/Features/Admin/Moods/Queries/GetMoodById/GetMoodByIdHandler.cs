@@ -24,7 +24,10 @@ public sealed class GetMoodByIdHandler : IRequestHandler<GetMoodByIdQuery, GetMo
             .Select(m => new GetMoodByIdDto(
                 m.Id,
                 m.Name,
-                m.CoverUrl != null ? $"/storage/{m.CoverUrl}" : null
+                m.CoverUrl,
+                m.TrackMoods.Count,
+                m.CreatedAt,
+                m.UpdatedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

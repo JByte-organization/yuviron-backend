@@ -10,14 +10,11 @@ namespace Yuviron.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext, IApplicationDbContext
 {
-    private readonly IMediator _mediator;
 
     public AppDbContext(
-        DbContextOptions<AppDbContext> options,
-        IMediator mediator) 
+        DbContextOptions<AppDbContext> options) 
         : base(options)
     {
-        _mediator = mediator;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

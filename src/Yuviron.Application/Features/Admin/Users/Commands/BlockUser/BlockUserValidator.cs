@@ -4,9 +4,9 @@ using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.BlockUser;
 
-public sealed class BlockUserCommandValidator : AbstractValidator<BlockUserCommand>
+public sealed class BlockUserValidator : AbstractValidator<BlockUserCommand>
 {
-    public BlockUserCommandValidator(TimeProvider timeProvider)
+    public BlockUserValidator(TimeProvider timeProvider)
     {
         RuleFor(x => x.UserId).NotEqual(Guid.Empty);
         

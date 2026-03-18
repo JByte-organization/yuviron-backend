@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Yuviron.Domain.Enums;
+
 namespace Yuviron.Domain.Entities;
 
-public enum ArtistRole { Main = 1, Feat = 2, Producer = 3 }
 
 public class AlbumArtist
 {

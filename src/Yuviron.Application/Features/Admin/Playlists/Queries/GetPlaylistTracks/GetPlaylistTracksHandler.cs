@@ -1,5 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
@@ -21,9 +24,11 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .Select(pt => new PlaylistTrackItemDto(
                 pt.TrackId,
                 pt.Track.Title,
-                pt.Track.TrackArtists.FirstOrDefault() != null 
-                    ? pt.Track.TrackArtists.FirstOrDefault()!.Artist.Name 
-                    : null,
+                pt.Track.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+                pt.Track.AlbumId,
+                pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
+                pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
+                pt.Track.DurationMs,
                 pt.Position,
                 pt.AddedAt
             ));

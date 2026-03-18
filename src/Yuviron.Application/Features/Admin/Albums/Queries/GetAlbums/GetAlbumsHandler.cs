@@ -23,33 +23,27 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
     {
         var query = _context.Albums.AsNoTracking();
 
-        if (request.IncludeDeleted)
-        {
-            query = query.IgnoreQueryFilters();
-        }
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
             query = query.Where(a => a.Title.Contains(request.SearchTerm));
-        }
 
         if (request.Status.HasValue)
-        {
             query = query.Where(a => a.VisibilityStatus == request.Status.Value);
-        }
 
         var projectedQuery = query
             .OrderByDescending(a => a.CreatedAt) 
             .Select(a => new AlbumListItemDto(
                 a.Id,
                 a.Title,
+                a.AlbumArtists.Select(aa => aa.Artist.Name).ToList(), 
                 a.CoverUrl,
+                a.Tracks.Count,                 
+                a.Tracks.Sum(t => t.PlayCount),   
                 a.ReleaseDate,
                 a.VisibilityStatus,
-                a.CreatedAt
+                a.CreatedAt,
+                a.UpdatedAt
             ));
 
-        // 4. Вся магия пагинации в одной строке!
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

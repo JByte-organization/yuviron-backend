@@ -14,7 +14,6 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.Property(x => x.Title).IsRequired().HasMaxLength(256);
         builder.Property(x => x.CoverUrl).HasMaxLength(500);
         builder.Property(x => x.AudioStorageKey).IsRequired().HasMaxLength(500);
-        builder.Property(x => x.PreviewStorageKey).HasMaxLength(500);
 
         builder.Property(x => x.PlayCount).HasDefaultValue(0);
         

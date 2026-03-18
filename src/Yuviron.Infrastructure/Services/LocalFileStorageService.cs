@@ -69,4 +69,33 @@ public class LocalFileStorageService : IFileStorageService
 
         return fullPath;
     }
+    
+    public Task<string> MoveAsync(string sourceFileKey, string destinationFolder, CancellationToken cancellationToken = default)
+    {
+        
+        if (string.IsNullOrWhiteSpace(sourceFileKey) || !sourceFileKey.StartsWith("temp/"))
+        {
+            return Task.FromResult(sourceFileKey); 
+        }
+
+        var sourcePath = GetValidatedFullPath(sourceFileKey);
+    
+        if (!File.Exists(sourcePath))
+        {
+            return Task.FromResult(sourceFileKey);
+        }
+
+        var targetDirectory = GetValidatedFullPath(destinationFolder);
+        if (!Directory.Exists(targetDirectory))
+        {
+            Directory.CreateDirectory(targetDirectory);
+        }
+
+        var fileName = Path.GetFileName(sourceFileKey);
+        var targetFilePath = Path.Combine(targetDirectory, fileName);
+    
+        File.Move(sourcePath, targetFilePath, overwrite: true);
+
+        return Task.FromResult(Path.Combine(destinationFolder, fileName).Replace("\\", "/"));
+    }
 }

@@ -19,8 +19,6 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
     {
         var query = _context.Playlists.AsNoTracking();
 
-        if (request.IncludeDeleted) query = query.IgnoreQueryFilters();
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(p => p.Title.Contains(request.SearchTerm));
@@ -31,8 +29,10 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             .Select(p => new PlaylistDto(
                 p.Id,
                 p.Title,
+                p.CoverUrl, 
                 p.Visibility,
-                p.IsEditorial ? "YUVIRON" : (p.User != null ? p.User.Email : "Unknown"), // <-- CreatorName
+                p.IsEditorial,
+                p.IsEditorial ? "YUVIRON" : (p.User != null ? p.User.Email : "Unknown"),
                 p.PlaylistTracks.Count,
                 p.CreatedAt,
                 p.UpdatedAt

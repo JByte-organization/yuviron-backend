@@ -7,6 +7,7 @@ using Yuviron.Application.Features.Admin.Genres.Commands.CreateGenre;
 using Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
 using Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
 using Yuviron.Application.Features.Admin.Genres.Queries.GetGenres;
+using Yuviron.Application.Features.Admin.Genres.Queries.GetGenresById;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -20,6 +21,13 @@ public class AdminGenresController : ApiControllerBase
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
+    
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetGenreById(Guid id, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetGenreByIdQuery(id), ct);
+        return Ok(result);
+    }
 
     [HttpPost]
     public async Task<IActionResult> CreateGenre([FromBody] CreateGenreCommand command, CancellationToken ct)
@@ -31,7 +39,6 @@ public class AdminGenresController : ApiControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateGenre(Guid id, [FromBody] UpdateGenreCommand command, CancellationToken ct)
     {
-        // Прокидываем ID из роута (URL) в record-команду
         var commandWithId = command with { GenreId = id };
         await Mediator.Send(commandWithId, ct);
         return NoContent();
@@ -43,4 +50,6 @@ public class AdminGenresController : ApiControllerBase
         await Mediator.Send(new DeleteGenreCommand(id), ct);
         return NoContent();
     }
+    
+    
 }

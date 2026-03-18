@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИТЬ
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -16,13 +17,16 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IFileStorageService _fileStorageService; // <-- ДОБАВИТЬ
 
     public DeleteArtistHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService) // <-- ДОБАВИТЬ
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(DeleteArtistCommand request, CancellationToken cancellationToken)
@@ -31,6 +35,10 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
                          .Include(a => a.TeamMembers)
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
+
+        // <-- Запоминаем пути к файлам ДО удаления
+        var avatarUrlToDelete = artist.AvatarUrl;
+        var bannerUrlToDelete = artist.BannerUrl;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         artist.Delete(utcNow);
@@ -70,6 +78,17 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        
+        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete))
+        {
+            await _fileStorageService.DeleteAsync(avatarUrlToDelete, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(bannerUrlToDelete))
+        {
+            await _fileStorageService.DeleteAsync(bannerUrlToDelete, cancellationToken);
+        }
+
         return Unit.Value;
     }
 }

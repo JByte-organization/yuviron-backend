@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- Для файлов
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- Для файлов
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -36,51 +37,46 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        // 1. Проверяем, существует ли вообще новый владелец (без всяких .HasValue)
         var ownerExists = await _context.Users
             .AsNoTracking()
             .AnyAsync(u => u.Id == request.OwnerUserId, cancellationToken);
 
         if (!ownerExists) throw new NotFoundException(nameof(User), request.OwnerUserId);
 
-        // 2. Запоминаем старые картинки до обновления (для удаления)
         var oldAvatarUrl = artist.AvatarUrl;
         var oldBannerUrl = artist.BannerUrl;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
-        // 3. Обновляем базовые данные
+        
+        var finalAvatarUrl = await _fileStorageService.MoveIfTempAsync(request.AvatarUrl, "avatars", cancellationToken);
+        var finalBannerUrl = await _fileStorageService.MoveIfTempAsync(request.BannerUrl, "uploads", cancellationToken);
+        
         artist.UpdateDetails(
             request.Name,
             request.Bio,
-            request.AvatarUrl,
-            request.BannerUrl,
+            finalAvatarUrl,
+            finalBannerUrl,
             request.VerificationStatus,
             utcNow);
 
-        // 4. Умная логика передачи прав (Магия для админа)
         var currentOwner = artist.TeamMembers.FirstOrDefault(tm => tm.Role == ArtistTeamRole.Owner);
         var newOwnerId = request.OwnerUserId;
 
         if (currentOwner?.UserId != newOwnerId)
         {
+            if (currentOwner != null)
+            {
+                artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
+            }
+
             var isNewOwnerInTeam = artist.TeamMembers.Any(tm => tm.UserId == newOwnerId);
 
             if (isNewOwnerInTeam)
             {
-                // Если юзер уже в команде — просто даем ему корону
                 artist.UpdateTeamMemberRole(newOwnerId, ArtistTeamRole.Owner, utcNow);
             }
             else
             {
-                // Если юзера нет в команде: 
-                // Понижаем текущего владельца (если он есть) до менеджера
-                if (currentOwner != null)
-                {
-                    artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
-                }
-                
-                // Добавляем нового человека сразу как владельца
                 artist.AddTeamMember(newOwnerId, ArtistTeamRole.Owner, utcNow);
             }
 

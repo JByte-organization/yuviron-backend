@@ -17,7 +17,6 @@ public class Track : Entity
     public bool Explicit { get; private set; }
     public string? CoverUrl { get; private set; }
     public string AudioStorageKey { get; private set; } = string.Empty;
-    public string? PreviewStorageKey { get; private set; }
     public int PlayCount { get; private set; }
     public VisibilityStatus VisibilityStatus { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -35,7 +34,7 @@ public class Track : Entity
 
     public static Track Create(
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl, // <-- Изменено
-        string audioKey, string? previewKey, VisibilityStatus status,
+        string audioKey, VisibilityStatus status,
         IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
         DateTime utcNow)
@@ -55,7 +54,6 @@ public class Track : Entity
             Explicit = isExplicit,
             CoverUrl = coverUrl?.Trim(),
             AudioStorageKey = audioKey,
-            PreviewStorageKey = previewKey,
             VisibilityStatus = status,
             CreatedAt = utcNow,
             UpdatedAt = utcNow
@@ -69,7 +67,7 @@ public class Track : Entity
 
     public void UpdateDetails(
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl, 
-        string audioKey, string? previewKey, VisibilityStatus status,
+        string audioKey, VisibilityStatus status,
         IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
         DateTime utcNow)
@@ -81,7 +79,6 @@ public class Track : Entity
         Explicit = isExplicit;
         CoverUrl = coverUrl?.Trim();
         AudioStorageKey = audioKey;
-        PreviewStorageKey = previewKey;
         VisibilityStatus = status;
         UpdatedAt = utcNow;
 

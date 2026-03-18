@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMembers;
 
@@ -23,11 +24,16 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
         var teamMembers = await _context.ArtistTeamMembers
             .AsNoTracking()
             .Where(tm => tm.ArtistId == request.ArtistId)
+            .OrderByDescending(tm => tm.Role == ArtistTeamRole.Owner)
+            .ThenBy(tm => tm.CreatedAt)
             .Select(tm => new ArtistTeamMemberDto(
                 tm.UserId,
                 tm.User.Email,
-                tm.User.Profile != null ? tm.User.Profile.DisplayName : null, 
-                tm.Role
+                tm.User.Profile != null ? tm.User.Profile.DisplayName : null,
+                tm.User.Profile != null ? tm.User.Profile.AvatarUrl : null, 
+                tm.User.AccountState,
+                tm.Role,
+                tm.CreatedAt      
             ))
             .ToListAsync(cancellationToken);
 

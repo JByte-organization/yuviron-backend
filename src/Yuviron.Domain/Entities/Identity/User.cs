@@ -28,7 +28,7 @@ public class User : Entity
 
     private User() { }
 
-    public static User Create(string email, string passwordHash, bool acceptMarketing, bool acceptTerms, DateTime utcNow)
+    public static User Create(string email, string passwordHash, bool acceptMarketing, bool acceptTerms, DateTime utcNow, AccountState accountState = AccountState.Active)
     {
         var normalizedEmail = EmailNormalizer.Normalize(email);
         if (string.IsNullOrWhiteSpace(normalizedEmail)) throw new ArgumentException("Email is required");
@@ -38,7 +38,7 @@ public class User : Entity
             Id = Guid.NewGuid(),
             Email = normalizedEmail,
             PasswordHash = passwordHash,
-            AccountState = AccountState.Active,
+            AccountState = accountState,
             AcceptMarketing = acceptMarketing,
             AcceptTerms = acceptTerms,
             CreatedAt = utcNow,
@@ -77,11 +77,10 @@ public class User : Entity
 
     public void SetProfile(UserProfile profile) => Profile = profile;
 
-    public void UpdateAdminDetails(string email, bool acceptMarketing, bool acceptTerms, AccountState accountState, DateTime utcNow)
+    public void UpdateAdminDetails(string email, bool acceptMarketing, AccountState accountState, DateTime utcNow)
     {
         Email = EmailNormalizer.Normalize(email);
         AcceptMarketing = acceptMarketing;
-        AcceptTerms = acceptTerms;
         AccountState = accountState;
         UpdatedAt = utcNow;
     }

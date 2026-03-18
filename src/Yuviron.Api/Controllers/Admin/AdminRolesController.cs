@@ -11,9 +11,9 @@ namespace Yuviron.Api.Controllers.Admin;
 public class AdminRolesController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetRoles(CancellationToken ct)
+    public async Task<ActionResult<List<RoleDto>>> GetRoles(CancellationToken ct) 
     {
         var result = await Mediator.Send(new GetRolesQuery(), ct);
-        return Ok(result);
+        return Ok(result); 
     }
 }

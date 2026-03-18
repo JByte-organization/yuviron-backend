@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- Нужен для файлов
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
@@ -13,15 +14,18 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
+    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
     public CreatePlaylistHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider, 
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IFileStorageService fileStorageService) 
     {
         _context = context;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreatePlaylistCommand request, CancellationToken cancellationToken)
@@ -29,11 +33,13 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var userId = request.IsEditorial ? null : _currentUser.UserId;
 
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+
         var playlist = Playlist.Create(
             userId,
             request.Title,
             request.Description,
-            request.CoverUrl,
+            finalCoverUrl, 
             request.Visibility,
             request.IsEditorial,
             utcNow

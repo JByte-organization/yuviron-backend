@@ -101,6 +101,7 @@ public static class DependencyInjection
         services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
+        services.AddHostedService<TempFilesCleanupJob>();
         services.AddScoped<IPermissionService, PermissionService>();
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.AddScoped<IOtpService, OtpService>();

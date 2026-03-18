@@ -4,8 +4,9 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- ДОБАВИЛИ
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.CreateGenre;
 
@@ -13,11 +14,16 @@ public sealed class CreateGenreHandler : IRequestHandler<CreateGenreCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IFileStorageService _fileStorageService;
 
-    public CreateGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateGenreHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService) 
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreateGenreCommand request, CancellationToken cancellationToken)
@@ -26,7 +32,10 @@ public sealed class CreateGenreHandler : IRequestHandler<CreateGenreCommand, Gui
             throw new InvalidOperationException($"Genre '{request.Name}' already exists.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var genre = Genre.Create(request.Name, request.CoverUrl, utcNow);
+        
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+
+        var genre = Genre.Create(request.Name, finalCoverUrl, utcNow); 
 
         _context.Genres.Add(genre);
         await _context.SaveChangesAsync(cancellationToken);

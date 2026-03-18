@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- Добавили
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- Добавили
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -41,11 +42,13 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
         var oldCoverUrl = genre.CoverUrl; 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        genre.Update(request.Name, request.CoverUrl, utcNow);
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+        
+        genre.Update(request.Name, finalCoverUrl, utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (!string.Equals(oldCoverUrl, request.CoverUrl, StringComparison.OrdinalIgnoreCase) 
+        if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
             && !string.IsNullOrWhiteSpace(oldCoverUrl))
         {
             await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);

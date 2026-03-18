@@ -7,5 +7,8 @@ public sealed record ArtistTeamMemberDto(
     Guid UserId,
     string Email,
     string? DisplayName,
-    ArtistTeamRole Role
+    string? AvatarUrl,   
+    AccountState AccountState,
+    ArtistTeamRole Role,
+    DateTime JoinedAt   
 );

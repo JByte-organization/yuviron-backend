@@ -23,25 +23,14 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
     {
         var query = _context.Tracks.AsNoTracking();
 
-        if (request.IncludeDeleted)
-        {
-            query = query.IgnoreQueryFilters();
-        }
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
             query = query.Where(t => t.Title.Contains(request.SearchTerm));
-        }
 
         if (request.AlbumId.HasValue)
-        {
             query = query.Where(t => t.AlbumId == request.AlbumId.Value);
-        }
 
         if (request.Status.HasValue)
-        {
             query = query.Where(t => t.VisibilityStatus == request.Status.Value);
-        }
 
         var projectedQuery = query
             .OrderBy(t => t.AlbumId)
@@ -50,10 +39,14 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
             .Select(t => new TrackListItemDto(
                 t.Id,
                 t.AlbumId,
+                t.Album != null ? t.Album.Title : "Unknown Album",
                 t.AlbumPosition,
                 t.Title,
+                t.TrackArtists.Select(ta => ta.Artist.Name).ToList(), 
                 t.DurationMs,
                 t.Explicit,
+                t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
+                t.PlayCount,
                 t.VisibilityStatus,
                 t.CreatedAt,
                 t.UpdatedAt

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -16,11 +18,16 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-
-    public CreateArtistHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    private readonly IFileStorageService _fileStorageService;
+    
+    public CreateArtistHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService) 
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
@@ -31,14 +38,16 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
             ?? throw new NotFoundException(nameof(User), request.OwnerUserId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
+        
+        var finalAvatarUrl = await _fileStorageService.MoveIfTempAsync(request.AvatarUrl, "avatars", cancellationToken);
+        var finalBannerUrl = await _fileStorageService.MoveIfTempAsync(request.BannerUrl, "uploads", cancellationToken);
         
         var artist = Artist.Create(
             request.OwnerUserId,
             request.Name,
             request.Bio,
-            request.AvatarUrl,
-            request.BannerUrl,
+            finalAvatarUrl, 
+            finalBannerUrl,
             request.VerificationStatus,
             utcNow);
 

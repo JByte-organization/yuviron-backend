@@ -11,10 +11,9 @@ public sealed record GetTracksQuery(
     string? SearchTerm,
     Guid? AlbumId,
     VisibilityStatus? Status,
-    bool IncludeDeleted,
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, IncludeDeleted, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, Page, PageSize), 
     IRequest<PaginatedList<TrackListItemDto>>, 
     ISecuredRequest
 {

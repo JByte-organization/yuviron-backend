@@ -9,7 +9,6 @@ public class Genre : Entity
 {
     public string Name { get; private set; } = string.Empty;
     public string? CoverUrl { get; private set; }
-    public string? HexColor { get; private set; } 
     
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }

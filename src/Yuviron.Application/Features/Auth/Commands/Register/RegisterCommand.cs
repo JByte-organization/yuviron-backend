@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Features.Auth.Commands.Login; 
 using Yuviron.Domain.Enums;
+using System;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
 
@@ -15,4 +15,4 @@ public record RegisterCommand(
     bool AcceptTerms,
     bool IsArtist,
     string? ArtistName    
-) : IRequest<LoginResponse>, ISensitiveRequest;
+) : IRequest<Guid>, ISensitiveRequest;

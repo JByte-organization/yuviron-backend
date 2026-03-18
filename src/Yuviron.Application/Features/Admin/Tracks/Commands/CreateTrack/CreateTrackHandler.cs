@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- Добавили
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -14,11 +16,16 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
-    public CreateTrackHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreateTrackHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService) // <-- Добавили
     {
         _context = context;
         _timeProvider = timeProvider;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreateTrackCommand request, CancellationToken cancellationToken)
@@ -40,15 +47,17 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+        var finalAudioKey = await _fileStorageService.MoveIfTempAsync(request.AudioStorageKey, "tracks", cancellationToken);
+
         var track = Track.Create(
             request.AlbumId,
             request.AlbumPosition,
             request.Title,
             request.DurationMs,
             request.Explicit,
-            request.CoverUrl,
-            request.AudioStorageKey,
-            request.PreviewStorageKey,
+            finalCoverUrl,   
+            finalAudioKey!,
             request.VisibilityStatus,
             uniqueArtistIds,
             uniqueGenreIds,

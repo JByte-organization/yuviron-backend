@@ -11,7 +11,10 @@ public record AlbumDetailsDto(
     DateTime ReleaseDate,
     VisibilityStatus VisibilityStatus,
     DateTime? ScheduledPublishAt,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
+    int TracksCount,     
+    long TotalDurationMs, 
+    int TotalPlays,     
+    DateTime CreatedAt,  
+    DateTime UpdatedAt, 
     List<ArtistSimpleDto> Artists
 );

@@ -35,21 +35,20 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                         tm.User.Email,
                         tm.User.Profile != null ? tm.User.Profile.DisplayName : null
                     ))
-                    .First(), 
+                    .FirstOrDefault(), 
                 a.Name,
                 a.Bio,
-                a.AvatarUrl != null ? $"/storage/{a.AvatarUrl}" : null,
-                a.BannerUrl != null ? $"/storage/{a.BannerUrl}" : null,
+                a.AvatarUrl,
+                a.BannerUrl,
                 a.VerificationStatus,
+                a.AlbumArtists.Count, 
+                a.TrackArtists.Count, 
                 a.CreatedAt,
                 a.UpdatedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (artist is null)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+        if (artist is null) throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         return artist;
     }

@@ -24,7 +24,10 @@ public sealed class GetGenreByIdHandler : IRequestHandler<GetGenreByIdQuery, Gen
             .Select(g => new GenreDetailsDto(
                 g.Id,
                 g.Name,
-                g.CoverUrl != null ? $"/storage/{g.CoverUrl}" : null
+                g.CoverUrl,
+                g.TrackGenres.Count,
+                g.CreatedAt,
+                g.UpdatedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
