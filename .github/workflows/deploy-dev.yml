@@ -12,7 +12,7 @@ jobs:
       - name: Update backend source
         run: |
           set -e
-          cd /opt/yuviron/src/yuviron-backend
+          cd /opt/yuviron-serever/src/yuviron-backend
           git fetch origin dev
           git reset --hard origin/dev
           git clean -fd
@@ -20,6 +20,7 @@ jobs:
       - name: Generate Secrets Config
         run: |
           set -e
+
           if [ "${{ github.ref_name }}" = "dev" ]; then
             ENV_FILE="Development"
           else
@@ -55,11 +56,11 @@ jobs:
       - name: Apply EF Core migrations
         run: |
           set -e
-          cd /opt/yuviron/infra
+          cd /opt/yuviron-server/infra
           docker compose -f compose.dev.yml run --rm yuviron-dev-migrator
 
       - name: Rebuild and restart services
         run: |
           set -e
-          cd /opt/yuviron/infra
+          cd /opt/yuviron-server/infra
           docker compose -f compose.dev.yml up -d --build --force-recreate yuviron-dev-backend yuviron-dev-frontend yuviron-dev-nginx
