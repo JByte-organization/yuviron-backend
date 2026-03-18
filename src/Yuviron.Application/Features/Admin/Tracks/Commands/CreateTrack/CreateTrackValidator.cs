@@ -18,9 +18,6 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
         RuleFor(x => x.AudioStorageKey)
             .NotEmpty()
             .MaximumLength(1024);
-        RuleFor(x => x.PreviewStorageKey)
-            .MaximumLength(1024)
-            .When(x => x.PreviewStorageKey is not null);
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
             .Must(ValidationExtensions.BeValidUrl)

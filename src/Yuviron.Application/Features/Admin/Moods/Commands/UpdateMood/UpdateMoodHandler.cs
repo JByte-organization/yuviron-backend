@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- Добавили
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -14,7 +15,7 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- Добавили
+    private readonly IFileStorageService _fileStorageService;
 
     public UpdateMoodHandler(
         IApplicationDbContext context, 
@@ -41,11 +42,13 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
         var oldCoverUrl = mood.CoverUrl;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        mood.Update(request.Name, request.CoverUrl, utcNow);
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+
+        mood.Update(request.Name, finalCoverUrl, utcNow); 
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (!string.Equals(oldCoverUrl, request.CoverUrl, StringComparison.OrdinalIgnoreCase) 
+        if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
             && !string.IsNullOrWhiteSpace(oldCoverUrl))
         {
             await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);

@@ -6,9 +6,11 @@ public record UserListItemDto(
     Guid Id,
     string Email,
     string? DisplayName,
+    string? AvatarUrl, 
     AccountState AccountState,
     bool HasActivePremium,
     DateTime CreatedAt,
     DateTime UpdatedAt,
+    DateTime? LastLoginAt, 
     List<string> Roles
 );

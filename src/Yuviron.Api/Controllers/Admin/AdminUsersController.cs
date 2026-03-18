@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Application.Features.Admin.Users.Commands.BlockUser;
 using Yuviron.Application.Features.Admin.Users.Commands.CreateUser;
 using Yuviron.Application.Features.Admin.Users.Commands.DeleteUser;
+using Yuviron.Application.Features.Admin.Users.Commands.UnblockUser;
 using Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 using Yuviron.Application.Features.Admin.Users.Queries.GetUserById;
 using Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
@@ -45,6 +47,21 @@ public class AdminUsersController : ApiControllerBase
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteUserCommand(id), ct);
+        return NoContent();
+    }
+    
+    [HttpPost("{id:guid}/block")]
+    public async Task<IActionResult> BlockUser(Guid id, [FromBody] BlockUserCommand command, CancellationToken ct)
+    {
+        var commandWithId = command with { UserId = id };
+        await Mediator.Send(commandWithId, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/unblock")]
+    public async Task<IActionResult> UnblockUser(Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new UnblockUserCommand(id), ct);
         return NoContent();
     }
 }

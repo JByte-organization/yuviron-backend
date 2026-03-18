@@ -20,21 +20,16 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
     {
         var query = _context.Genres.AsNoTracking();
 
-        if (request.IncludeDeleted) 
-        {
-            query = query.IgnoreQueryFilters();
-        }
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));
-        }
 
         var projectedQuery = query
             .OrderBy(g => g.Name) 
             .Select(g => new GenreListItemDto(
                 g.Id, 
+                g.CoverUrl,
                 g.Name, 
+                g.TrackGenres.Count,
                 g.CreatedAt,
                 g.UpdatedAt
             ));

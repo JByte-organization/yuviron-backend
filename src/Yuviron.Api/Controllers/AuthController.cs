@@ -12,6 +12,7 @@ using Yuviron.Application.Features.Auth.Queries.CheckEmail;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Api.Controllers;
+
 [Route("api/auth")]
 public class AuthController : ApiControllerBase
 {
@@ -39,16 +40,19 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> LoginWithCode([FromBody] LoginWithCodeCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
+        
+        SetRefreshTokenCookie(result.RefreshToken);
+        
         return Ok(result);
     }
 
     [HttpPost("register")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
     {
-        var result = await Mediator.Send(command, ct);
-        return Ok(result);
+        var userId = await Mediator.Send(command, ct);
+        return Ok(new { UserId = userId });
     }
 
     [HttpPost("login")]
@@ -57,6 +61,9 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
+        
+        SetRefreshTokenCookie(result.RefreshToken);
+        
         return Ok(result);
     }
 
@@ -84,18 +91,42 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshAccessTokenCommand command, CancellationToken ct)
+    public async Task<IActionResult> Refresh(CancellationToken ct) 
     {
+        var refreshToken = Request.Cookies["refreshToken"];
+        
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized("Refresh token is missing.");
+        }
+
+        var command = new RefreshAccessTokenCommand(refreshToken);
         var result = await Mediator.Send(command, ct);
+        
+        SetRefreshTokenCookie(result.RefreshToken);
+        
         return Ok(result);
     }
     
     [HttpPost("logout")]
     [Authorize] 
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout([FromBody] LogoutCommand command, CancellationToken ct)
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        await Mediator.Send(command, ct);
+        var refreshToken = Request.Cookies["refreshToken"];
+        
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            await Mediator.Send(new LogoutCommand(refreshToken), ct);
+            
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+        }
+        
         return NoContent(); 
     }
 
@@ -109,4 +140,16 @@ public class AuthController : ApiControllerBase
         return NoContent();
     }
 
+    private void SetRefreshTokenCookie(string token)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, 
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(30) 
+        };
+
+        Response.Cookies.Append("refreshToken", token, cookieOptions);
+    }
 }

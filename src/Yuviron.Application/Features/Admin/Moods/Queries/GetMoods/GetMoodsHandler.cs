@@ -19,8 +19,6 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
     {
         var query = _context.Moods.AsNoTracking();
 
-        if (request.IncludeDeleted) query = query.IgnoreQueryFilters();
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(m => m.Name.StartsWith(request.SearchTerm));
@@ -31,6 +29,8 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
             .Select(m => new MoodDto(
                 m.Id, 
                 m.Name,
+                m.CoverUrl,
+                m.TrackMoods.Count, 
                 m.CreatedAt,
                 m.UpdatedAt
             ));

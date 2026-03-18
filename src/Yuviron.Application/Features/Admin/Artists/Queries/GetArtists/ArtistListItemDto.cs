@@ -5,6 +5,10 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
 public record ArtistListItemDto(
     Guid Id,
     string Name,
+    string? AvatarUrl,     
+    string? OwnerEmail,       
     VerificationStatus VerificationStatus,
-    DateTime CreatedAt
+    int TotalAlbums,       
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );

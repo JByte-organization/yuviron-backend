@@ -27,17 +27,20 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
             .Select(t => new TrackDetailsDto(
                 t.Id,
                 t.AlbumId,
+                t.Album != null ? t.Album.Title : "Unknown Album", 
                 t.AlbumPosition,
                 t.Title,
                 t.DurationMs,
                 t.Explicit,
-                t.CoverUrl,
+                t.CoverUrl,                 
                 t.AudioStorageKey,
-                t.PreviewStorageKey,
+                t.PlayCount,
                 t.VisibilityStatus,
-                t.TrackArtists.Select(ta => ta.ArtistId).ToList(), // Вытаскиваем только ID артистов
-                t.TrackGenres.Select(tg => tg.GenreId).ToList(),
-                t.TrackMoods.Select(tg => tg.MoodId).ToList() // Вытаскиваем только ID жанров
+                t.CreatedAt,
+                t.UpdatedAt,
+                t.TrackArtists.Select(ta => new TrackArtistSimpleDto(ta.ArtistId, ta.Artist.Name, ta.Role)).ToList(), 
+                t.TrackGenres.Select(tg => new TrackGenreSimpleDto(tg.GenreId, tg.Genre.Name)).ToList(),
+                t.TrackMoods.Select(tm => new TrackMoodSimpleDto(tm.MoodId, tm.Mood.Name)).ToList() 
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -40,7 +40,10 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         {
             foreach (var userRole in user.UserRoles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+                if (userRole.Role != null && !string.IsNullOrWhiteSpace(userRole.Role.Name))
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+                }
             }
         }
 

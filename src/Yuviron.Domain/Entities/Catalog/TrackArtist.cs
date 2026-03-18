@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Yuviron.Domain.Enums;
+
 namespace Yuviron.Domain.Entities;
 
 public class TrackArtist

@@ -9,10 +9,9 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtists;
 public sealed record GetArtistsQuery(
     string? SearchTerm, 
     VerificationStatus? VerificationStatus, 
-    bool IncludeDeleted, 
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, IncludeDeleted, Page, PageSize),
+) : PaginatedQuery(SearchTerm, Page, PageSize),
     IRequest<PaginatedList<ArtistListItemDto>>, 
     ISecuredRequest
 {

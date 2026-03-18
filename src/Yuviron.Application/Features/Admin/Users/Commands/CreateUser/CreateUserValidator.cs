@@ -29,6 +29,10 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
 
         RuleFor(x => x.AccountState)
             .IsInEnum();
+        
+        RuleFor(x => x.AcceptTerms)
+            .Equal(true)
+            .WithMessage("You must accept the terms and conditions to create an account.");
 
         RuleFor(x => x.RoleIds)
             .Must(HaveDistinctRoles)

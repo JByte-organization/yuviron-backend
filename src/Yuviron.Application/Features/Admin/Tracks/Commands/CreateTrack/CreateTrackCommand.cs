@@ -15,7 +15,6 @@ public sealed record CreateTrackCommand(
     int DurationMs,
     bool Explicit,
     string AudioStorageKey,
-    string? PreviewStorageKey,
     string? CoverUrl,
     VisibilityStatus VisibilityStatus,
     List<Guid> ArtistIds,

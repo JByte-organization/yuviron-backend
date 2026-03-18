@@ -17,10 +17,6 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .EmailAddress()
             .MaximumLength(320);
 
-        RuleFor(x => x.Password)
-            .MinimumLength(6)
-            .MaximumLength(100)
-            .When(x => !string.IsNullOrWhiteSpace(x.Password));
 
         RuleFor(x => x.DisplayName)
             .NotEmpty()

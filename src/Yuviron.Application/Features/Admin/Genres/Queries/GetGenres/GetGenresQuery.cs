@@ -8,10 +8,9 @@ namespace Yuviron.Application.Features.Admin.Genres.Queries.GetGenres;
 
 public sealed record GetGenresQuery(
     string? SearchTerm,
-    bool IncludeDeleted,
     int Page = 1,
     int PageSize = 50 
-) : PaginatedQuery(SearchTerm, IncludeDeleted, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, Page, PageSize), 
     IRequest<PaginatedList<GenreListItemDto>>, 
     ISecuredRequest
 {

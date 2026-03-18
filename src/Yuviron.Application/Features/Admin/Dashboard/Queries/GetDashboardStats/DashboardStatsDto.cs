@@ -17,18 +17,22 @@ public record DashboardSummaryDto(
     int TotalAlbums,
     int TotalUsers,
     int NewUsersLast24h,
-    int TotalPremiumUsers 
+    int TotalPremiumUsers,
+    long TotalPlays    
 );
 
 public record RecentUserDto(
     Guid Id,
     string Email,
+    string? DisplayName, 
+    string? AvatarUrl,  
     DateTime CreatedAt
 );
 
 public record TopEntityDto(
     Guid Id, 
     string Name, 
+    string? CoverUrl,   
     int TotalPlays 
 );
 

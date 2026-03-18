@@ -16,7 +16,6 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
-
     public CreateUserHandler(
         IApplicationDbContext context, 
         IPasswordHasher passwordHasher,
@@ -48,14 +47,9 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
             passwordHash,
             request.AcceptMarketing,
             request.AcceptTerms,
-            utcNow); 
+            utcNow,
+            request.AccountState); 
 
-        user.UpdateAdminDetails(
-            normalizedEmail,
-            request.AcceptMarketing,
-            request.AcceptTerms,
-            request.AccountState,
-            utcNow); 
 
         var profile = UserProfile.Create(
             user.Id,
@@ -119,7 +113,6 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
         {
             throw new UserAlreadyExistsException(normalizedEmail);
         }
-
 
         return user.Id;
     }

@@ -27,10 +27,6 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
     {
         var query = _context.Users.AsNoTracking();
 
-        if (request.IncludeDeleted)
-        {
-            query = query.IgnoreQueryFilters();
-        }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -52,10 +48,12 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
                 u.Id,
                 u.Email,
                 u.Profile != null ? u.Profile.DisplayName : null,
+                u.Profile != null ? u.Profile.AvatarUrl : null,
                 u.AccountState,
                 u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
                 u.CreatedAt,
                 u.UpdatedAt,
+                u.LastLoginAt,
                 u.UserRoles.Select(ur => ur.Role.Name).ToList()
             ));
 

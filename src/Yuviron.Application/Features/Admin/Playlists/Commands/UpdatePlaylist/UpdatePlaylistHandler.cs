@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -35,17 +36,19 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
         var oldCoverUrl = playlist.CoverUrl; 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
+        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+
         playlist.Update(
             request.Title,
             request.Description,
-            request.CoverUrl,
+            finalCoverUrl,
             request.Visibility,
             utcNow
         );
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (!string.Equals(oldCoverUrl, request.CoverUrl, StringComparison.OrdinalIgnoreCase) 
+        if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
             && !string.IsNullOrWhiteSpace(oldCoverUrl))
         {
             await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);

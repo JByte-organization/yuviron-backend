@@ -32,6 +32,9 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                 a.ReleaseDate,
                 a.VisibilityStatus,
                 a.ScheduledPublishAt,
+                a.Tracks.Count,                           
+                a.Tracks.Sum(t => (long)t.DurationMs),      
+                a.Tracks.Sum(t => t.PlayCount),             
                 a.CreatedAt,
                 a.UpdatedAt,
                 a.AlbumArtists.Select(aa => new ArtistSimpleDto(
@@ -40,10 +43,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (album is null)
-        {
-            throw new NotFoundException(nameof(Album), request.AlbumId);
-        }
+        if (album is null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         return album;
     }

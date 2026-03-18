@@ -10,5 +10,9 @@ public sealed record PlaylistDetailsDto(
     string? CoverUrl,
     PlaylistVisibility Visibility,
     bool IsEditorial,
-    string CreatorName
+    string CreatorName,
+    Guid? CreatorId, 
+    int TracksCount,  
+    DateTime CreatedAt, 
+    DateTime UpdatedAt
 );

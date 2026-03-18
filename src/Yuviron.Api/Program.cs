@@ -43,6 +43,29 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("YuvironCorsPolicy", policy =>
+    {
+        policy.WithOrigins(
+                // Продакшен домены
+                "https://yuviron.com", 
+                "https://backoffice.yuviron.com", 
+                "https://admin.yuviron.com",
+                
+                // Дев домены
+                "https://dev.yuviron.com", 
+                "https://dev-backoffice.yuviron.com", 
+                "https://dev-admin.yuviron.com",
+                
+                "http://localhost:3000" 
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -85,6 +108,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseCors("YuvironCorsPolicy");
 var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
                   ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
                   ?? "/var/yuviron/storage";
