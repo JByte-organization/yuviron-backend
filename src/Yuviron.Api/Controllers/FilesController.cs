@@ -15,8 +15,7 @@ public class FilesController : ApiControllerBase
         var command = new UploadFileCommand(
             file?.OpenReadStream() ?? Stream.Null,
             file?.FileName ?? string.Empty,
-            file?.ContentType ?? string.Empty,
-            folder ?? string.Empty
+            file?.ContentType ?? string.Empty
         );
 
         return Ok(await Mediator.Send(command, cancellationToken));

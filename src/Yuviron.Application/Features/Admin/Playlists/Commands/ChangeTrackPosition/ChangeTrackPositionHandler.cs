@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -26,14 +27,40 @@ public sealed class ChangeTrackPositionHandler : IRequestHandler<ChangeTrackPosi
                            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
                        ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
-        var playlistTrack = await _context.PlaylistTracks
-                                .FirstOrDefaultAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken)
-                            ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
+        var trackToMove = await _context.PlaylistTracks
+            .FirstOrDefaultAsync(t => t.PlaylistId == request.PlaylistId && t.TrackId == request.TrackId, cancellationToken)
+            ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
 
-        playlistTrack.UpdatePosition(request.NewPosition);
+        int maxPosition = await _context.PlaylistTracks
+            .Where(pt => pt.PlaylistId == request.PlaylistId)
+            .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
 
+        int oldPosition = trackToMove.Position;
+        int newPosition = request.NewPosition;
+
+        if (newPosition < 1) newPosition = 1;
+        if (newPosition > maxPosition) newPosition = maxPosition;
+        if (oldPosition == newPosition) return Unit.Value;
+
+        trackToMove.UpdatePosition(-1);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        if (newPosition < oldPosition)
+        {
+            await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= newPosition && pt.Position < oldPosition)
+                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+        }
+        else
+        {
+            await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > oldPosition && pt.Position <= newPosition)
+                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position - 1), cancellationToken);
+        }
+
+        trackToMove.UpdatePosition(newPosition);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        playlist.Update(playlist.Title, playlist.Description, playlist.CoverUrl, playlist.Visibility, utcNow);
+        playlist.NotifyContentChanged(utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
 

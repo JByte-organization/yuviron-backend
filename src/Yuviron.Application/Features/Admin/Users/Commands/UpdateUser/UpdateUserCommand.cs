@@ -20,7 +20,7 @@ public sealed record UpdateUserCommand(
     DateTime DateOfBirth,
     Gender Gender,
     IReadOnlyCollection<Guid>? RoleIds = null
-) : IRequest<Unit>, ISecuredRequest
+) : IRequest<Unit>, ISecuredRequest, ISensitiveRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageUsers;
 }

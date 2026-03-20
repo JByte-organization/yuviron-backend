@@ -59,4 +59,18 @@ public class UserProfile : Entity
         Gender = gender;
         UpdatedAt = utcNow;
     }
+    
+    public void ClearPersonalData(DateTime utcNow)
+    {
+        DisplayName = "Deleted User";
+        AvatarUrl = null;
+        Country = null;
+        Bio = null;
+        
+        DateOfBirth = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        
+        Gender = default; 
+        
+        UpdatedAt = utcNow;
+    }
 }

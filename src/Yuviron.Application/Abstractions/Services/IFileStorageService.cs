@@ -11,4 +11,6 @@ public interface IFileStorageService
     Task DeleteAsync(string fileKey, CancellationToken cancellationToken = default);
     
     Task<string> MoveAsync(string sourceFileKey, string destinationFolder, CancellationToken cancellationToken = default);
+    
+    Task<Stream> GetFileStreamAsync(string fileKey, CancellationToken cancellationToken);
 }

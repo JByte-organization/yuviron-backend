@@ -114,6 +114,7 @@ public class User : Entity
 
         var suffix = $"_del_{Id.ToString()[..8]}"; 
         Email = $"{Email[..Math.Min(Email.Length, 320 - suffix.Length)]}{suffix}";
+        PasswordHash = "deleted_account_hash_invalidated";
 
         AddDomainEvent(new UserDeletedEvent(this.Id));
     }

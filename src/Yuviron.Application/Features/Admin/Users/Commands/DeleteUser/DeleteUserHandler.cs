@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging; // <-- Добавлено
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events;
@@ -27,17 +26,23 @@ public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
         var user = await _context.Users
+                       .Include(u => u.Profile)
                        .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
+        var avatarUrlToDelete = user.Profile?.AvatarUrl;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         user.Delete(utcNow);
         
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
+
+        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete))
+        {
+            user.AddDomainEvent(new FileNeedsDeletionEvent(avatarUrlToDelete));
+        }
         
         await _context.SaveChangesAsync(cancellationToken);
-
 
         return Unit.Value;
     }

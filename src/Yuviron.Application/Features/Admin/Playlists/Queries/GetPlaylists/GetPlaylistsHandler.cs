@@ -32,7 +32,8 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
                 p.CoverUrl, 
                 p.Visibility,
                 p.IsEditorial,
-                p.IsEditorial ? "YUVIRON" : (p.User != null ? p.User.Email : "Unknown"),
+                p.IsEditorial ? "YUVIRON" : 
+                    (p.User != null ? (p.User.Profile != null ? p.User.Profile.DisplayName : p.User.Email) : "Unknown"),
                 p.PlaylistTracks.Count,
                 p.CreatedAt,
                 p.UpdatedAt

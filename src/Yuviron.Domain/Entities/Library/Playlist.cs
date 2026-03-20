@@ -58,12 +58,28 @@ public class Playlist : Entity
         string? description, 
         string? coverUrl, 
         PlaylistVisibility visibility,
+        bool isEditorial, 
+        Guid? userId,   
         DateTime utcNow)
     {
+        if (isEditorial)
+        {
+            userId = null;
+        }
+
         Title = title.Trim();
         Description = description?.Trim();
         CoverUrl = coverUrl;
         Visibility = visibility;
+        
+        IsEditorial = isEditorial; 
+        UserId = userId;    
+        
+        UpdatedAt = utcNow;
+    }
+    
+    public void NotifyContentChanged(DateTime utcNow)
+    {
         UpdatedAt = utcNow;
     }
 

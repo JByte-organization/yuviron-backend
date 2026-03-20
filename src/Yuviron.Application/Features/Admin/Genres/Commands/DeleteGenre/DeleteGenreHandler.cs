@@ -1,11 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- Добавили
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions; 
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
@@ -14,16 +11,13 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
     public DeleteGenreHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService)
+        TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(DeleteGenreCommand request, CancellationToken cancellationToken)
@@ -45,12 +39,12 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
         
         genre.Delete(utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
         if (!string.IsNullOrWhiteSpace(coverUrlToDelete))
         {
-            await _fileStorageService.DeleteAsync(coverUrlToDelete, cancellationToken);
+            genre.AddDomainEvent(new FileNeedsDeletionEvent(coverUrlToDelete));
         }
+
+        await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

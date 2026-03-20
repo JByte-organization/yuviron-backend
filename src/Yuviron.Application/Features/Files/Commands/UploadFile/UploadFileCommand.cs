@@ -1,11 +1,10 @@
-using MediatR;
 using System.IO;
+using MediatR;
 
 namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
 public sealed record UploadFileCommand(
     Stream FileStream,
     string FileName,
-    string ContentType,
-    string Folder
+    string ContentType
 ) : IRequest<UploadResponse>;

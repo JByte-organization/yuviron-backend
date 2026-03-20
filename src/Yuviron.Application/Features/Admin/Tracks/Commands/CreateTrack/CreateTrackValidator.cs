@@ -1,6 +1,7 @@
 using FluentValidation;
-using Yuviron.Application.Common;
+
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
+
 public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackCommand>
 {
     public CreateTrackCommandValidator()
@@ -12,16 +13,19 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
         RuleFor(x => x.Title)
             .NotEmpty()
             .MaximumLength(256);
-        RuleFor(x => x.DurationMs)
-            .GreaterThan(0)
-            .LessThanOrEqualTo(1000 * 60 * 60 * 3);
+            
         RuleFor(x => x.AudioStorageKey)
             .NotEmpty()
-            .MaximumLength(1024);
+            .MaximumLength(1024)
+            .Must(key => key == null || !key.Contains(".."))
+            .WithMessage("Invalid file path.");
+            
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
-            .Must(ValidationExtensions.BeValidUrl)
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
+            
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();
         
@@ -35,5 +39,4 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
             .NotEmpty()
             .WithMessage("Track must have at least one mood.");
     }
-
 }

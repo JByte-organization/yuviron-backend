@@ -1,5 +1,4 @@
 using FluentValidation;
-using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
 
@@ -7,6 +6,16 @@ public sealed class CreatePlaylistValidator : AbstractValidator<CreatePlaylistCo
 {
     public CreatePlaylistValidator()
     {
+        RuleFor(x => x.OwnerUserId)
+            .NotEmpty()
+            .When(x => !x.IsEditorial)
+            .WithMessage("OwnerUserId is required for non-editorial playlists.");
+
+        RuleFor(x => x.OwnerUserId)
+            .Must(x => x == null || x == Guid.Empty)
+            .When(x => x.IsEditorial)
+            .WithMessage("Editorial playlists cannot have an owner.");
+
         RuleFor(v => v.Title)
             .NotEmpty().WithMessage("Title is required")
             .MaximumLength(150).WithMessage("Title must not exceed 150 characters");
@@ -16,7 +25,8 @@ public sealed class CreatePlaylistValidator : AbstractValidator<CreatePlaylistCo
         
         RuleFor(v => v.CoverUrl)
             .MaximumLength(2048).WithMessage("Cover URL is too long")
-            .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
-            .WithMessage("Cover URL must be a valid URI.");
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
+            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
     }
 }

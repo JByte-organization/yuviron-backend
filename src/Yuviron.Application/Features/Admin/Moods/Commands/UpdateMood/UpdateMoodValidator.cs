@@ -1,5 +1,4 @@
 using FluentValidation;
-using Yuviron.Application.Common;
 
 namespace Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
 
@@ -15,7 +14,8 @@ public sealed class UpdateMoodCommandValidator : AbstractValidator<UpdateMoodCom
 
         RuleFor(v => v.CoverUrl)
             .MaximumLength(2048).WithMessage("Cover URL is too long")
-            .Must(ValidationExtensions.BeValidUrl).When(x => !string.IsNullOrEmpty(x.CoverUrl))
-            .WithMessage("Cover URL must be a valid URI.");
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
+            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
     }
 }

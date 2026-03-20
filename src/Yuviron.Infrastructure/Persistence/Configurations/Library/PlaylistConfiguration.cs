@@ -13,7 +13,7 @@ public class PlaylistConfiguration : IEntityTypeConfiguration<Playlist>
 
         builder.Property(x => x.Title).IsRequired().HasMaxLength(150);
         builder.Property(x => x.Description).HasMaxLength(2000); 
-        builder.Property(x => x.CoverUrl).HasMaxLength(500);
+        builder.Property(x => x.CoverUrl).HasMaxLength(2048);
 
         builder.HasIndex(x => x.IsDeleted); 
         builder.HasIndex(x => x.UserId);

@@ -2,10 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; // <-- Нужен для файлов
+using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
 
@@ -13,30 +15,31 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
     public CreatePlaylistHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider, 
-        ICurrentUserService currentUser,
-        IFileStorageService fileStorageService) 
+        TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _currentUser = currentUser;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreatePlaylistCommand request, CancellationToken cancellationToken)
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var userId = request.IsEditorial ? null : _currentUser.UserId;
+        
+        var userId = request.IsEditorial ? (Guid?)null : request.OwnerUserId;
 
-        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+        if (userId.HasValue)
+        {
+            var userExists = await _context.Users.AnyAsync(u => u.Id == userId.Value, cancellationToken);
+            if (!userExists) throw new NotFoundException(nameof(User), userId.Value);
+        }
+
+        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
 
         var playlist = Playlist.Create(
-            userId,
+            userId, 
             request.Title,
             request.Description,
             finalCoverUrl, 
@@ -45,7 +48,13 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
             utcNow
         );
 
+        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+        {
+            playlist.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+        }
+
         _context.Playlists.Add(playlist);
+        
         await _context.SaveChangesAsync(cancellationToken);
 
         return playlist.Id;

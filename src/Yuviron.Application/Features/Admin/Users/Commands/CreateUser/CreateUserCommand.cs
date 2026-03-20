@@ -20,7 +20,7 @@ public sealed record CreateUserCommand(
     bool AcceptTerms,
     AccountState AccountState,
     IReadOnlyCollection<Guid>? RoleIds = null
-) : IRequest<Guid>, ISecuredRequest
+) : IRequest<Guid>, ISecuredRequest, ISensitiveRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageUsers;
 }

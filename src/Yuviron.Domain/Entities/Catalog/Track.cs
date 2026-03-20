@@ -137,9 +137,11 @@ public class Track : Entity
     public void Delete(DateTime utcNow)
     {
         if (IsDeleted) return;
+
         IsDeleted = true;
         DeletedAt = utcNow;
         UpdatedAt = utcNow;
+
         AddDomainEvent(new TrackDeletedEvent(Id));
     }
 }

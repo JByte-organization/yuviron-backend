@@ -59,12 +59,19 @@ public class TempFilesCleanupJob : BackgroundService
 
         foreach (var file in files)
         {
-            var fileInfo = new FileInfo(file);
-            
-            if (now - fileInfo.CreationTimeUtc > _expirationAge)
+            try 
             {
-                fileInfo.Delete();
-                deletedCount++;
+                var fileInfo = new FileInfo(file);
+                
+                if (now - fileInfo.CreationTimeUtc > _expirationAge)
+                {
+                    fileInfo.Delete();
+                    deletedCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete temp file: {FileName}", file);
             }
         }
 
