@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; // <-- Добавили
+using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИЛИ ИМПОРТ СЕРВИСА
+using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
@@ -16,16 +17,16 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- Добавили
+    private readonly IAudioMetadataService _audioMetadataService; // <-- ИНЖЕКТИМ СЕРВИС
 
     public CreateTrackHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IFileStorageService fileStorageService) // <-- Добавили
+        IAudioMetadataService audioMetadataService) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
+        _audioMetadataService = audioMetadataService;
     }
 
     public async Task<Guid> Handle(CreateTrackCommand request, CancellationToken cancellationToken)
@@ -45,16 +46,23 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         var existingMoodsCount = await _context.Moods.CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
         if (existingMoodsCount != uniqueMoodIds.Count) throw new NotFoundException(nameof(Mood), "One or more provided IDs");
 
+        var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(request.AudioStorageKey, cancellationToken);
+        
+        if (audioMeta.DurationMs < 1000 || audioMeta.DurationMs > 1000 * 60 * 60 * 3)
+        {
+            throw new InvalidOperationException("Audio track duration is out of allowed bounds.");
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
-        var finalAudioKey = await _fileStorageService.MoveIfTempAsync(request.AudioStorageKey, "tracks", cancellationToken);
+        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        var finalAudioKey = FileStorageExtensions.PredictDestinationPath(request.AudioStorageKey, "tracks");
 
         var track = Track.Create(
             request.AlbumId,
             request.AlbumPosition,
             request.Title,
-            request.DurationMs,
+            audioMeta.DurationMs,
             request.Explicit,
             finalCoverUrl,   
             finalAudioKey!,
@@ -64,7 +72,14 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             uniqueMoodIds, 
             utcNow);
 
+        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+
+        if (!string.IsNullOrWhiteSpace(request.AudioStorageKey) && request.AudioStorageKey.StartsWith("temp/"))
+            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.AudioStorageKey, "tracks"));
+
         _context.Tracks.Add(track);
+        
         await _context.SaveChangesAsync(cancellationToken);
 
         return track.Id;

@@ -12,7 +12,6 @@ public sealed record CreateTrackCommand(
     Guid AlbumId,
     int AlbumPosition,
     string Title,
-    int DurationMs,
     bool Explicit,
     string AudioStorageKey,
     string? CoverUrl,

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИТЬ
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -17,78 +16,49 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- ДОБАВИТЬ
 
-    public DeleteArtistHandler(
-        IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService) // <-- ДОБАВИТЬ
+    public DeleteArtistHandler(IApplicationDbContext context, TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(DeleteArtistCommand request, CancellationToken cancellationToken)
     {
-        var artist = await _context.Artists
-                         .Include(a => a.TeamMembers)
-                         .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
+        var artist = await _context.Artists.Include(a => a.TeamMembers).FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        // <-- Запоминаем пути к файлам ДО удаления
         var avatarUrlToDelete = artist.AvatarUrl;
         var bannerUrlToDelete = artist.BannerUrl;
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        artist.Delete(utcNow);
+        artist.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
         var memberUserIds = artist.TeamMembers.Select(tm => tm.UserId).ToList();
-
         var usersWithOtherArtists = await _context.ArtistTeamMembers
-            .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId)
-            .Select(tm => tm.UserId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
+            .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId && !tm.Artist.IsDeleted) 
+            .Select(tm => tm.UserId).Distinct().ToListAsync(cancellationToken);
 
         var userIdsToRevokeRole = memberUserIds.Except(usersWithOtherArtists).ToList();
 
         if (userIdsToRevokeRole.Any())
         {
-            var managementRoleStr = nameof(RoleName.ManagementUser);
-            var managementRole = await _context.Roles
-                .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken);
-
+            var managementRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
             if (managementRole != null)
             {
-                var users = await _context.Users
-                    .Include(u => u.UserRoles)
-                    .Where(u => userIdsToRevokeRole.Contains(u.Id))
-                    .ToListAsync(cancellationToken);
-
+                var users = await _context.Users.Include(u => u.UserRoles).Where(u => userIdsToRevokeRole.Contains(u.Id)).ToListAsync(cancellationToken);
                 foreach (var user in users)
                 {
-                    user.SyncRoles(user.UserRoles
-                        .Where(ur => ur.RoleId != managementRole.Id)
-                        .Select(ur => ur.RoleId));
-                
+                    user.SyncRoles(user.UserRoles.Where(ur => ur.RoleId != managementRole.Id).Select(ur => ur.RoleId));
                     user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
                 }
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete)) artist.AddDomainEvent(new FileNeedsDeletionEvent(avatarUrlToDelete));
+        if (!string.IsNullOrWhiteSpace(bannerUrlToDelete)) artist.AddDomainEvent(new FileNeedsDeletionEvent(bannerUrlToDelete));
+
         await _context.SaveChangesAsync(cancellationToken);
         
-        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete))
-        {
-            await _fileStorageService.DeleteAsync(avatarUrlToDelete, cancellationToken);
-        }
-
-        if (!string.IsNullOrWhiteSpace(bannerUrlToDelete))
-        {
-            await _fileStorageService.DeleteAsync(bannerUrlToDelete, cancellationToken);
-        }
-
         return Unit.Value;
     }
 }

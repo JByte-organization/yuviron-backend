@@ -1,12 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; // <-- Добавили
+using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
@@ -15,16 +12,13 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- Добавили
 
     public UpdateGenreHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService)
+        TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(UpdateGenreCommand request, CancellationToken cancellationToken)
@@ -42,17 +36,22 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
         var oldCoverUrl = genre.CoverUrl; 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
+        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
         
         genre.Update(request.Name, finalCoverUrl, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+        {
+            genre.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+        }
 
         if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
             && !string.IsNullOrWhiteSpace(oldCoverUrl))
         {
-            await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);
+            genre.AddDomainEvent(new FileNeedsDeletionEvent(oldCoverUrl));
         }
+
+        await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

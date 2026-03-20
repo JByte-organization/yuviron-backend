@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -23,8 +24,11 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
         _currentUser = currentUser;
     }
 
-    public async Task<Unit> Handle(AddTrackToPlaylistCommand request, CancellationToken cancellationToken)
+   public async Task<Unit> Handle(AddTrackToPlaylistCommand request, CancellationToken cancellationToken)
     {
+        var currentUserId = _currentUser.UserId 
+            ?? throw new UnauthorizedAccessException("User context is required to modify a playlist.");
+
         var playlist = await _context.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
@@ -32,25 +36,31 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
         var trackExists = await _context.Tracks.AnyAsync(t => t.Id == request.TrackId, cancellationToken);
         if (!trackExists) throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var alreadyInPlaylist = await _context.PlaylistTracks
-            .AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken);
-        
-        if (alreadyInPlaylist) return Unit.Value; 
+        if (await _context.PlaylistTracks.AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken))
+            return Unit.Value;
+
+        int maxPosition = await _context.PlaylistTracks
+            .Where(pt => pt.PlaylistId == request.PlaylistId)
+            .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
+
+        int insertPosition = request.Position;
+        if (insertPosition <= 0 || insertPosition > maxPosition + 1) insertPosition = maxPosition + 1;
+
+        if (insertPosition <= maxPosition)
+        {
+            await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
+                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var newPlaylistTrack = new PlaylistTrack(
-            request.PlaylistId, 
-            request.TrackId, 
-            request.Position, 
-            _currentUser.UserId ?? Guid.Empty, 
-            utcNow);
-            
+        var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
         _context.PlaylistTracks.Add(newPlaylistTrack);
-
-        playlist.Update(playlist.Title, playlist.Description, playlist.CoverUrl, playlist.Visibility, utcNow);
-
+        
+        playlist.NotifyContentChanged(utcNow);
         await _context.SaveChangesAsync(cancellationToken);
+        
         return Unit.Value;
     }
 }

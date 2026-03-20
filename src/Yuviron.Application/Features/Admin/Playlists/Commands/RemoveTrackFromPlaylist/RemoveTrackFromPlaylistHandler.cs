@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -31,12 +32,18 @@ public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrack
 
         if (playlistTrack != null)
         {
-            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-            
+            int removedPosition = playlistTrack.Position;
             _context.PlaylistTracks.Remove(playlistTrack);
             
-            playlist.Update(playlist.Title, playlist.Description, playlist.CoverUrl, playlist.Visibility, utcNow);
+            await _context.SaveChangesAsync(cancellationToken);
 
+            await _context.PlaylistTracks
+                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > removedPosition)
+                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position - 1), cancellationToken);
+
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            playlist.NotifyContentChanged(utcNow);
+            
             await _context.SaveChangesAsync(cancellationToken);
         }
 

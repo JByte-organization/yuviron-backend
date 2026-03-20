@@ -85,6 +85,17 @@ public class Album : Entity
         AddDomainEvent(new AlbumDeletedEvent(Id));
     }
 
-    private static DateTime? NormalizeScheduledPublishAt(VisibilityStatus status, DateTime? date) 
-        => status == VisibilityStatus.Scheduled ? date : null;
+    private static DateTime? NormalizeScheduledPublishAt(VisibilityStatus status, DateTime? date)
+    {
+        if (status == VisibilityStatus.Scheduled)
+        {
+            if (!date.HasValue)
+            {
+                throw new InvalidOperationException("ScheduledPublishAt date is required when VisibilityStatus is Scheduled.");
+            }
+            return date; 
+        }
+
+        return null; 
+    }
 }

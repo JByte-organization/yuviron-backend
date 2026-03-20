@@ -17,7 +17,6 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .EmailAddress()
             .MaximumLength(320);
 
-
         RuleFor(x => x.DisplayName)
             .NotEmpty()
             .MaximumLength(100);
@@ -31,6 +30,12 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
 
         RuleFor(x => x.AccountState)
             .IsInEnum();
+
+        RuleFor(x => x.AvatarUrl)
+            .MaximumLength(2048)
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
+            .When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl));
 
         RuleFor(x => x.RoleIds)
             .Must(HaveDistinctRoles)

@@ -19,6 +19,7 @@ using Yuviron.Infrastructure.Services;
 using Yuviron.Infrastructure.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
+using Yuviron.Infrastructure.Services.Audio;
 
 namespace Yuviron.Infrastructure;
 
@@ -101,6 +102,7 @@ public static class DependencyInjection
         services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
+        services.AddScoped<IAudioMetadataService, AudioMetadataService>();
         services.AddHostedService<TempFilesCleanupJob>();
         services.AddScoped<IPermissionService, PermissionService>();
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));

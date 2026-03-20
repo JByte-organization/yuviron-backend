@@ -14,12 +14,13 @@ public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumC
             .MaximumLength(256);
         
         RuleFor(x => x.Description)
-            .MaximumLength(4000)
+            .MaximumLength(2000) 
             .When(x => x.Description is not null);
         
         RuleFor(x => x.CoverUrl)
             .MaximumLength(2048)
-            .Must(ValidationExtensions.BeValidUrl)
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
         
         RuleFor(x => x.ReleaseDate)
@@ -33,13 +34,11 @@ public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumC
             .WithMessage("The album must belong to at least one artist.");
 
         RuleFor(x => x.ScheduledPublishAt)
+            .Cascade(CascadeMode.Stop) 
             .NotEmpty()
             .WithMessage("ScheduledPublishAt is required when visibility is Scheduled.")
-            .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled);
-
-        RuleFor(x => x.ScheduledPublishAt)
             .Must((command, scheduledAt) => scheduledAt > timeProvider.GetUtcNow().UtcDateTime.AddMinutes(-1)) 
             .WithMessage("Scheduled date must be in the future.")
-            .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled && x.ScheduledPublishAt.HasValue);
+            .When(x => x.VisibilityStatus == VisibilityStatus.Scheduled);
     }
 }

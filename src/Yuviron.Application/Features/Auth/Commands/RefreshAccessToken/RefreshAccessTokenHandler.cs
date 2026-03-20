@@ -33,23 +33,32 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         var requestTokenHash = _jwtTokenGenerator.HashRefreshToken(request.RefreshToken.Trim());
 
         var existingToken = await _context.RefreshTokens
+            .IgnoreQueryFilters() 
             .Include(rt => rt.User)
-                .ThenInclude(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                        .ThenInclude(r => r.RolePermissions)
-                            .ThenInclude(rp => rp.Permission)
+            .ThenInclude(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .ThenInclude(r => r.RolePermissions)
+            .ThenInclude(rp => rp.Permission)
             .Include(rt => rt.User.Subscriptions)
             .FirstOrDefaultAsync(rt => rt.TokenHash == requestTokenHash, cancellationToken); 
 
         if (existingToken == null) throw new UnauthorizedAccessException("Invalid token.");
 
-        if (existingToken.User.AccountState == AccountState.Banned || existingToken.User.AccountState == AccountState.Deleted)
+        if (existingToken.User == null) 
+        {
+            throw new UnauthorizedAccessException("User not found.");
+        }
+
+        if (existingToken.User.AccountState == AccountState.Banned || 
+            existingToken.User.AccountState == AccountState.Deleted || 
+            existingToken.User.IsDeleted)
         {
             throw new UnauthorizedAccessException("This account has been banned or deleted.");
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         bool isRetryWithinGracePeriod = false;
+
 
         if (existingToken.IsRevoked)
         {

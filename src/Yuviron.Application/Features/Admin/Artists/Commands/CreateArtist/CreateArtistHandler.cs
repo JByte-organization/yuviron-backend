@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
-using Yuviron.Domain.Events;
+using Yuviron.Domain.Events; // <-- ДОБАВИЛИ ДЛЯ ИВЕНТОВ
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
@@ -18,16 +17,14 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService;
     
+    // Убрали IFileStorageService
     public CreateArtistHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService) 
+        TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
@@ -39,8 +36,8 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalAvatarUrl = await _fileStorageService.MoveIfTempAsync(request.AvatarUrl, "avatars", cancellationToken);
-        var finalBannerUrl = await _fileStorageService.MoveIfTempAsync(request.BannerUrl, "uploads", cancellationToken);
+        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
+        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "uploads");
         
         var artist = Artist.Create(
             request.OwnerUserId,
@@ -51,9 +48,14 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
             request.VerificationStatus,
             utcNow);
 
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
+
+        if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "uploads"));
+
         _context.Artists.Add(artist);
 
-        
         var managementRoleStr = nameof(RoleName.ManagementUser);
         var managementRole = await _context.Roles
             .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
@@ -64,9 +66,7 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
         if (!currentRoleIds.Contains(managementRole.Id))
         {
             currentRoleIds.Add(managementRole.Id);
-            
             ownerUser.SyncRoles(currentRoleIds);
-            
             ownerUser.AddDomainEvent(new UserPermissionsChangedEvent(ownerUser.Id));
         }
 

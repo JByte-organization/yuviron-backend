@@ -42,7 +42,10 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
         }
 
         var belongsToOtherArtists = await _context.ArtistTeamMembers
-            .AnyAsync(tm => tm.UserId == request.UserId && tm.ArtistId != request.ArtistId, cancellationToken);
+            .AnyAsync(tm => tm.UserId == request.UserId 
+                         && tm.ArtistId != request.ArtistId
+                         && !tm.Artist.IsDeleted,
+            cancellationToken);
 
         var user = await _context.Users
             .Include(u => u.UserRoles) 

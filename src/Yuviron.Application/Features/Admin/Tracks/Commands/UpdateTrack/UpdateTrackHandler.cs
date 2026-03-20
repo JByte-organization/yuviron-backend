@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИЛИ ИМПОРТ СЕРВИСА
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
@@ -16,16 +17,16 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService;
+    private readonly IAudioMetadataService _audioMetadataService; // <-- ИНЖЕКТИМ СЕРВИС
 
     public UpdateTrackHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IFileStorageService fileStorageService)
+        IAudioMetadataService audioMetadataService)
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
+        _audioMetadataService = audioMetadataService;
     }
 
     public async Task<Unit> Handle(UpdateTrackCommand request, CancellationToken cancellationToken)
@@ -55,16 +56,30 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var oldCoverUrl = track.CoverUrl;
         var oldAudioKey = track.AudioStorageKey;
 
+        int updatedDurationMs = track.DurationMs;
+
+        if (!string.Equals(oldAudioKey, request.AudioStorageKey, StringComparison.OrdinalIgnoreCase) 
+            && request.AudioStorageKey.StartsWith("temp/"))
+        {
+            var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(request.AudioStorageKey, cancellationToken);
+            
+            if (audioMeta.DurationMs < 1000 || audioMeta.DurationMs > 1000 * 60 * 60 * 3)
+            {
+                throw new InvalidOperationException("Audio track duration is out of allowed bounds.");
+            }
+            updatedDurationMs = audioMeta.DurationMs;
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var finalCoverUrl = await _fileStorageService.MoveIfTempAsync(request.CoverUrl, "covers", cancellationToken);
-        var finalAudioKey = await _fileStorageService.MoveIfTempAsync(request.AudioStorageKey, "tracks", cancellationToken);
+        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        var finalAudioKey = FileStorageExtensions.PredictDestinationPath(request.AudioStorageKey, "tracks");
 
         track.UpdateDetails(
             request.AlbumId,
             request.AlbumPosition,
             request.Title,
-            request.DurationMs,
+            updatedDurationMs,
             request.Explicit,
             finalCoverUrl,   
             finalAudioKey!, 
@@ -74,14 +89,19 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             uniqueMoodIds, 
             utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+
+        if (!string.IsNullOrWhiteSpace(request.AudioStorageKey) && request.AudioStorageKey.StartsWith("temp/"))
+            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.AudioStorageKey, "tracks"));
 
         if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldCoverUrl))
-            await _fileStorageService.DeleteAsync(oldCoverUrl, cancellationToken);
+            track.AddDomainEvent(new FileNeedsDeletionEvent(oldCoverUrl));
 
         if (!string.Equals(oldAudioKey, finalAudioKey, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAudioKey))
-            await _fileStorageService.DeleteAsync(oldAudioKey, cancellationToken);
+            track.AddDomainEvent(new FileNeedsDeletionEvent(oldAudioKey));
 
+        await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

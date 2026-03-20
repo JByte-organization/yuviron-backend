@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; // <-- Для файлов
+using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
-using Yuviron.Domain.Events;
+using Yuviron.Domain.Events; // <-- ДОБАВИЛИ ДЛЯ ИВЕНТОВ
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateArtist;
@@ -18,16 +17,14 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService; // <-- Инжектим сервис файлов
 
+    // Убрали IFileStorageService
     public UpdateArtistHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService) 
+        TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(UpdateArtistCommand request, CancellationToken cancellationToken)
@@ -48,8 +45,8 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalAvatarUrl = await _fileStorageService.MoveIfTempAsync(request.AvatarUrl, "avatars", cancellationToken);
-        var finalBannerUrl = await _fileStorageService.MoveIfTempAsync(request.BannerUrl, "uploads", cancellationToken);
+        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
+        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "uploads");
         
         artist.UpdateDetails(
             request.Name,
@@ -58,6 +55,18 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             finalBannerUrl,
             request.VerificationStatus,
             utcNow);
+
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
+
+        if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "uploads"));
+
+        if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAvatarUrl))
+            artist.AddDomainEvent(new FileNeedsDeletionEvent(oldAvatarUrl));
+
+        if (!string.Equals(oldBannerUrl, finalBannerUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldBannerUrl))
+            artist.AddDomainEvent(new FileNeedsDeletionEvent(oldBannerUrl));
 
         var currentOwner = artist.TeamMembers.FirstOrDefault(tm => tm.Role == ArtistTeamRole.Owner);
         var newOwnerId = request.OwnerUserId;
@@ -80,8 +89,26 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
                 artist.AddTeamMember(newOwnerId, ArtistTeamRole.Owner, utcNow);
             }
 
-            var newOwnerUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == newOwnerId, cancellationToken);
-            if (newOwnerUser != null) newOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(newOwnerId));
+            var newOwnerUser = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == newOwnerId, cancellationToken);
+                
+            if (newOwnerUser != null) 
+            {
+                var managementRoleStr = nameof(RoleName.ManagementUser);
+                var managementRole = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
+                    ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
+
+                var currentRoleIds = newOwnerUser.UserRoles.Select(ur => ur.RoleId).ToList();
+                if (!currentRoleIds.Contains(managementRole.Id))
+                {
+                    currentRoleIds.Add(managementRole.Id);
+                    newOwnerUser.SyncRoles(currentRoleIds);
+                }
+
+                newOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(newOwnerId));
+            }
 
             if (currentOwner != null)
             {
@@ -91,18 +118,6 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-
-        if (!string.Equals(oldAvatarUrl, request.AvatarUrl, StringComparison.OrdinalIgnoreCase) 
-            && !string.IsNullOrWhiteSpace(oldAvatarUrl))
-        {
-            await _fileStorageService.DeleteAsync(oldAvatarUrl, cancellationToken);
-        }
-
-        if (!string.Equals(oldBannerUrl, request.BannerUrl, StringComparison.OrdinalIgnoreCase) 
-            && !string.IsNullOrWhiteSpace(oldBannerUrl))
-        {
-            await _fileStorageService.DeleteAsync(oldBannerUrl, cancellationToken);
-        }
 
         return Unit.Value;
     }

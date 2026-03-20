@@ -1,6 +1,10 @@
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services; 
 using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Admin.Albums.EventHandlers;
@@ -10,7 +14,10 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public AlbumDeletedEventHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public AlbumDeletedEventHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IFileStorageService fileStorageService) 
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -22,10 +29,7 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
             .Where(t => t.AlbumId == notification.AlbumId && !t.IsDeleted) 
             .ToListAsync(cancellationToken);
 
-        if (!tracks.Any())
-        {
-            return;
-        }
+        if (!tracks.Any()) return;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -33,6 +37,7 @@ public sealed class AlbumDeletedEventHandler : INotificationHandler<AlbumDeleted
         {
             track.Delete(utcNow); 
         }
+        
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

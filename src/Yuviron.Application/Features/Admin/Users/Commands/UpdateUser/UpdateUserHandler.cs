@@ -2,16 +2,15 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services; // <-- Добавили для файлов
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Yuviron.Application.Extensions;
+using Yuviron.Application.Extensions; 
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 
@@ -19,16 +18,13 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IFileStorageService _fileStorageService;
 
     public UpdateUserHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider,
-        IFileStorageService fileStorageService) 
+        TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -58,11 +54,9 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             request.AccountState,
             utcNow);
 
-
         var oldAvatarUrl = user.Profile?.AvatarUrl;
 
-       
-        var finalAvatarUrl = await _fileStorageService.MoveIfTempAsync(request.AvatarUrl, "avatars", cancellationToken);
+        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
 
         if (user.Profile == null)
         {
@@ -109,17 +103,22 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             user.SyncRoles(existingRoleIds);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
+        {
+            user.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
+        }
+
+        if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) 
+            && !string.IsNullOrWhiteSpace(oldAvatarUrl))
+        {
+            user.AddDomainEvent(new FileNeedsDeletionEvent(oldAvatarUrl));
+        }
+
         try
         {
             user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id)); 
             
             await _context.SaveChangesAsync(cancellationToken);
-
-            if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) 
-                && !string.IsNullOrWhiteSpace(oldAvatarUrl))
-            {
-                await _fileStorageService.DeleteAsync(oldAvatarUrl, cancellationToken);
-            }
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {
