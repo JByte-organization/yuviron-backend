@@ -3,9 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Moods.Commands.CreateMood;
 using Yuviron.Application.Features.Admin.Moods.Commands.DeleteMood;
 using Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
+using Yuviron.Application.Features.Admin.Moods.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Moods.Queries.GetMoodById;
 using Yuviron.Application.Features.Admin.Moods.Queries.GetMoods;
 
@@ -16,27 +18,31 @@ namespace Yuviron.Api.Controllers.Admin;
 public class AdminMoodsController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetMoods([FromQuery] GetMoodsQuery query, CancellationToken ct)
+    [ProducesResponseType(typeof(PaginatedList<MoodDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<MoodDto>>> GetMoods([FromQuery] GetMoodsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetMoodById(Guid id, CancellationToken ct)
+    [ProducesResponseType(typeof(GetMoodByIdDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetMoodByIdDto>> GetMoodById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMoodByIdQuery(id), ct);
         return Ok(result);
     }
     
     [HttpPost]
-    public async Task<IActionResult> CreateMood([FromBody] CreateMoodCommand command, CancellationToken ct)
+    [ProducesResponseType(typeof(CreateMoodResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CreateMoodResponse>> CreateMood([FromBody] CreateMoodCommand command, CancellationToken ct)
     {
         var moodId = await Mediator.Send(command, ct);
-        return Ok(new { MoodId = moodId });
+        return Ok(new CreateMoodResponse(moodId));
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateMood(Guid id, [FromBody] UpdateMoodCommand command, CancellationToken ct)
     {
         var commandWithId = command with { Id = id };
@@ -47,6 +53,7 @@ public class AdminMoodsController : ApiControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteMood(Guid id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteMoodCommand(id), ct);

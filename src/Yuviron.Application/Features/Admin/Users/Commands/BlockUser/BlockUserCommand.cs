@@ -10,7 +10,7 @@ public sealed record BlockUserCommand(
     BlockType BlockType,
     string ReasonCode,
     string Description,
-    DateTime? EndsAt // null = навсегда
+    DateTime? EndsAt // null = навсегда 
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageUsers;

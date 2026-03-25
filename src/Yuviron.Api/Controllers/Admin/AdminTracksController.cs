@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 using Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrack;
 using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
+using Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
 
@@ -13,27 +15,31 @@ namespace Yuviron.Api.Controllers.Admin;
 public class AdminTracksController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetTracks([FromQuery] GetTracksQuery query, CancellationToken ct)
+    [ProducesResponseType(typeof(PaginatedList<TrackListItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<TrackListItemDto>>> GetTracks([FromQuery] GetTracksQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetTrackById(Guid id, CancellationToken ct)
+    [ProducesResponseType(typeof(TrackDetailsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TrackDetailsDto>> GetTrackById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetTrackByIdQuery(id), ct);
         return Ok(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTrack([FromBody] CreateTrackCommand command, CancellationToken ct)
+    [ProducesResponseType(typeof(CreateTrackResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CreateTrackResponse>> CreateTrack([FromBody] CreateTrackCommand command, CancellationToken ct)
     {
         var trackId = await Mediator.Send(command, ct);
-        return Ok(new { TrackId = trackId });
+        return Ok(new CreateTrackResponse(trackId));
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateTrack(Guid id, [FromBody] UpdateTrackCommand command, CancellationToken ct)
     {
         var commandWithId = command with { TrackId = id };
@@ -42,6 +48,7 @@ public class AdminTracksController : ApiControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteTrack(Guid id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteTrackCommand(id), ct);

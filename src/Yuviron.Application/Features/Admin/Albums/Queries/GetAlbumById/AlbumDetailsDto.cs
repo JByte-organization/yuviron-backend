@@ -12,7 +12,7 @@ public record AlbumDetailsDto(
     VisibilityStatus VisibilityStatus,
     DateTime? ScheduledPublishAt,
     int TracksCount,     
-    long TotalDurationMs, 
+    long TotalDurationMs, //mm:ss
     int TotalPlays,     
     DateTime CreatedAt,  
     DateTime UpdatedAt, 
