@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 using Yuviron.Application.Features.Admin.Albums.Commands.DeleteAlbum;
 using Yuviron.Application.Features.Admin.Albums.Commands.UpdateAlbum;
+using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumById;
 using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;
 
@@ -13,27 +15,31 @@ namespace Yuviron.Api.Controllers.Admin;
 public class AdminAlbumsController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAlbums([FromQuery] GetAlbumsQuery query, CancellationToken ct)
+    [ProducesResponseType(typeof(PaginatedList<AlbumListItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<AlbumListItemDto>>> GetAlbums([FromQuery] GetAlbumsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetAlbumById(Guid id, CancellationToken ct)
+    [ProducesResponseType(typeof(AlbumDetailsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AlbumDetailsDto>> GetAlbumById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetAlbumByIdQuery(id), ct);
         return Ok(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAlbum([FromBody] CreateAlbumCommand command, CancellationToken ct)
+    [ProducesResponseType(typeof(CreateAlbumResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CreateAlbumResponse>> CreateAlbum([FromBody] CreateAlbumCommand command, CancellationToken ct)
     {
         var albumId = await Mediator.Send(command, ct);
-        return Ok(new { AlbumId = albumId });
+        return Ok(new CreateAlbumResponse(albumId));
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateAlbum(Guid id, [FromBody] UpdateAlbumCommand command, CancellationToken ct)
     {
         var commandWithId = command with { AlbumId = id };
@@ -42,6 +48,7 @@ public class AdminAlbumsController : ApiControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAlbum(Guid id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteAlbumCommand(id), ct);

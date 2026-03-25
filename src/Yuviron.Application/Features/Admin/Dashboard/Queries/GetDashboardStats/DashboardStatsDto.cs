@@ -24,7 +24,7 @@ public record DashboardSummaryDto(
 public record RecentUserDto(
     Guid Id,
     string Email,
-    string? DisplayName, 
+    string DisplayName, //update 23:15
     string? AvatarUrl,  
     DateTime CreatedAt
 );
@@ -42,3 +42,5 @@ public record PopularAlbumDto(
     string? CoverUrl, 
     int TotalPlays 
 );
+
+//top entity artist+
