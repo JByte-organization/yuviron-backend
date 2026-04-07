@@ -31,9 +31,16 @@ public class AppDbContextInitializer
     {
         try
         {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
             if (_context.Database.IsRelational())
             {
-                await _context.Database.MigrateAsync();
+                // Накатываем миграции кодом ТОЛЬКО при локальной разработке
+                // На сервере (Production/Dev) это делает GitHub Actions пайплайн
+                if (env == "Development")
+                {
+                    await _context.Database.MigrateAsync();
+                }
             }
         }
         catch (Exception ex)

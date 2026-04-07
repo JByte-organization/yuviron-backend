@@ -10,7 +10,7 @@ public class FilesController : ApiControllerBase
 {
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<UploadResponse>> UploadFile(IFormFile file, [FromForm] string folder, CancellationToken cancellationToken)
+    public async Task<ActionResult<UploadResponse>> UploadFile(IFormFile file, CancellationToken cancellationToken)
     {
         var command = new UploadFileCommand(
             file?.OpenReadStream() ?? Stream.Null,
@@ -20,5 +20,4 @@ public class FilesController : ApiControllerBase
 
         return Ok(await Mediator.Send(command, cancellationToken));
     }
-    
 }

@@ -46,6 +46,16 @@ jobs:
           import os
 
           config = {
+          "CorsSettings": {
+                  "AllowedOrigins": [
+                      "https://yuviron.com",
+                      "https://backoffice.yuviron.com",
+                      "https://admin.yuviron.com",
+                      "https://dev.yuviron.com",
+                      "https://dev-backoffice.yuviron.com",
+                      "https://dev-admin.yuviron.com"
+                  ]
+              },
               "JwtSettings": {
                   "Secret": os.environ["JWT_SECRET"],
                   "Issuer": "YuvironApi",

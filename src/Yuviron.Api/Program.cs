@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks; 
 using System.Text.Json;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,23 +45,14 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() 
+                     ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("YuvironCorsPolicy", policy =>
     {
-        policy.WithOrigins(
-                // Продакшен домены
-                "https://yuviron.com", 
-                "https://backoffice.yuviron.com", 
-                "https://admin.yuviron.com",
-                
-                // Дев домены
-                "https://dev.yuviron.com", 
-                "https://dev-backoffice.yuviron.com", 
-                "https://dev-admin.yuviron.com",
-                
-                "http://localhost:3000" 
-            )
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -68,6 +61,31 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    
+    options.OnRejected = async (context, token) =>
+    {
+        await context.HttpContext.Response.WriteAsJsonAsync(new 
+        { 
+            error = "Too Many Requests", 
+            message = "Please wait a minute before trying again." 
+        }, cancellationToken: token);
+    };
+
+    options.AddFixedWindowLimiter(policyName: "AuthPolicy", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5; 
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0; 
+    });
+});
 
 var app = builder.Build();
 
@@ -109,6 +127,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("YuvironCorsPolicy");
+app.UseRateLimiter();
 var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
                   ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
                   ?? "/var/yuviron/storage";
@@ -121,7 +140,11 @@ if (!Directory.Exists(storageRoot))
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(storageRoot),
-    RequestPath = "/storage" 
+    RequestPath = "/storage",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    }
 });
 
 app.UseAuthentication();

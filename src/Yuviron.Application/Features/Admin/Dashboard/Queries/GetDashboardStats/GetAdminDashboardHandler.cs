@@ -58,8 +58,8 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .Select(u => new RecentUserDto(
                 u.Id, 
                 u.Email,
-                u.Profile != null ? u.Profile.DisplayName : null,
-                u.Profile != null ? u.Profile.AvatarUrl : null,
+                u.Profile!.DisplayName, 
+                u.Profile.AvatarUrl,  
                 u.CreatedAt))
             .ToListAsync(cancellationToken);
 

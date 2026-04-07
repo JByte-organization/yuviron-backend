@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Features.Auth.Commands.ChangePassword;
 using Yuviron.Application.Features.Auth.Commands.Login;
@@ -27,6 +28,7 @@ public class AuthController : ApiControllerBase
     public sealed record CheckEmailResponse(bool Exists);
 
     [HttpPost("send-code")]
+    [EnableRateLimiting("AuthPolicy")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> SendCode([FromBody] SendLoginCodeCommand command, CancellationToken ct)
     {
@@ -35,18 +37,18 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("login-with-code")]
+    [EnableRateLimiting("AuthPolicy")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginWithCode([FromBody] LoginWithCodeCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
-        
         SetRefreshTokenCookie(result.RefreshToken);
-        
         return Ok(result);
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("AuthPolicy")] 
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
@@ -56,14 +58,13 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("AuthPolicy")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
-        
         SetRefreshTokenCookie(result.RefreshToken);
-        
         return Ok(result);
     }
 

@@ -49,12 +49,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                     );
                 break;
 
-            // 2. Стандартные системные исключения бизнес-логики (400) <-- ДОБАВИЛИ ЭТОТ БЛОК
-            case ArgumentException argEx:
-            case InvalidOperationException invalidOpEx:
+            // 2. Стандартные системные исключения бизнес-логики (400)
+            case ArgumentException:
+            case InvalidOperationException:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Bad Request";
-                problemDetails.Detail = exception.Message;
+                problemDetails.Detail = "The request could not be processed due to invalid parameters or state."; 
                 break;
 
             // 3. Не найдено (404)
