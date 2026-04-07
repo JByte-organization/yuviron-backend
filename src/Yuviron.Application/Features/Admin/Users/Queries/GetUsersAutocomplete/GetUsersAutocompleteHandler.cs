@@ -29,14 +29,14 @@ public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutoco
         var users = await _context.Users
             .AsNoTracking()
             .Where(u => u.Email.ToLower().Contains(searchTerm) || 
-                        (u.Profile != null && u.Profile.DisplayName.ToLower().Contains(searchTerm)))
+                        u.Profile.FirstName.ToLower().Contains(searchTerm)) 
             .OrderBy(u => u.Email)
             .Take(request.Limit) 
             .Select(u => new UserAutocompleteDto(
                 u.Id,
                 u.Email,
-                u.Profile != null ? u.Profile.DisplayName : "No Name",
-                u.Profile != null ? u.Profile.AvatarUrl : null
+                u.Profile.FirstName,
+                u.Profile.AvatarUrl
             ))
             .ToListAsync(cancellationToken);
 

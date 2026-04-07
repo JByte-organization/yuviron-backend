@@ -29,8 +29,8 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
             .Select(tm => new ArtistTeamMemberDto(
                 tm.UserId,
                 tm.User.Email,
-                tm.User.Profile != null ? tm.User.Profile.DisplayName : null,
-                tm.User.Profile != null ? tm.User.Profile.AvatarUrl : null, 
+                tm.User.Profile.FirstName,
+                tm.User.Profile.AvatarUrl,
                 tm.User.AccountState,
                 tm.Role,
                 tm.CreatedAt      

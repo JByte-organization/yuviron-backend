@@ -24,7 +24,7 @@ public record DashboardSummaryDto(
 public record RecentUserDto(
     Guid Id,
     string Email,
-    string DisplayName, //update 23:15
+    string FirstName, 
     string? AvatarUrl,  
     DateTime CreatedAt
 );

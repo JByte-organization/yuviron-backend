@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Users.Queries.DTOs;
@@ -10,12 +12,12 @@ public record UserDetailsDto(
     AccountState AccountState,
     bool AcceptMarketing,
     bool AcceptTerms,
-    string? DisplayName,
+    string FirstName,
     string? AvatarUrl,
     string? Country,
     string? Bio,
-    DateTime DateOfBirth,
-    Gender Gender,
+    DateTime DateOfBirth, 
+    Gender Gender, 
     bool HasActivePremium,
     DateTime CreatedAt,
     DateTime UpdatedAt,

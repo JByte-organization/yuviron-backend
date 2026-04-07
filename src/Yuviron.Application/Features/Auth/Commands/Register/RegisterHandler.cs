@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Common;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
@@ -21,20 +20,17 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IEmailService _emailService;
     private readonly ILogger<RegisterHandler> _logger;
     private readonly TimeProvider _timeProvider; 
 
     public RegisterHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
-        IEmailService emailService,
         ILogger<RegisterHandler> logger,
         TimeProvider timeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
-        _emailService = emailService;
         _logger = logger;
         _timeProvider = timeProvider; 
     }
@@ -70,7 +66,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime; 
 
         var user = User.Create(
-            normalizedEmail, passwordHash, request.AcceptMarketing, request.AcceptTerms, utcNow);
+            normalizedEmail, passwordHash, firstName, request.AcceptMarketing, request.AcceptTerms, utcNow);
 
         var profile = UserProfile.Create(
             user.Id, firstName, null, null, null, request.DateOfBirth, request.Gender, utcNow);
@@ -105,19 +101,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {
             throw new UserAlreadyExistsException(normalizedEmail);
-        }
-
-        try
-        {
-            await _emailService.SendEmailAsync(
-                user.Email,
-                "Добро пожаловать в Yuviron!",
-                $"<h1>Привет, {firstName}!</h1><p>Спасибо за регистрацию.</p>",
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send welcome email to {Email}", user.Email);
         }
 
         return user.Id;

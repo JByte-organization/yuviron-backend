@@ -129,7 +129,7 @@ public class AppDbContextInitializer
         }
     }
 
-    private async Task SeedUserFromConfigAsync(string roleName, string configSection, string displayName, Gender gender, int ageOffset, bool isPremium)
+    private async Task SeedUserFromConfigAsync(string roleName, string configSection, string firstName, Gender gender, int ageOffset, bool isPremium)
     {
         var email = _configuration[$"{configSection}:Email"];
         var password = _configuration[$"{configSection}:Password"];
@@ -144,10 +144,10 @@ public class AppDbContextInitializer
             var role = await _context.Roles.FirstAsync(r => r.Name == roleName);
             var utcNow = DateTime.UtcNow;
 
-            var user = User.Create(email, _passwordHasher.Hash(password), false, true, utcNow);
+            var user = User.Create(email, _passwordHasher.Hash(password), firstName, false, true, utcNow);
             await _context.Users.AddAsync(user);
             await _context.UserRoles.AddAsync(new UserRole(user.Id, role.Id));
-            user.SetProfile(UserProfile.Create(user.Id, displayName, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
+            user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
 
             if (isPremium)
             {

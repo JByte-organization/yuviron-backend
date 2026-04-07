@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,14 +7,14 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Users.Queries.DTOs;
-using Yuviron.Domain.Enums; // Если потребуется для SubscriptionStatus
+using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 
 public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedList<UserListItemDto>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly TimeProvider _timeProvider; // <-- Добавили для проверки премиума
+    private readonly TimeProvider _timeProvider; 
 
     public GetUsersHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
@@ -27,12 +26,11 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
     {
         var query = _context.Users.AsNoTracking();
 
-
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             query = query.Where(u => 
                 u.Email.Contains(request.SearchTerm) || 
-                (u.Profile != null && u.Profile.DisplayName.Contains(request.SearchTerm)));
+                u.Profile.FirstName.Contains(request.SearchTerm));
         }
 
         if (request.AccountState.HasValue)
@@ -47,8 +45,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
             .Select(u => new UserListItemDto(
                 u.Id,
                 u.Email,
-                u.Profile != null ? u.Profile.DisplayName : null,
-                u.Profile != null ? u.Profile.AvatarUrl : null,
+                u.Profile.FirstName, 
+                u.Profile.AvatarUrl, 
                 u.AccountState,
                 u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
                 u.CreatedAt,

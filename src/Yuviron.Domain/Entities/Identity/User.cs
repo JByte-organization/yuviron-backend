@@ -23,17 +23,17 @@ public class User : Entity
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
-    public virtual UserProfile? Profile { get; private set; }
+    public virtual UserProfile Profile { get; private set; } = null!;
     public virtual UserSettings? Settings { get; private set; }
 
     private User() { }
 
-    public static User Create(string email, string passwordHash, bool acceptMarketing, bool acceptTerms, DateTime utcNow, AccountState accountState = AccountState.Active)
+    public static User Create(string email, string passwordHash, string firstName, bool acceptMarketing, bool acceptTerms, DateTime utcNow, AccountState accountState = AccountState.Active)
     {
         var normalizedEmail = EmailNormalizer.Normalize(email);
         if (string.IsNullOrWhiteSpace(normalizedEmail)) throw new ArgumentException("Email is required");
 
-        return new User
+        var user = new User
         {
             Id = Guid.NewGuid(),
             Email = normalizedEmail,
@@ -45,6 +45,10 @@ public class User : Entity
             UpdatedAt = utcNow,
             IsDeleted = false
         };
+
+        user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email, firstName));
+        
+        return user;
     }
 
     public void SyncRoles(IEnumerable<Guid> roleIds)

@@ -45,15 +45,15 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
         var user = User.Create(
             normalizedEmail,
             passwordHash,
+            request.FirstName.Trim(), 
             request.AcceptMarketing,
             request.AcceptTerms,
             utcNow,
             request.AccountState); 
 
-
         var profile = UserProfile.Create(
             user.Id,
-            request.DisplayName.Trim(),
+            request.FirstName.Trim(),
             null,
             null,
             null, 

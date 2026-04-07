@@ -13,7 +13,7 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.CreateUser;
 public sealed record CreateUserCommand(
     string Email,
     string Password,
-    string DisplayName,
+    string FirstName,
     DateTime DateOfBirth,
     Gender Gender,
     bool AcceptMarketing,

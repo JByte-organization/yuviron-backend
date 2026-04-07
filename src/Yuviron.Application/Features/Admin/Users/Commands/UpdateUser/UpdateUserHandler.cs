@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
@@ -54,33 +53,17 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             request.AccountState,
             utcNow);
 
-        var oldAvatarUrl = user.Profile?.AvatarUrl;
-
+        var oldAvatarUrl = user.Profile!.AvatarUrl;
         var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
 
-        if (user.Profile == null)
-        {
-            user.SetProfile(UserProfile.Create(
-                user.Id,
-                request.DisplayName.Trim(),
-                finalAvatarUrl, 
-                null,
-                null,
-                request.DateOfBirth,
-                request.Gender,
-                utcNow));
-        }
-        else
-        {
-            user.Profile.UpdateDetails(
-                request.DisplayName.Trim(),
-                finalAvatarUrl, 
-                user.Profile.Country,
-                user.Profile.Bio,
-                request.DateOfBirth,
-                request.Gender,
-                utcNow);
-        }
+        user.Profile!.UpdateDetails(
+            request.FirstName.Trim(),
+            finalAvatarUrl, 
+            user.Profile.Country,
+            user.Profile.Bio,
+            request.DateOfBirth,
+            request.Gender,
+            utcNow);
 
         if (request.RoleIds is not null)
         {

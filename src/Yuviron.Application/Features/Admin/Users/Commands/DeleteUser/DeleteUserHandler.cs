@@ -30,7 +30,7 @@ public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
                        .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
-        var avatarUrlToDelete = user.Profile?.AvatarUrl;
+        var avatarUrlToDelete = user.Profile!.AvatarUrl;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         user.Delete(utcNow);

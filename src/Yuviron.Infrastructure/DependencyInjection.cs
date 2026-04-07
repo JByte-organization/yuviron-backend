@@ -102,6 +102,9 @@ public static class DependencyInjection
         services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
+        services.AddSingleton<IEmailJobQueue, EmailJobQueue>();
+        services.AddHostedService<EmailBackgroundWorker>();
+        services.AddSingleton<ITemplateService, FluidTemplateService>();
         services.AddScoped<IAudioMetadataService, AudioMetadataService>();
         services.AddHostedService<TempFilesCleanupJob>();
         services.AddScoped<IPermissionService, PermissionService>();

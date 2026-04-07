@@ -5,7 +5,7 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries;
 public record ArtistOwnerDto(
     Guid UserId, 
     string Email, 
-    string? DisplayName
+    string FirstName
 );
 
 public record ArtistDetailsDto(
