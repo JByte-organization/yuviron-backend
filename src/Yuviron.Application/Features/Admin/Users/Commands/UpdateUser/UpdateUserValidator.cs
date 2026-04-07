@@ -17,7 +17,7 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .EmailAddress()
             .MaximumLength(320);
 
-        RuleFor(x => x.DisplayName)
+        RuleFor(x => x.FirstName)
             .NotEmpty()
             .MaximumLength(100);
 

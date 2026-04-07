@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Сброс стилей для корректного отображения в почтовиках */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+
+        /* Основные стили в стиле Yuviron */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0b0413; /* Глубокий темный фон космоса */
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+        }
+
+        .wrapper {
+            padding: 40px 20px;
+            background-color: #0b0413;
+            /* Если хочешь добавить фоновую картинку с неоновыми волнами, раскомментируй строку ниже и вставь ссылку на картинку */
+            /* background-image: url('https://твой-домен/images/email-bg.jpg'); background-size: cover; background-position: top center; */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #140b24; /* Цвет карточки (чуть светлее фона) */
+            border: 1px solid #321b54; /* Тонкая неоновая рамка */
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(116, 45, 230, 0.15); /* Легкое свечение */
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Заголовки и текст */
+        .header { text-align: center; padding-bottom: 10px; }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .content {
+            text-align: center;
+            padding: 10px 0;
+            color: #b3a7c6; /* Приглушенный серо-фиолетовый текст */
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .content strong {
+            color: #ffffff; /* Имя пользователя выделяем белым */
+        }
+
+        /* Неоновая кнопка-таблетка */
+        .button-wrapper {
+            text-align: center;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 35px;
+            background-color: #8b5cf6; /* Запасной цвет (solid) для старых почтовиков */
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%); /* Градиент от синего к розовому */
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(217, 70, 239, 0.4); /* Розовое свечение */
+        }
+
+        /* Подвал */
+        .footer {
+            text-align: center;
+            font-size: 13px;
+            color: #5d4d7a;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+
+        <div class="logo">
+                <span style="color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -1px;">
+                    <span style="color: #3b82f6;">Y</span>uviron
+                </span>
+        </div>
+
+        <div class="header">
+            <h1>Discover Your Sound 🎵</h1>
+        </div>
+
+        <div class="content">
+            <p>Hello, <strong>{{ FirstName }}</strong>!</p>
+            <p>Your music world awaits. Listen to millions of songs, create your playlists, and enter a personalized music environment.</p>
+
+            <div class="button-wrapper">
+                <a href="{{ AppUrl }}" class="button">Get Started</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Experience the ultimate music streaming platform.</p>
+            <p>© 2026 Yuviron Team. Все права защищены.</p>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

@@ -14,7 +14,7 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUserById;
 public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserDetailsDto>
 {
     private readonly IApplicationDbContext _context;
-    private readonly TimeProvider _timeProvider; // <-- Добавили для премиума
+    private readonly TimeProvider _timeProvider; 
 
     public GetUserByIdHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
@@ -35,12 +35,12 @@ public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserD
                 u.AccountState,
                 u.AcceptMarketing,
                 u.AcceptTerms,
-                u.Profile != null ? u.Profile.DisplayName : null,
-                u.Profile != null ? u.Profile.AvatarUrl : null,
-                u.Profile != null ? u.Profile.Country : null,
-                u.Profile != null ? u.Profile.Bio : null,
-                u.Profile != null ? u.Profile.DateOfBirth : default,
-                u.Profile != null ? u.Profile.Gender : default,
+                u.Profile.FirstName,
+                u.Profile.AvatarUrl,  
+                u.Profile.Country,   
+                u.Profile.Bio,        
+                u.Profile.DateOfBirth, 
+                u.Profile.Gender,    
                 u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow), 
                 u.CreatedAt,
                 u.UpdatedAt,

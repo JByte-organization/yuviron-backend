@@ -7,7 +7,7 @@ namespace Yuviron.Domain.Entities;
 public class UserProfile : Entity
 {
     
-    public string DisplayName { get; private set; } = string.Empty;
+    public string FirstName { get; private set; } = string.Empty;
     public string? AvatarUrl { get; private set; }
     public string? Country { get; private set; }
     public string? Bio { get; private set; }
@@ -21,7 +21,7 @@ public class UserProfile : Entity
 
     public static UserProfile Create(
         Guid userId, 
-        string displayName, 
+        string firstName, 
         string? avatarUrl, 
         string? country, 
         string? bio, 
@@ -32,7 +32,7 @@ public class UserProfile : Entity
         return new UserProfile
         {
             Id = userId,
-            DisplayName = displayName.Trim(),
+            FirstName = firstName.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
             Country = country?.Trim(),
             Bio = bio?.Trim(),
@@ -43,7 +43,7 @@ public class UserProfile : Entity
     }
 
     public void UpdateDetails(
-        string displayName, 
+        string firstName, 
         string? avatarUrl, 
         string? country, 
         string? bio, 
@@ -51,7 +51,7 @@ public class UserProfile : Entity
         Gender gender, 
         DateTime utcNow)
     {
-        DisplayName = displayName.Trim();
+        FirstName = firstName.Trim();
         AvatarUrl = avatarUrl?.Trim();
         Country = country?.Trim();
         Bio = bio?.Trim();
@@ -62,7 +62,7 @@ public class UserProfile : Entity
     
     public void ClearPersonalData(DateTime utcNow)
     {
-        DisplayName = "Deleted User";
+        FirstName = "Deleted User";
         AvatarUrl = null;
         Country = null;
         Bio = null;

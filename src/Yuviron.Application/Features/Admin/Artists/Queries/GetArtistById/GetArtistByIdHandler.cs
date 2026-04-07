@@ -33,7 +33,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                     .Select(tm => new ArtistOwnerDto(
                         tm.UserId,
                         tm.User.Email,
-                        tm.User.Profile != null ? tm.User.Profile.DisplayName : null
+                        tm.User.Profile.FirstName // Берем имя напрямую
                     ))
                     .FirstOrDefault(), 
                 a.Name,

@@ -16,7 +16,7 @@ public sealed record UpdateUserCommand(
     string? AvatarUrl,
     AccountState AccountState,
     bool AcceptMarketing,
-    string DisplayName,
+    string FirstName,
     DateTime DateOfBirth,
     Gender Gender,
     IReadOnlyCollection<Guid>? RoleIds = null

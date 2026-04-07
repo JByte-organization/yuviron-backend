@@ -16,7 +16,7 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .MinimumLength(6)
             .MaximumLength(100);
 
-        RuleFor(x => x.DisplayName)
+        RuleFor(x => x.FirstName)
             .NotEmpty()
             .MaximumLength(100);
 
