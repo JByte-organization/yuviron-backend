@@ -27,9 +27,14 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                p.CoverUrl,
                                p.Visibility,
                                p.IsEditorial,
-                               p.IsEditorial ? "YUVIRON" : 
-                                   (p.User != null ? p.User.Profile.FirstName : "Unknown"),
-                               p.UserId,
+                           
+                               p.IsEditorial || p.User == null ? null : new PlaylistCreatorDto(
+                                   p.UserId,
+                                   p.User.Profile.FirstName,
+                                   p.User.Email,
+                                   p.User.Profile.AvatarUrl 
+                               ),
+                           
                                p.PlaylistTracks.Count,
                                p.CreatedAt,
                                p.UpdatedAt

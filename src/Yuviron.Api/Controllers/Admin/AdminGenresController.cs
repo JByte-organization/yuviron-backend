@@ -9,6 +9,7 @@ using Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
 using Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
 using Yuviron.Application.Features.Admin.Genres.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Genres.Queries.GetGenres;
+using Yuviron.Application.Features.Admin.Genres.Queries.GetGenresAutocomplete;
 using Yuviron.Application.Features.Admin.Genres.Queries.GetGenresById;
 
 namespace Yuviron.Api.Controllers.Admin;
@@ -58,5 +59,12 @@ public class AdminGenresController : ApiControllerBase
         return NoContent();
     }
     
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<GenreAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<GenreAutocompleteDto>>> AutocompleteGenres([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetGenresAutocompleteQuery(searchTerm, limit), ct);
+        return Ok(result);
+    }
     
 }

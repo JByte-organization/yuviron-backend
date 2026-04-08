@@ -11,6 +11,7 @@ using Yuviron.Application.Features.Admin.Artists.Queries;
 using Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Artists.Queries.GetArtistById;
 using Yuviron.Application.Features.Admin.Artists.Queries.GetArtists;
+using Yuviron.Application.Features.Admin.Artists.Queries.GetArtistsAutocomplete;
 using Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMembers;
 
 namespace Yuviron.Api.Controllers.Admin;
@@ -96,6 +97,15 @@ public class AdminArtistsController : ApiControllerBase
         await Mediator.Send(new RemoveTeamMemberCommand(id, userId), ct);
         
         return NoContent();
+    }
+    
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<ArtistAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ArtistAutocompleteDto>>> Autocomplete([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var query = new GetArtistsAutocompleteQuery(searchTerm, limit);
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
     }
 
 }

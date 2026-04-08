@@ -7,6 +7,7 @@ using Yuviron.Application.Features.Admin.Albums.Commands.UpdateAlbum;
 using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumById;
 using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;
+using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumsAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -53,5 +54,13 @@ public class AdminAlbumsController : ApiControllerBase
     {
         await Mediator.Send(new DeleteAlbumCommand(id), ct);
         return NoContent();
+    }
+    
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<AlbumAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AlbumAutocompleteDto>>> Autocomplete([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetAlbumsAutocompleteQuery(searchTerm, limit), ct);
+        return Ok(result);
     }
 }

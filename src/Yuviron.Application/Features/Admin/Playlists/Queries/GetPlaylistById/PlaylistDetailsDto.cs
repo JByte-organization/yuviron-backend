@@ -3,6 +3,13 @@ using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistById;
 
+public sealed record PlaylistCreatorDto(
+    Guid? Id, 
+    string? Name, 
+    string? Email,
+    string? AvatarUrl
+);
+
 public sealed record PlaylistDetailsDto(
     Guid Id,
     string Title,
@@ -10,8 +17,7 @@ public sealed record PlaylistDetailsDto(
     string? CoverUrl,
     PlaylistVisibility Visibility,
     bool IsEditorial,
-    string CreatorName,
-    Guid? CreatorId, 
+    PlaylistCreatorDto? Creator, 
     int TracksCount,  
     DateTime CreatedAt, 
     DateTime UpdatedAt
