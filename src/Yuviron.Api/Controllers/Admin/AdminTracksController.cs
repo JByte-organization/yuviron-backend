@@ -7,6 +7,7 @@ using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 using Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
+using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -53,5 +54,13 @@ public class AdminTracksController : ApiControllerBase
     {
         await Mediator.Send(new DeleteTrackCommand(id), ct);
         return NoContent();
+    }
+    
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<TrackAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<TrackAutocompleteDto>>> Autocomplete([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetTracksAutocompleteQuery(searchTerm, limit), ct);
+        return Ok(result);
     }
 }

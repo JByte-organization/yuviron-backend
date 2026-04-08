@@ -10,6 +10,7 @@ using Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
 using Yuviron.Application.Features.Admin.Moods.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Moods.Queries.GetMoodById;
 using Yuviron.Application.Features.Admin.Moods.Queries.GetMoods;
+using Yuviron.Application.Features.Admin.Moods.Queries.GetMoodsAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -58,5 +59,13 @@ public class AdminMoodsController : ApiControllerBase
     {
         await Mediator.Send(new DeleteMoodCommand(id), ct);
         return NoContent();
+    }
+    
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<MoodAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<MoodAutocompleteDto>>> AutocompleteMoods([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetMoodsAutocompleteQuery(searchTerm, limit), ct);
+        return Ok(result);
     }
 }

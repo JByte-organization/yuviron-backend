@@ -9,6 +9,7 @@ using Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 using Yuviron.Application.Features.Admin.Users.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Users.Queries.GetUserById;
 using Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
+using Yuviron.Application.Features.Admin.Users.Queries.GetUsersAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -72,5 +73,14 @@ public class AdminUsersController : ApiControllerBase
     {
         await Mediator.Send(new UnblockUserCommand(id), ct);
         return NoContent();
+    }
+    
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(typeof(List<UserAutocompleteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<UserAutocompleteDto>>> Autocomplete([FromQuery] string searchTerm, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var query = new GetUsersAutocompleteQuery(searchTerm, limit);
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
     }
 }
