@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИЛИ ИМПОРТ СЕРВИСА
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events;
@@ -17,7 +17,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IAudioMetadataService _audioMetadataService; // <-- ИНЖЕКТИМ СЕРВИС
+    private readonly IAudioMetadataService _audioMetadataService;
 
     public CreateTrackHandler(
         IApplicationDbContext context, 
@@ -56,7 +56,6 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
-        var finalAudioKey = FileStorageExtensions.PredictDestinationPath(request.AudioStorageKey, "tracks");
 
         var track = Track.Create(
             request.AlbumId,
@@ -65,7 +64,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             audioMeta.DurationMs,
             request.Explicit,
             finalCoverUrl,   
-            finalAudioKey!,
+            request.AudioStorageKey, 
             request.VisibilityStatus,
             uniqueArtistIds,
             uniqueGenreIds,
@@ -74,9 +73,6 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
 
         if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
             track.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
-
-        if (!string.IsNullOrWhiteSpace(request.AudioStorageKey) && request.AudioStorageKey.StartsWith("temp/"))
-            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.AudioStorageKey, "tracks"));
 
         _context.Tracks.Add(track);
         

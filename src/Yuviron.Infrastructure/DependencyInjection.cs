@@ -103,7 +103,9 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddSingleton<IEmailJobQueue, EmailJobQueue>();
+        services.AddHttpClient<IJamendoApiService, JamendoApiService>();
         services.AddHostedService<EmailBackgroundWorker>();
+        services.AddScoped<IHlsTranscodingService, HlsTranscodingService>();
         services.AddSingleton<ITemplateService, FluidTemplateService>();
         services.AddScoped<IAudioMetadataService, AudioMetadataService>();
         services.AddHostedService<TempFilesCleanupJob>();

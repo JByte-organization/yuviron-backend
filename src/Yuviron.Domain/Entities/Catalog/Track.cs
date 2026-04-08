@@ -19,6 +19,10 @@ public class Track : Entity
     public string AudioStorageKey { get; private set; } = string.Empty;
     public int PlayCount { get; private set; }
     public VisibilityStatus VisibilityStatus { get; private set; }
+    
+    public TrackProcessingStatus ProcessingStatus { get; private set; }
+    public string? HlsPlaylistUrl { get; private set; } 
+    
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public bool IsDeleted { get; private set; }
@@ -33,7 +37,7 @@ public class Track : Entity
     private Track() { }
 
     public static Track Create(
-        Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl, // <-- Изменено
+        Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, VisibilityStatus status,
         IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
@@ -55,6 +59,9 @@ public class Track : Entity
             CoverUrl = coverUrl?.Trim(),
             AudioStorageKey = audioKey,
             VisibilityStatus = status,
+            
+            ProcessingStatus = TrackProcessingStatus.Processing, 
+            
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };
@@ -62,7 +69,23 @@ public class Track : Entity
         track.SyncArtists(artistIds);
         track.SyncGenres(genreIds);
         track.SyncMoods(moodIds);
+        
+        track.AddDomainEvent(new AudioNeedsTranscodingEvent(track.Id, audioKey));
+        
         return track;
+    }
+
+    public void MarkAsReady(string hlsPlaylistUrl, DateTime utcNow)
+    {
+        HlsPlaylistUrl = hlsPlaylistUrl;
+        ProcessingStatus = TrackProcessingStatus.Ready;
+        UpdatedAt = utcNow;
+    }
+
+    public void MarkAsFailed(DateTime utcNow)
+    {
+        ProcessingStatus = TrackProcessingStatus.Failed;
+        UpdatedAt = utcNow;
     }
 
     public void UpdateDetails(
@@ -88,20 +111,19 @@ public class Track : Entity
     }
 
     private void SyncArtists(IEnumerable<Guid> ids)
-{
-    var newIds = ids.Distinct().ToList();
-    
-    var toRemove = TrackArtists.Where(ta => !newIds.Contains(ta.ArtistId)).ToList();
-    foreach (var item in toRemove) TrackArtists.Remove(item);
-
-    var currentIds = TrackArtists.Select(ta => ta.ArtistId).ToList();
-    
-    foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
     {
-        // Используем конструктор
-        TrackArtists.Add(new TrackArtist(this.Id, id, ArtistRole.Main));
+        var newIds = ids.Distinct().ToList();
+        
+        var toRemove = TrackArtists.Where(ta => !newIds.Contains(ta.ArtistId)).ToList();
+        foreach (var item in toRemove) TrackArtists.Remove(item);
+
+        var currentIds = TrackArtists.Select(ta => ta.ArtistId).ToList();
+        
+        foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
+        {
+            TrackArtists.Add(new TrackArtist(this.Id, id, ArtistRole.Main));
+        }
     }
-}
 
     private void SyncGenres(IEnumerable<Guid> ids)
     {

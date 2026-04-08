@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Services; // <-- ДОБАВИЛИ ИМПОРТ СЕРВИСА
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
@@ -17,7 +17,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly IAudioMetadataService _audioMetadataService; // <-- ИНЖЕКТИМ СЕРВИС
+    private readonly IAudioMetadataService _audioMetadataService;
 
     public UpdateTrackHandler(
         IApplicationDbContext context, 
@@ -41,6 +41,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var albumExists = await _context.Albums.AsNoTracking().AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
         if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
+        // ... проверки связей ... (остались без изменений)
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtists = await _context.Artists.AsNoTracking().CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
         if (existingArtists != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "Invalid artists provided.");
@@ -57,9 +58,10 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var oldAudioKey = track.AudioStorageKey;
 
         int updatedDurationMs = track.DurationMs;
+        bool audioFileChanged = !string.Equals(oldAudioKey, request.AudioStorageKey, StringComparison.OrdinalIgnoreCase) 
+                                && request.AudioStorageKey.StartsWith("temp/");
 
-        if (!string.Equals(oldAudioKey, request.AudioStorageKey, StringComparison.OrdinalIgnoreCase) 
-            && request.AudioStorageKey.StartsWith("temp/"))
+        if (audioFileChanged)
         {
             var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(request.AudioStorageKey, cancellationToken);
             
@@ -73,7 +75,6 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
-        var finalAudioKey = FileStorageExtensions.PredictDestinationPath(request.AudioStorageKey, "tracks");
 
         track.UpdateDetails(
             request.AlbumId,
@@ -82,7 +83,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             updatedDurationMs,
             request.Explicit,
             finalCoverUrl,   
-            finalAudioKey!, 
+            request.AudioStorageKey,
             request.VisibilityStatus,
             uniqueArtistIds,
             uniqueGenreIds,
@@ -92,14 +93,14 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
             track.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
 
-        if (!string.IsNullOrWhiteSpace(request.AudioStorageKey) && request.AudioStorageKey.StartsWith("temp/"))
-            track.AddDomainEvent(new TempFileNeedsMovingEvent(request.AudioStorageKey, "tracks"));
-
         if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldCoverUrl))
             track.AddDomainEvent(new FileNeedsDeletionEvent(oldCoverUrl));
 
-        if (!string.Equals(oldAudioKey, finalAudioKey, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAudioKey))
-            track.AddDomainEvent(new FileNeedsDeletionEvent(oldAudioKey));
+        if (audioFileChanged)
+        {
+            track.AddDomainEvent(new AudioNeedsTranscodingEvent(track.Id, request.AudioStorageKey));
+            
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

@@ -1,7 +1,7 @@
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks;
 
 public record PlaylistTrackItemDto(
-    Guid TrackId,
+    Guid TrackId,//avatar,name, ownerArtist
     string Title,
     List<string> ArtistNames,
     Guid AlbumId,      

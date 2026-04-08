@@ -16,5 +16,5 @@ public record AlbumDetailsDto(
     int TotalPlays,     
     DateTime CreatedAt,  
     DateTime UpdatedAt, 
-    List<ArtistSimpleDto> Artists
+    List<ArtistSimpleDto> Artists//avatar, name, email 
 );
