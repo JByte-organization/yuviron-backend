@@ -12,7 +12,7 @@ public class JamendoApiService : IJamendoApiService
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<JamendoApiService> _logger;
     private readonly string _clientId;
-    private readonly string _baseUrl; // <-- Вот оно, наше новое поле!
+    private readonly string _baseUrl;
 
     public JamendoApiService(
         HttpClient httpClient,
@@ -22,7 +22,6 @@ public class JamendoApiService : IJamendoApiService
     {
         _httpClient = httpClient;
         
-        // Надежно читаем URL из конфига, отрезая слэш на конце
         _baseUrl = (configuration["JamendoApi:BaseUrl"] ?? "https://api.jamendo.com/v3.0").TrimEnd('/');
         
         _clientId = configuration["JamendoApi:ClientId"] 
@@ -32,32 +31,26 @@ public class JamendoApiService : IJamendoApiService
         _logger = logger;
     }
 
-    public async Task<List<JamendoTrackDto>> GetPopularTracksAsync(int limit = 10, CancellationToken cancellationToken = default)
+    public async Task<List<JamendoTrackDto>> GetTracksAsync(int limit = 10, int offset = 0, CancellationToken cancellationToken = default)
     {
-        // Клеим идеальный URL
-        var url = $"{_baseUrl}/tracks/?client_id={_clientId}&format=json&limit={limit}&order=popularity_total&hasimage=true&audiodlformat=mp32";
+        var url = $"{_baseUrl}/tracks/?client_id={_clientId}&format=json&limit={limit}&offset={offset}&order=releasedate_desc&hasimage=true&audiodlformat=mp32";
         
-        _logger.LogInformation("Запрашиваем {Limit} треков из Jamendo API", limit);
+        _logger.LogInformation("Request {Limit} of tracks (offset {Offset}) from Jamendo API", limit, offset);
         
         try
         {
-            // Читаем сырой JSON
             var rawJson = await _httpClient.GetStringAsync(url, cancellationToken);
 
-            _logger.LogInformation("Сырой JSON от Jamendo: {Json}", rawJson);
-            
-            // Игнорируем регистр (status vs Status)
             var options = new System.Text.Json.JsonSerializerOptions 
             { 
                 PropertyNameCaseInsensitive = true 
             };
 
-            // Распаковываем
             var response = System.Text.Json.JsonSerializer.Deserialize<JamendoResponse>(rawJson, options);
 
             if (response == null || response.Results == null || response.Results.Count == 0)
             {
-                _logger.LogWarning("Jamendo API вернул пустой список треков. Статус: {Status}", response?.Headers?.Status ?? "NULL");
+                _logger.LogWarning("Jamendo API returned an empty track list. Status: {Status}", response?.Headers?.Status ?? "NULL");
                 return new List<JamendoTrackDto>();
             }
 
@@ -65,7 +58,7 @@ public class JamendoApiService : IJamendoApiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при обращении к Jamendo API");
+            _logger.LogError(ex, "Error when accessing Jamendo API");
             return new List<JamendoTrackDto>();
         }
     }
@@ -74,18 +67,25 @@ public class JamendoApiService : IJamendoApiService
     {
         if (string.IsNullOrWhiteSpace(fileUrl)) return string.Empty;
 
-        _logger.LogInformation("Скачиваем файл с Jamendo: {Url}", fileUrl);
+        _logger.LogInformation("Download the file from Jamendo: {Url}", fileUrl);
 
-        var response = await _httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        try 
+        {
+            var response = await _httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        
-        var tempKey = await _fileStorageService.UploadAsync(stream, "temp", uniqueFileName, contentType, cancellationToken);
-        
-        return tempKey; 
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            
+            var tempKey = await _fileStorageService.UploadAsync(stream, "temp", $"file{extension}", contentType, cancellationToken);
+            
+            return tempKey; 
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to download file from link {Url}", fileUrl);
+            return string.Empty;
+        }
     }
 }

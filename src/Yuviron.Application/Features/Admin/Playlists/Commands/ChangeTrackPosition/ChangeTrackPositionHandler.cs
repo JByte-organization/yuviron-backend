@@ -36,33 +36,45 @@ public sealed class ChangeTrackPositionHandler : IRequestHandler<ChangeTrackPosi
             .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
 
         int oldPosition = trackToMove.Position;
-        int newPosition = request.NewPosition;
+        int newPosition = Math.Clamp(request.NewPosition, 1, maxPosition);
 
-        if (newPosition < 1) newPosition = 1;
-        if (newPosition > maxPosition) newPosition = maxPosition;
         if (oldPosition == newPosition) return Unit.Value;
 
-        trackToMove.UpdatePosition(-1);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        if (newPosition < oldPosition)
+        // ИСПОЛЬЗУЕМ НАШУ АБСТРАКЦИЮ
+        await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+        try
         {
-            await _context.PlaylistTracks
-                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= newPosition && pt.Position < oldPosition)
-                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+            // 1. Временная позиция
+            trackToMove.UpdatePosition(-1);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // 2. Сдвиг остальных
+            if (newPosition < oldPosition)
+            {
+                await _context.PlaylistTracks
+                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= newPosition && pt.Position < oldPosition)
+                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+            }
+            else
+            {
+                await _context.PlaylistTracks
+                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > oldPosition && pt.Position <= newPosition)
+                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position - 1), cancellationToken);
+            }
+
+            // 3. Финальная установка
+            trackToMove.UpdatePosition(newPosition);
+            playlist.NotifyContentChanged(_timeProvider.GetUtcNow().UtcDateTime);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
         }
-        else
+        catch
         {
-            await _context.PlaylistTracks
-                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > oldPosition && pt.Position <= newPosition)
-                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position - 1), cancellationToken);
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
-
-        trackToMove.UpdatePosition(newPosition);
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        playlist.NotifyContentChanged(utcNow);
-
-        await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

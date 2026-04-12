@@ -66,6 +66,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             finalCoverUrl,   
             request.AudioStorageKey, 
             request.VisibilityStatus,
+            request.Isrc,
             uniqueArtistIds,
             uniqueGenreIds,
             uniqueMoodIds, 

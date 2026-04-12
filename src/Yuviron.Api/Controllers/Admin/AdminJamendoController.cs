@@ -9,11 +9,13 @@ namespace Yuviron.Api.Controllers.Admin;
 public class AdminJamendoController : ApiControllerBase
 {
     [HttpPost("sync")]
-    [ProducesResponseType(typeof(SyncJamendoResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<SyncJamendoResponse>> SyncTracks([FromQuery] int limit = 10, CancellationToken ct = default)
+    public async Task<ActionResult<SyncJamendoResponse>> SyncTracks(
+        [FromQuery] int limit = 10, 
+        [FromQuery] int offset = 0, 
+        CancellationToken ct = default)
     {
-        var command = new SyncJamendoTracksCommand(limit);
-        
+        var command = new SyncJamendoTracksCommand(limit, offset);
+    
         var syncedCount = await Mediator.Send(command, ct);
 
         return Ok(new SyncJamendoResponse("Синхронизация завершена", syncedCount));

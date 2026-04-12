@@ -4,7 +4,7 @@ using Yuviron.Domain.Enums; // <-- Подключили енамку
 
 namespace Yuviron.Domain.Entities;
 
-public sealed class Notification : Entity // <-- Добавили sealed
+public sealed class Notification : Entity
 {
     public Guid UserId { get; private set; }
     public string Title { get; private set; } = string.Empty;
@@ -16,7 +16,7 @@ public sealed class Notification : Entity // <-- Добавили sealed
     public bool IsRead { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public User User { get; private set; } = null!; // <-- Убрали virtual за ненадобностью
+    public User User { get; private set; } = null!;
 
     private Notification() { }
 

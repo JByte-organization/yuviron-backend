@@ -130,4 +130,36 @@ public class LocalFileStorageService : IFileStorageService
         if (!fullPath.StartsWith(_storageRoot, StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Access denied.");
         return fullPath;
     }
+    
+    public Task DeleteDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(directoryPath)) return Task.CompletedTask;
+
+        try
+        {
+            var fullPath = GetValidatedFullPath(directoryPath); 
+            
+            if (Directory.Exists(fullPath))
+            {
+                Directory.Delete(fullPath, recursive: true);
+                _logger.LogInformation("Успешно удалена директория и все её файлы: {Path}", fullPath);
+            }
+            else
+            {
+                _logger.LogWarning("Директория {Path} не найдена, удаление пропущено.", fullPath);
+            }
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Директория {DirectoryPath} заблокирована и не может быть удалена прямо сейчас.", directoryPath);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Непредвиденная ошибка при удалении директории {DirectoryPath}.", directoryPath);
+            throw;
+        }
+
+        return Task.CompletedTask;
+    }
 }

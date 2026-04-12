@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Enums;
-using Yuviron.Domain.Events; // <-- ДОБАВИЛИ ДЛЯ ИВЕНТОВ
-using Yuviron.Domain.Exceptions;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
 
@@ -17,23 +16,20 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IIdentityManager _identityManager;
     
-    // Убрали IFileStorageService
     public CreateArtistHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider) 
+        TimeProvider timeProvider,
+        IIdentityManager identityManager) 
     {
         _context = context;
         _timeProvider = timeProvider;
+        _identityManager = identityManager;
     }
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
     {
-        var ownerUser = await _context.Users
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == request.OwnerUserId, cancellationToken)
-            ?? throw new NotFoundException(nameof(User), request.OwnerUserId);
-
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
         var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
@@ -56,19 +52,7 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 
         _context.Artists.Add(artist);
 
-        var managementRoleStr = nameof(RoleName.ManagementUser);
-        var managementRole = await _context.Roles
-            .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
-            ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
-
-        var currentRoleIds = ownerUser.UserRoles.Select(ur => ur.RoleId).ToList();
-        
-        if (!currentRoleIds.Contains(managementRole.Id))
-        {
-            currentRoleIds.Add(managementRole.Id);
-            ownerUser.SyncRoles(currentRoleIds);
-            ownerUser.AddDomainEvent(new UserPermissionsChangedEvent(ownerUser.Id));
-        }
+        await _identityManager.EnsureManagementRoleAsync(request.OwnerUserId, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 

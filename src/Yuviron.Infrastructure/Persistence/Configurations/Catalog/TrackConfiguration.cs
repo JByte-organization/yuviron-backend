@@ -26,6 +26,12 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
             .IsRequired() 
             .OnDelete(DeleteBehavior.Cascade);
         
+        builder.Property(t => t.Isrc)
+            .HasMaxLength(12)
+            .IsRequired(false);
+
+        builder.HasIndex(t => t.Isrc);
+        
         builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

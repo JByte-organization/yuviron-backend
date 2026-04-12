@@ -2,31 +2,35 @@ using System.Text.Json.Serialization;
 
 namespace Yuviron.Application.Integrations.Jamendo.Models;
 
-public record JamendoTrackDto
+public class JamendoTrackDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; init; } = string.Empty;
+    public required string Id { get; set; }
 
     [JsonPropertyName("name")]
-    public string Name { get; init; } = string.Empty;
-
-    [JsonPropertyName("duration")]
-    public int DurationSeconds { get; init; }
+    public required string Name { get; set; }
 
     [JsonPropertyName("artist_id")]
-    public string ArtistId { get; init; } = string.Empty;
+    public required string ArtistId { get; set; }
 
     [JsonPropertyName("artist_name")]
-    public string ArtistName { get; init; } = string.Empty;
+    public required string ArtistName { get; set; }
 
     [JsonPropertyName("album_name")]
-    public string AlbumName { get; init; } = string.Empty;
+    public required string AlbumName { get; set; }
 
-    // Ссылка на обложку (обычно 500x500)
-    [JsonPropertyName("image")]
-    public string CoverUrl { get; init; } = string.Empty;
+    [JsonPropertyName("album_id")]
+    public required string AlbumId { get; set; }
 
-    // Прямая ссылка на скачивание MP3
+    [JsonPropertyName("position")]
+    public int Position { get; set; }
+
     [JsonPropertyName("audiodownload")]
-    public string AudioDownloadUrl { get; init; } = string.Empty;
+    public required string AudioDownloadUrl { get; set; }
+
+    [JsonPropertyName("image")]
+    public required string CoverUrl { get; set; }
+    
+    [JsonPropertyName("isrc")]
+    public string? Isrc { get; set; } 
 }

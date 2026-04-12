@@ -13,7 +13,7 @@ public class Subscription : Entity
     public DateTime StartAt { get; private set; }
     public DateTime EndAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; } // <-- Добавили
+    public DateTime UpdatedAt { get; private set; }
 
     public virtual User User { get; private set; } = null!;
     public virtual Plan Plan { get; private set; } = null!;
@@ -26,7 +26,7 @@ public class Subscription : Entity
         DateTime startAt, 
         DateTime endAt, 
         SubscriptionStatus status,
-        DateTime utcNow) // <-- Добавили проброс времени
+        DateTime utcNow)
     {
         return new Subscription
         {

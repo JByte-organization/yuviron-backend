@@ -33,14 +33,14 @@ public record TopEntityDto(
     Guid Id, 
     string Name, 
     string? CoverUrl,   
-    int TotalPlays 
+    long TotalPlays
 );
 
 public record PopularAlbumDto(
     Guid Id, 
     string Title, 
     string? CoverUrl, 
-    int TotalPlays 
+    long TotalPlays
 );
 
 //top entity artist+

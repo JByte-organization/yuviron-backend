@@ -13,15 +13,18 @@ public class Track : Entity
     public Guid AlbumId { get; private set; } 
     public int AlbumPosition { get; private set; }
     public string Title { get; private set; } = string.Empty;
+    public string? Isrc { get; private set; }
     public int DurationMs { get; private set; }
     public bool Explicit { get; private set; }
     public string? CoverUrl { get; private set; }
     public string AudioStorageKey { get; private set; } = string.Empty;
-    public int PlayCount { get; private set; }
+    
+    public long PlayCount { get; private set; }
     public VisibilityStatus VisibilityStatus { get; private set; }
     
     public TrackProcessingStatus ProcessingStatus { get; private set; }
     public string? HlsPlaylistUrl { get; private set; } 
+    
     
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -39,6 +42,7 @@ public class Track : Entity
     public static Track Create(
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, VisibilityStatus status,
+        string? isrc,
         IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
         DateTime utcNow)
@@ -54,6 +58,7 @@ public class Track : Entity
             AlbumId = albumId,
             AlbumPosition = albumPosition, 
             Title = title.Trim(),
+            Isrc = isrc?.Trim(),
             DurationMs = durationMs,
             Explicit = isExplicit,
             CoverUrl = coverUrl?.Trim(),
@@ -75,22 +80,30 @@ public class Track : Entity
         return track;
     }
 
-    public void MarkAsReady(string hlsPlaylistUrl, DateTime utcNow)
+    public void MarkAsReady(string hlsPlaylistUrl, string finalAudioKey, DateTime utcNow)
     {
         HlsPlaylistUrl = hlsPlaylistUrl;
+        AudioStorageKey = finalAudioKey; 
+    
         ProcessingStatus = TrackProcessingStatus.Ready;
         UpdatedAt = utcNow;
     }
 
-    public void MarkAsFailed(DateTime utcNow)
+    public void MarkAsFailed(DateTime utcNow, string? cleanupDirectoryPath = null)
     {
         ProcessingStatus = TrackProcessingStatus.Failed;
         UpdatedAt = utcNow;
+
+        if (!string.IsNullOrWhiteSpace(cleanupDirectoryPath))
+        {
+            AddDomainEvent(new DirectoryNeedsDeletionEvent(cleanupDirectoryPath));
+        }
     }
 
     public void UpdateDetails(
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl, 
         string audioKey, VisibilityStatus status,
+        string? isrc,
         IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
         DateTime utcNow)
@@ -98,6 +111,7 @@ public class Track : Entity
         AlbumId = albumId;
         AlbumPosition = albumPosition;
         Title = title.Trim();
+        Isrc = isrc?.Trim();
         DurationMs = durationMs;
         Explicit = isExplicit;
         CoverUrl = coverUrl?.Trim();
@@ -151,9 +165,12 @@ public class Track : Entity
         }
     }
     
-    public void IncrementPlayCount()
+    public void AddPlays(long count)
     {
-        PlayCount++;
+        if (count > 0) 
+        {
+            PlayCount += count;
+        }
     }
 
     public void Delete(DateTime utcNow)

@@ -44,10 +44,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
 
         if (existingToken == null) throw new UnauthorizedAccessException("Invalid token.");
 
-        if (existingToken.User == null) 
-        {
-            throw new UnauthorizedAccessException("User not found.");
-        }
+        if (existingToken.User == null) throw new UnauthorizedAccessException("User not found.");
 
         if (existingToken.User.AccountState == AccountState.Banned || 
             existingToken.User.AccountState == AccountState.Deleted || 
@@ -57,15 +54,27 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        bool isRetryWithinGracePeriod = false;
-
 
         if (existingToken.IsRevoked)
         {
             if (existingToken.IsInGracePeriod(utcNow))
             {
-                isRetryWithinGracePeriod = true;
-                _logger.LogInformation("Grace period utilized for User {UserId}. Token reused within 1 minute.", existingToken.UserId);
+                _logger.LogInformation("Сетевой ретрай! Grace period для токена юзера {UserId}.", existingToken.UserId);
+
+                if (existingToken.RevokedAt.HasValue)
+                {
+                    var lostTokens = await _context.RefreshTokens
+                        .Where(t => t.UserId == existingToken.UserId 
+                                 && t.CreatedAt >= existingToken.RevokedAt.Value 
+                                 && !t.IsRevoked)
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var lostToken in lostTokens)
+                    {
+                        lostToken.Revoke(utcNow);
+                    }
+                }
+                
             }
             else
             {
@@ -73,10 +82,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
                     .Where(x => x.UserId == existingToken.UserId && x.RevokedAt == null)
                     .ToListAsync(cancellationToken);
 
-                foreach (var token in allUserTokens)
-                {
-                    token.Revoke(utcNow);
-                }
+                foreach (var token in allUserTokens) token.Revoke(utcNow);
 
                 existingToken.User.AddDomainEvent(new UserPermissionsChangedEvent(existingToken.UserId));
                 await _context.SaveChangesAsync(cancellationToken);
@@ -85,15 +91,13 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
                 throw new UnauthorizedAccessException("Security Alert: Token reuse detected. All sessions terminated.");
             }
         }
-
-        if (existingToken.IsExpired(utcNow)) 
+        else if (existingToken.IsExpired(utcNow)) 
         {
             throw new UnauthorizedAccessException("Token expired."); 
         }
-
-        if (!isRetryWithinGracePeriod)
+        else 
         {
-            existingToken.Revoke(utcNow); 
+            existingToken.Revoke(utcNow);
         }
 
         var newAccessToken = _jwtTokenGenerator.GenerateToken(existingToken.User);
@@ -108,7 +112,6 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         );
 
         _context.RefreshTokens.Add(newRefreshTokenEntity);
-
         await _context.SaveChangesAsync(cancellationToken);
 
         return new RefreshAccessTokenResponse(newAccessToken, newRawRefreshToken);

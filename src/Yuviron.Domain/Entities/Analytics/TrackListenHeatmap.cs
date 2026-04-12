@@ -4,7 +4,6 @@ namespace Yuviron.Domain.Entities;
 
 public class TrackListenHeatmap
 {
-    // Композитный ключ: TrackId + SecondIndex (настраивается в EF Core Configuration)
     public Guid TrackId { get; private set; }
     public int SecondIndex { get; private set; }
 
@@ -23,12 +22,11 @@ public class TrackListenHeatmap
         {
             TrackId = trackId,
             SecondIndex = secondIndex,
-            PlaysCount = 1, // Создали - значит 1 раз уже послушали
+            PlaysCount = 1, 
             UpdatedAt = utcNow
         };
     }
 
-    // Метод действия с пробросом времени
     public void IncrementPlays(DateTime utcNow)
     {
         PlaysCount++;

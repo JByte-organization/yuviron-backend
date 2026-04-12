@@ -1,14 +1,14 @@
-using System;
-using System.Linq;
+using System.Diagnostics;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 using Yuviron.Domain.Common;
+using Yuviron.Domain.Entities;
 using Yuviron.Infrastructure.Persistence; 
 
 namespace Yuviron.Infrastructure.BackgroundJobs;
@@ -17,6 +17,8 @@ public class ProcessOutboxMessagesJob : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ProcessOutboxMessagesJob> _logger;
+    
+    private static readonly ActivitySource ActivitySource = new("Yuviron.Infrastructure");
     
     private const int MaxRetries = 5; 
 
@@ -36,7 +38,7 @@ public class ProcessOutboxMessagesJob : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+                var publishEndpoint = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
                 var strategy = dbContext.Database.CreateExecutionStrategy();
 
@@ -46,15 +48,20 @@ public class ProcessOutboxMessagesJob : BackgroundService
 
                     var now = DateTime.UtcNow;
 
-                    var messages = await dbContext.OutboxMessages
-                        .FromSqlInterpolated($@"
-                            SELECT * FROM outbox_messages 
-                            WHERE ProcessedOnUtc IS NULL 
-                              AND NextAttemptUtc <= {now} 
-                            ORDER BY NextAttemptUtc 
-                            LIMIT 20 
-                            FOR UPDATE SKIP LOCKED")
-                        .ToListAsync(stoppingToken);
+                    List<OutboxMessage> messages;
+
+                    using (SuppressInstrumentationScope.Begin())
+                    {
+                        messages = await dbContext.OutboxMessages
+                            .FromSqlInterpolated($@"
+                                SELECT * FROM outbox_messages 
+                                WHERE ProcessedOnUtc IS NULL 
+                                  AND NextAttemptUtc <= {now} 
+                                ORDER BY NextAttemptUtc 
+                                LIMIT 20 
+                                FOR UPDATE SKIP LOCKED")
+                            .ToListAsync(stoppingToken);
+                    }
 
                     messagesProcessedInBatch = messages.Count;
 
@@ -62,6 +69,12 @@ public class ProcessOutboxMessagesJob : BackgroundService
                     {
                         foreach (var message in messages)
                         {
+                            using var activity = ActivitySource.StartActivity("ProcessOutboxMessage", ActivityKind.Consumer);
+                            if (activity != null && !string.IsNullOrEmpty(message.TraceId))
+                            {
+                                activity.SetParentId(message.TraceId);
+                            }
+
                             try
                             {
                                 var eventType = Type.GetType(message.Type);
@@ -76,7 +89,7 @@ public class ProcessOutboxMessagesJob : BackgroundService
                                     throw new InvalidOperationException($"Deserialization returned null for {message.Type}");
                                 }
 
-                                await publisher.Publish(domainEvent, stoppingToken);
+                                await publishEndpoint.Publish(domainEvent, eventType, stoppingToken);
                                 
                                 message.MarkAsProcessed(DateTime.UtcNow);
                             }
@@ -87,7 +100,6 @@ public class ProcessOutboxMessagesJob : BackgroundService
                                 if (message.RetryCount >= MaxRetries - 1)
                                 {
                                     _logger.LogError("Message {Id} failed after {MaxRetries} attempts. Dead Letter.", message.Id, MaxRetries);
-                                    
                                     message.MarkAsFailed(ex.Message, null);
                                 }
                                 else

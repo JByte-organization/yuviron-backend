@@ -18,7 +18,6 @@ public class FluidTemplateService : ITemplateService
 
     public async Task<string> RenderTemplateAsync<T>(string templateName, T model)
     {
-        // Ищем файл шаблона в папке Templates/Emails рядом с исполняемым файлом
         var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Emails", $"{templateName}.html");
         
         if (!File.Exists(templatePath))
@@ -29,7 +28,6 @@ public class FluidTemplateService : ITemplateService
         if (_parser.TryParse(source, out var template, out var error))
         {
             var options = new TemplateOptions();
-            // Разрешаем шаблонизатору читать свойства переданной модели (DTO)
             options.MemberAccessStrategy.Register(typeof(T)); 
             
             var context = new TemplateContext(model, options);

@@ -18,10 +18,4 @@
     <ProjectReference Include="..\Yuviron.Domain\Yuviron.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Client\Command\" />
-    <Folder Include="Features\Client\Playlist\Commands\CreatePlaylistCommand\" />
-    <Folder Include="Features\Client\Playlist\Queries\" />
-  </ItemGroup>
-
 </Project>

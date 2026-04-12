@@ -36,13 +36,17 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
 
     public async Task<int> Handle(SyncJamendoTracksCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Начинаем синхронизацию {Limit} треков из Jamendo...", request.Limit);
+        _logger.LogInformation("Начинаем синхронизацию {Limit} треков (Offset: {Offset})...", request.Limit, request.Offset);
 
-        var jamendoTracks = await _jamendoApi.GetPopularTracksAsync(request.Limit, cancellationToken);
+        var jamendoTracks = await _jamendoApi.GetTracksAsync(request.Limit, request.Offset, cancellationToken);
         if (!jamendoTracks.Any()) return 0;
 
         var defaultGenre = await GetOrCreateGenreAsync("Jamendo Hits", cancellationToken);
         var defaultMood = await GetOrCreateMoodAsync("Various", cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken); 
+
+        var localArtistCache = new Dictionary<string, Artist>();
+        var localAlbumCache = new Dictionary<string, Album>();
 
         int syncedCount = 0;
 
@@ -50,66 +54,103 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
         {
             try
             {
-                var artist = await GetOrCreateArtistAsync(jt.ArtistName, cancellationToken);
+                bool hasNewPrerequisites = false;
 
-                var trackExists = await _context.Tracks
-                    .AnyAsync(t => t.Title == jt.Name && t.TrackArtists.Any(ta => ta.ArtistId == artist.Id), cancellationToken);
-                
-                if (trackExists)
+                if (!localArtistCache.TryGetValue(jt.ArtistId, out var artist))
                 {
-                    _logger.LogInformation("Трек {TrackName} уже есть в базе. Пропускаем.", jt.Name);
+                    artist = await GetOrCreateArtistAsync(jt.ArtistName, jt.ArtistId, cancellationToken);
+                    localArtistCache[jt.ArtistId] = artist;
+                    hasNewPrerequisites = true;
+                }
+
+                var safeAlbumTitle = string.IsNullOrWhiteSpace(jt.AlbumName) ? "Singles" : jt.AlbumName;
+                if (!localAlbumCache.TryGetValue(jt.AlbumId, out var album))
+                {
+                    album = await GetOrCreateAlbumAsync(safeAlbumTitle, jt.AlbumId, artist.Id, cancellationToken);
+                    localAlbumCache[jt.AlbumId] = album;
+                    hasNewPrerequisites = true;
+                }
+
+                if (hasNewPrerequisites)
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                var hasMapping = await _context.ExternalMappings.AnyAsync(m => 
+                    m.Provider == ExternalProvider.Jamendo && 
+                    m.ExternalId == jt.Id && 
+                    m.EntityType == nameof(Track), cancellationToken);
+                    
+                if (hasMapping)
+                {
+                    _logger.LogInformation("Трек Jamendo:{Id} уже скачан. Пропускаем.", jt.Id);
                     continue;
                 }
 
-                var album = await GetOrCreateAlbumAsync(jt.AlbumName, artist.Id, cancellationToken);
+                Guid? existingTrackId = null;
 
-                _logger.LogInformation("Скачиваем файлы для трека {TrackName}...", jt.Name);
+                if (!string.IsNullOrWhiteSpace(jt.Isrc))
+                {
+                    var trackByIsrc = await _context.Tracks.FirstOrDefaultAsync(t => t.Isrc == jt.Isrc, cancellationToken);
+                    if (trackByIsrc != null)
+                    {
+                        existingTrackId = trackByIsrc.Id;
+                        _logger.LogInformation("БИНГО! Трек {Title} найден по ISRC. Связываем.", jt.Name);
+                    }
+                }
+
+                if (existingTrackId.HasValue)
+                {
+                    var newMapping = ExternalMapping.Create(existingTrackId.Value, nameof(Track), ExternalProvider.Jamendo, jt.Id);
+                    _context.ExternalMappings.Add(newMapping);
+                    
+                    syncedCount++;
+                    continue;
+                }
+
+                int position = jt.Position > 0 ? jt.Position : 1;
+
                 var audioKey = await _jamendoApi.DownloadFileToTempAsync(jt.AudioDownloadUrl, ".mp3", cancellationToken);
                 var coverKey = await _jamendoApi.DownloadFileToTempAsync(jt.CoverUrl, ".jpg", cancellationToken);
 
-                if (string.IsNullOrWhiteSpace(audioKey))
-                {
-                    _logger.LogWarning("Не удалось скачать аудио для {TrackName}. Пропускаем.", jt.Name);
-                    continue;
-                }
+                if (string.IsNullOrWhiteSpace(audioKey)) continue;
 
-                // ИСПРАВЛЕНО: CreateTrackCommand теперь вызывается через круглые скобки
                 var createTrackCmd = new CreateTrackCommand(
-                    album.Id,
-                    1,
-                    jt.Name,
-                    false,
-                    audioKey,
-                    coverKey,
-                    VisibilityStatus.Published, // Приводим 1 к Enum (Published)
-                    new List<Guid> { artist.Id },
-                    new List<Guid> { defaultGenre.Id },
-                    new List<Guid> { defaultMood.Id }
+                    album.Id, position, jt.Name, false, audioKey, coverKey, VisibilityStatus.Published,
+                    new List<Guid> { artist.Id }, new List<Guid> { defaultGenre.Id }, new List<Guid> { defaultMood.Id }, jt.Isrc
                 );
 
-                await _sender.Send(createTrackCmd, cancellationToken);
-                syncedCount++;
+                var trackId = await _sender.Send(createTrackCmd, cancellationToken);
                 
-                _logger.LogInformation("Трек {TrackName} успешно отправлен на обработку HLS!", jt.Name);
+                var trackMapping = ExternalMapping.Create(trackId, nameof(Track), ExternalProvider.Jamendo, jt.Id);
+                _context.ExternalMappings.Add(trackMapping);
+                
+
+                syncedCount++;
+                _logger.LogInformation("Трек {TrackName} успешно отправлен в обработку!", jt.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при синхронизации трека {TrackName}", jt.Name);
+                _logger.LogError(ex, "Ошибка при синхронизации трека Jamendo:{Id}", jt.Id);
             }
+        }
+
+        if (syncedCount > 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return syncedCount;
     }
+
 
     private async Task<Genre> GetOrCreateGenreAsync(string name, CancellationToken cancellationToken)
     {
         var genre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == name, cancellationToken);
         if (genre == null)
         {
-            // ИСПРАВЛЕНО: Добавлен null для CoverUrl и DateTime.UtcNow
             genre = Genre.Create(name, null, DateTime.UtcNow);
             _context.Genres.Add(genre);
-            await _context.SaveChangesAsync(cancellationToken);
         }
         return genre;
     }
@@ -119,56 +160,45 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
         var mood = await _context.Moods.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
         if (mood == null)
         {
-            // ИСПРАВЛЕНО: Добавлен null для CoverUrl и DateTime.UtcNow
             mood = Mood.Create(name, null, DateTime.UtcNow);
             _context.Moods.Add(mood);
-            await _context.SaveChangesAsync(cancellationToken);
         }
         return mood;
     }
 
-    private async Task<Artist> GetOrCreateArtistAsync(string name, CancellationToken cancellationToken)
+    private async Task<Artist> GetOrCreateArtistAsync(string name, string jamendoId, CancellationToken ct)
     {
-        var artist = await _context.Artists.FirstOrDefaultAsync(a => a.Name == name, cancellationToken);
-        if (artist == null)
-        {
-            // ИСПРАВЛЕНО: Переданы все 7 параметров
-            artist = Artist.Create(
-                null, 
-                name, 
-                "Imported from Jamendo", 
-                null, 
-                null, 
-                default(VerificationStatus), // Статус по умолчанию (например, Unverified)
-                DateTime.UtcNow);
-                
-            _context.Artists.Add(artist);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        var mapping = await _context.ExternalMappings
+            .FirstOrDefaultAsync(m => m.Provider == ExternalProvider.Jamendo && m.ExternalId == jamendoId && m.EntityType == nameof(Artist), ct);
+
+        if (mapping != null)
+            return await _context.Artists.FirstAsync(a => a.Id == mapping.InternalId, ct);
+
+        var artist = Artist.Create(null, name, "Imported from Jamendo", null, null, default, DateTime.UtcNow);
+        _context.Artists.Add(artist);
+        
+        var newMapping = ExternalMapping.Create(artist.Id, nameof(Artist), ExternalProvider.Jamendo, jamendoId);
+        _context.ExternalMappings.Add(newMapping);
+
         return artist;
     }
 
-    private async Task<Album> GetOrCreateAlbumAsync(string title, Guid artistId, CancellationToken cancellationToken)
+    private async Task<Album> GetOrCreateAlbumAsync(string title, string jamendoId, Guid artistId, CancellationToken ct)
     {
-        var safeTitle = string.IsNullOrWhiteSpace(title) ? "Singles" : title;
-        
-        var album = await _context.Albums.FirstOrDefaultAsync(a => a.Title == safeTitle && a.AlbumArtists.Any(aa => aa.ArtistId == artistId), cancellationToken);
-        if (album == null)
-        {
-            // ИСПРАВЛЕНО: Переданы все 8 параметров
-            album = Album.Create(
-                safeTitle, 
-                "Imported from Jamendo", 
-                null, 
-                DateTime.UtcNow, 
-                VisibilityStatus.Published,
-                null, 
-                new List<Guid> { artistId }, 
-                DateTime.UtcNow);
+        var safeTitle = string.IsNullOrWhiteSpace(title) ? "Singles" : title; 
 
-            _context.Albums.Add(album);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        var mapping = await _context.ExternalMappings
+            .FirstOrDefaultAsync(m => m.Provider == ExternalProvider.Jamendo && m.ExternalId == jamendoId && m.EntityType == nameof(Album), ct);
+
+        if (mapping != null)
+            return await _context.Albums.FirstAsync(a => a.Id == mapping.InternalId, ct);
+
+        var album = Album.Create(safeTitle, "Imported from Jamendo", null, DateTime.UtcNow, VisibilityStatus.Published, null, new List<Guid> { artistId }, DateTime.UtcNow);
+        _context.Albums.Add(album);
+        
+        var newMapping = ExternalMapping.Create(album.Id, nameof(Album), ExternalProvider.Jamendo, jamendoId);
+        _context.ExternalMappings.Add(newMapping);
+
         return album;
     }
 }

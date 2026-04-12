@@ -10,7 +10,7 @@ public class RoyaltyAccrualDaily
     public int StreamsCount { get; private set; }
     public decimal GrossAmount { get; private set; } 
     public decimal PlatformFeeAmount { get; private set; }
-    public decimal NetAmount { get; private set; } // Чистыми
+    public decimal NetAmount { get; private set; }
 
     public virtual Artist Artist { get; private set; } = null!;
 
@@ -28,7 +28,6 @@ public class RoyaltyAccrualDaily
             StreamsCount = streamsCount,
             GrossAmount = grossAmount,
             PlatformFeeAmount = platformFeeAmount,
-            // Магия домена: вычисляем чистую прибыль сами, чтобы не было расхождений в БД!
             NetAmount = grossAmount - platformFeeAmount 
         };
     }

@@ -28,6 +28,7 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
 
         var coverUrlToDelete = track.CoverUrl;
         var audioKeyToDelete = track.AudioStorageKey;
+        var hlsPlaylistUrlToDelete = track.HlsPlaylistUrl;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         track.Delete(utcNow); 
@@ -37,6 +38,16 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
 
         if (!string.IsNullOrWhiteSpace(audioKeyToDelete))
             track.AddDomainEvent(new FileNeedsDeletionEvent(audioKeyToDelete));
+
+        if (!string.IsNullOrWhiteSpace(hlsPlaylistUrlToDelete))
+        {
+            var directoryPath = System.IO.Path.GetDirectoryName(hlsPlaylistUrlToDelete)?.Replace("\\", "/");
+            
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+            {
+                track.AddDomainEvent(new DirectoryNeedsDeletionEvent(directoryPath));
+            }
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

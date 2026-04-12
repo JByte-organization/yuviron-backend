@@ -34,6 +34,7 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
                 t.Explicit,
                 t.CoverUrl,                 
                 t.AudioStorageKey,
+                t.HlsPlaylistUrl,
                 t.PlayCount,
                 t.VisibilityStatus,
                 t.CreatedAt,

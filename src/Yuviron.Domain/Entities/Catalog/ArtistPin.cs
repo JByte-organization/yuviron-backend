@@ -18,7 +18,7 @@ public class ArtistPin : Entity
 
     private ArtistPin() { }
 
-    public static ArtistPin Create(Guid artistId, ArtistPinType type, Guid entityId, int position, DateTime utcNow) // Добавили utcNow
+    public static ArtistPin Create(Guid artistId, ArtistPinType type, Guid entityId, int position, DateTime utcNow)
     {
         return new ArtistPin
         {
