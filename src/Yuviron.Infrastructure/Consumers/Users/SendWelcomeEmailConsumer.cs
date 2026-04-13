@@ -1,42 +1,42 @@
-using MediatR;
+using System.Threading.Tasks;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Events;
 
-namespace Yuviron.Application.Features.Auth.EventHandlers;
+namespace Yuviron.Infrastructure.Consumers;
 
 public record WelcomeEmailModel(string FirstName, string AppUrl);
 
-public sealed class SendWelcomeEmailEventHandler : INotificationHandler<UserRegisteredEvent>
+public class SendWelcomeEmailConsumer : IConsumer<UserRegisteredEvent>
 {
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
-    private readonly ILogger<SendWelcomeEmailEventHandler> _logger;
+    private readonly ILogger<SendWelcomeEmailConsumer> _logger;
 
-    public SendWelcomeEmailEventHandler(
+    public SendWelcomeEmailConsumer(
         IEmailService emailService,
         ITemplateService templateService,
-        ILogger<SendWelcomeEmailEventHandler> logger)
+        ILogger<SendWelcomeEmailConsumer> logger)
     {
         _emailService = emailService;
         _templateService = templateService;
         _logger = logger;
     }
 
-    public async Task Handle(UserRegisteredEvent notification, CancellationToken cancellationToken)
+    public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
-
-        var templateModel = new WelcomeEmailModel(notification.FirstName, "https://dev.yuviron.com");
+        var templateModel = new WelcomeEmailModel(context.Message.FirstName, "https://dev.yuviron.com");
 
         var htmlBody = await _templateService.RenderTemplateAsync("WelcomeEmail", templateModel);
 
         await _emailService.SendEmailAsync(
-            notification.Email,
+            context.Message.Email,
             "Добро пожаловать в Yuviron! 🎵",
             htmlBody,
-            cancellationToken
+            context.CancellationToken
         );
         
-        _logger.LogInformation("Приветственное письмо для {Email} успешно отправлено.", notification.Email);
+        _logger.LogInformation("Приветственное письмо для {Email} успешно отправлено.", context.Message.Email);
     }
 }

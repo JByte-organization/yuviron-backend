@@ -182,5 +182,17 @@ public class Track : Entity
         UpdatedAt = utcNow;
 
         AddDomainEvent(new TrackDeletedEvent(Id));
+        
+        if (!string.IsNullOrWhiteSpace(CoverUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(CoverUrl));
+        }
+
+        if (!string.IsNullOrWhiteSpace(AudioStorageKey))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(AudioStorageKey));
+        }
+
+        AddDomainEvent(new DirectoryNeedsDeletionEvent($"tracks/{Id}"));
     }
 }

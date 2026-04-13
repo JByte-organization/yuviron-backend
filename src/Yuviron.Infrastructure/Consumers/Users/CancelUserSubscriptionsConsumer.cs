@@ -1,31 +1,30 @@
-using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
+using System;
 
-namespace Yuviron.Application.Features.Admin.Users.EventHandlers;
+namespace Yuviron.Infrastructure.Consumers;
 
-public sealed class CancelUserSubscriptionsEventHandler : INotificationHandler<UserDeletedEvent>
+public class CancelUserSubscriptionsConsumer : IConsumer<UserDeletedEvent>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CancelUserSubscriptionsEventHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CancelUserSubscriptionsConsumer(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
     }
 
-    public async Task Handle(UserDeletedEvent notification, CancellationToken cancellationToken)
+    public async Task Consume(ConsumeContext<UserDeletedEvent> context)
     {
         var activeSubscriptions = await _context.Subscriptions
-            .Where(s => s.UserId == notification.UserId && s.Status == SubscriptionStatus.Active)
-            .ToListAsync(cancellationToken);
+            .Where(s => s.UserId == context.Message.UserId && s.Status == SubscriptionStatus.Active)
+            .ToListAsync(context.CancellationToken);
 
         if (!activeSubscriptions.Any()) return; 
 
@@ -35,6 +34,6 @@ public sealed class CancelUserSubscriptionsEventHandler : INotificationHandler<U
         {
             subscription.Cancel(utcNow, immediate: true); 
         }
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(context.CancellationToken);
     }
 }

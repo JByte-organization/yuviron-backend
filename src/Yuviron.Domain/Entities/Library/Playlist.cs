@@ -1,5 +1,6 @@
 ﻿using Yuviron.Domain.Common;
-using Yuviron.Domain.Enums; 
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Domain.Entities;
 
@@ -87,5 +88,10 @@ public class Playlist : Entity
     {
         IsDeleted = true;
         UpdatedAt = utcNow;
+
+        if (!string.IsNullOrWhiteSpace(CoverUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(CoverUrl));
+        }
     }
 }

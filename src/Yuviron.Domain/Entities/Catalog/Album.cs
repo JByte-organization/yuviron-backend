@@ -82,7 +82,13 @@ public class Album : Entity
         IsDeleted = true;
         DeletedAt = utcNow;
         UpdatedAt = utcNow;
+        
         AddDomainEvent(new AlbumDeletedEvent(Id));
+
+        if (!string.IsNullOrWhiteSpace(CoverUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(CoverUrl));
+        }
     }
 
     private static DateTime? NormalizeScheduledPublishAt(VisibilityStatus status, DateTime? date)

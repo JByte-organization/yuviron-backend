@@ -156,5 +156,15 @@ public class Artist : Entity
         UpdatedAt = utcNow;
         
         AddDomainEvent(new ArtistDeletedEvent(this.Id));
+
+        if (!string.IsNullOrWhiteSpace(AvatarUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(AvatarUrl));
+        }
+
+        if (!string.IsNullOrWhiteSpace(BannerUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(BannerUrl));
+        }
     }
 }

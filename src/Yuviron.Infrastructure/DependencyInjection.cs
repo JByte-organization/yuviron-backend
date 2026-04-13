@@ -17,6 +17,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
+using Yuviron.Infrastructure.Consumers;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
@@ -133,6 +134,22 @@ public static class DependencyInjection
     {
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<MoveTempFileConsumer>();
+            x.AddConsumer<DeleteFileConsumer>();
+            x.AddConsumer<DeleteDirectoryConsumer>();
+            
+            x.AddConsumer<AlbumDeletedConsumer>();
+            x.AddConsumer<HideArtistAlbumsConsumer>();
+            x.AddConsumer<RemoveTrackFromPlaylistsConsumer>();
+            
+            x.AddConsumer<CancelUserSubscriptionsConsumer>();
+            x.AddConsumer<ClearUserProfileConsumer>();
+            x.AddConsumer<UserPermissionsChangedConsumer>();
+            x.AddConsumer<RevokeTokensOnPasswordChangedConsumer>();
+            x.AddConsumer<SendWelcomeEmailConsumer>();
+            
+            x.AddConsumer<TrackPlayedFallbackConsumer>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 var host = configuration["RabbitMQ:Host"] ?? "127.0.0.1";
@@ -143,8 +160,14 @@ public static class DependencyInjection
                     h.Username(user);
                     h.Password(pass);
                 });
+                
+                cfg.ReceiveEndpoint("api_background_tasks", e =>
+                {
+                    e.ConfigureConsumers(context); 
+                });
             });
         });
+        
 
         // Background tasks that only the API runs
         services.AddHostedService<ProcessOutboxMessagesJob>();
