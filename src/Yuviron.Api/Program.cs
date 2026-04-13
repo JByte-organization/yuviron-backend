@@ -18,7 +18,7 @@ using Yuviron.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================================================================
-// ЧАСТЬ 0: НАСТРОЙКА ЛОГИРОВАНИЯ (Serilog + Seq)
+// PART 0: SETTING UP LOGGING (Serilog + Seq)
 // =========================================================================
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -39,10 +39,10 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // =========================================================================
-// ЧАСТЬ 1: РЕГИСТРАЦИЯ СЕРВИСОВ (DI Container)
+// PART 1: REGISTRATION OF SERVICES (DI Container)
 // =========================================================================
 
-// 1.0 OpenTelemetry (Трассировка и графики)
+// 1.0 OpenTelemetry (Traces and graphs)
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => 
     {
@@ -62,10 +62,10 @@ builder.Services.AddOpenTelemetry()
     {
         metrics
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Yuviron.Api"))
-            .AddAspNetCoreInstrumentation() // Статистика по HTTP запросам
-            .AddHttpClientInstrumentation() // Статистика по вызовам Jamendo
-            .AddRuntimeInstrumentation()    // Самое важное: CPU, RAM, Garbage Collector
-            .AddProcessInstrumentation()   // Данные о процессе
+            .AddAspNetCoreInstrumentation() // Statistics on HTTP requests
+            .AddHttpClientInstrumentation() // Jamendo call statistics
+            .AddRuntimeInstrumentation()    // The most important: CPU, RAM, Garbage Collector
+            .AddProcessInstrumentation()   // Process data
             .AddOtlpExporter(options => 
             {
                 options.Endpoint = new Uri("http://localhost:4317");
@@ -73,15 +73,15 @@ builder.Services.AddOpenTelemetry()
             });
     });
 
-// 1.1 Архитектурные слои
+// 1.1 Architectural layers
 builder.Services.AddApplication();
 
-// ПОДКЛЮЧАЕМ ИНФРАСТРУКТУРУ
+// CONNECTING THE INFRASTRUCTURE
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddApiBackgroundServices(builder.Configuration);
 
-// 1.2 Контроллеры и Swagger
+// 1.2 Controllers and Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -112,7 +112,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 1.3 CORS (Разрешения для фронтенда)
+// 1.3 CORS (Permissions for frontend)
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() 
                      ?? Array.Empty<string>();
 
@@ -127,11 +127,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 1.4 Глобальная обработка ошибок
+// 1.4 Global error handling
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-// 1.5 Rate Limiter (Защита от DDoS и брутфорса)
+// 1.5 Rate Limiter (Protection against DDoS and brute force)
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -155,16 +155,16 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // =========================================================================
-// СБОРКА ПРИЛОЖЕНИЯ
+// BUILDING THE APPLICATION
 // =========================================================================
 var app = builder.Build();
 
 // =========================================================================
-// ЧАСТЬ 2: ИНИЦИАЛИЗАЦИЯ И HTTP-ПАЙПЛАЙН (Middlewares)
-// Внимание: Порядок вызовов app.Use... имеет огромное значение!
+// Part 2: INITIALIZATION AND HTTP PIPELINE (Middlewares)
+// Attention: The order of app.Use... calls is of great importance!
 // =========================================================================
 
-// 2.1 Инициализация базы данных (Миграции и Seed)
+// 2.1 Initializing the Database (Migrations and Seed)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -181,10 +181,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 2.2 Перехват ошибок (Должен быть в самом начале пайплайна)
+// 2.2 Error catching (Must be at the very beginning of the pipeline)
 app.UseExceptionHandler();
 
-// 2.3 Swagger UI (Только для разработки или если включен в конфиге)
+// 2.3 Swagger UI (For development only or if enabled in the config)
 var swaggerEnabled = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled");
 if (swaggerEnabled)
 {
@@ -197,11 +197,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 2.4 Базовые защиты и правила (CORS и лимиты до обработки авторизации)
+// 2.4 Basic protections and rules (CORS and limits before authorization processing)
 app.UseCors("YuvironCorsPolicy");
 app.UseRateLimiter();
 
-// 2.5 Раздача статических файлов (Музыка, Обложки)
+// 2.5 Distribution of static files (Music, Covers)
 var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
                   ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
                   ?? "/var/yuviron/storage";
@@ -224,16 +224,16 @@ app.UseStaticFiles(new StaticFileOptions
     {
         ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
         
-        // Разрешаем плеерам читать аудио-файлы
+        // Allow players to read audio files
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
     }
 });
 
-// 2.6 Аутентификация и Авторизация (Строго в таком порядке!)
+// 2.6 Authentication and Authorization (Strictly in that order!)
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 2.7 Маршрутизация эндпоинтов (Контроллеры и HealthChecks)
+// 2.7 Endpoint routing (Controllers and HealthChecks)
 app.MapControllers();
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
@@ -261,5 +261,5 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     }
 });
 
-// ЗАПУСК СЕРВЕРА
+// START SERVER
 app.Run();

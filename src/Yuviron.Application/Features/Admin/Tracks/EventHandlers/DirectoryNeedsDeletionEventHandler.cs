@@ -29,7 +29,7 @@ public sealed class DirectoryNeedsDeletionEventHandler : INotificationHandler<Di
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при фоновом удалении директории {DirectoryPath}", notification.DirectoryPath);
+            _logger.LogError(ex, "Error when deleting a directory in the background {DirectoryPath}", notification.DirectoryPath);
             throw;
         }
     }
