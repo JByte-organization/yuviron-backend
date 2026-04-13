@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using FluentValidation;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;

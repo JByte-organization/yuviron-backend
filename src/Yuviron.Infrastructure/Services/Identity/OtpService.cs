@@ -1,9 +1,5 @@
 using Microsoft.Extensions.Caching.Distributed;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions.Authentication;
-using Yuviron.Application.Abstractions.Services;
 
 namespace Yuviron.Infrastructure.Authentication;
 

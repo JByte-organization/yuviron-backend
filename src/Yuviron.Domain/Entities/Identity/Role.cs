@@ -1,6 +1,7 @@
 ﻿using Yuviron.Domain.Common;
-using Yuviron.Domain.Entities;
+
 namespace Yuviron.Domain.Entities;
+
 public class Role : Entity
 {
     public string Name { get; private set; } = string.Empty;

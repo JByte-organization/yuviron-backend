@@ -1,4 +1,3 @@
-using System;
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Features.Admin.Moods.Queries.DTOs;

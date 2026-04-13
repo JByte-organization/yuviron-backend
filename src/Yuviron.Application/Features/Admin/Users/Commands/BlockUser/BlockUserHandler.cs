@@ -1,10 +1,6 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Services; 
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;

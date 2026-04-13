@@ -2,10 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 
 namespace Yuviron.Infrastructure.BackgroundJobs;
@@ -15,7 +11,6 @@ public class TokenCleanupJob : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TokenCleanupJob> _logger;
     
-    // Запускаем очистку раз в сутки
     private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
 
     public TokenCleanupJob(IServiceProvider serviceProvider, ILogger<TokenCleanupJob> logger)
@@ -26,7 +21,7 @@ public class TokenCleanupJob : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Token Cleanup Service запущен. Очистка будет происходить каждые {Interval} часов.", _checkInterval.TotalHours);
+        _logger.LogInformation("The Token Cleanup Service has started. Cleanup will occur every {Interval} hours.", _checkInterval.TotalHours);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -36,10 +31,9 @@ public class TokenCleanupJob : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Критическая ошибка во время фоновой очистки токенов.");
+                _logger.LogError(ex, "Critical error during background token cleanup.");
             }
 
-            // Ждем сутки до следующего запуска
             await Task.Delay(_checkInterval, stoppingToken);
         }
     }
@@ -61,7 +55,7 @@ public class TokenCleanupJob : BackgroundService
 
         if (deletedCount > 0)
         {
-            _logger.LogInformation("🧹 Уборка завершена: удалено {Count} протухших/старых токенов из БД.", deletedCount);
+            _logger.LogInformation("Cleanup complete: {Count} stale/old tokens removed from DB", deletedCount);
         }
     }
 }

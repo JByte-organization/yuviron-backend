@@ -2,14 +2,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Messaging;
-using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Common;
 using Yuviron.Domain.Common;
 
 namespace Yuviron.Application.Features.Auth.Commands.SendLoginCode;

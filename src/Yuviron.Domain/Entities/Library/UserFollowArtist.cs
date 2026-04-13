@@ -1,5 +1,4 @@
-﻿using System;
-namespace Yuviron.Domain.Entities;
+﻿namespace Yuviron.Domain.Entities;
 
 public class UserFollowArtist
 {

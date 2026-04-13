@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Messaging;
@@ -37,6 +36,6 @@ public class SendWelcomeEmailConsumer : IConsumer<UserRegisteredEvent>
             context.CancellationToken
         );
         
-        _logger.LogInformation("Приветственное письмо для {Email} успешно отправлено.", context.Message.Email);
+        _logger.LogInformation("Welcome email for {Email} sent successfully.", context.Message.Email);
     }
 }

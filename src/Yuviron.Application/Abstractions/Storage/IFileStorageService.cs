@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
+﻿
 namespace Yuviron.Application.Abstractions.Services;
 
 public interface IFileStorageService

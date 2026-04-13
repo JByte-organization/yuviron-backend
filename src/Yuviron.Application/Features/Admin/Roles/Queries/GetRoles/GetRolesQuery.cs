@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;

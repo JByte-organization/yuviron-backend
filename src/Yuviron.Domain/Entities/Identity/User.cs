@@ -2,7 +2,6 @@
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 
-
 namespace Yuviron.Domain.Entities;
 
 public class User : Entity

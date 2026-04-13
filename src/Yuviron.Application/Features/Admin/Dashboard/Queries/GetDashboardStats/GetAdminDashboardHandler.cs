@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -50,7 +46,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             totalUsers, newUsers24h, premiumUsers, totalPlays
         );
 
-        // 2. Последние пользователи
+        // 2. Latest users
         var recentUsers = await _context.Users
             .AsNoTracking()
             .OrderByDescending(u => u.CreatedAt)
@@ -63,7 +59,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
                 u.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        // 3. Топ Жанров
+        // 3. Top Genres
         var topGenres = await _context.Genres
             .AsNoTracking()
             .OrderByDescending(g => g.TrackGenres.Sum(tg => tg.Track.PlayCount))
@@ -76,7 +72,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             ))
             .ToListAsync(cancellationToken);
 
-        // 4. Топ Настроений
+        // 4. Top Moods
         var topMoods = await _context.Moods
             .AsNoTracking()
             .OrderByDescending(m => m.TrackMoods.Sum(tm => tm.Track.PlayCount))
@@ -89,7 +85,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             ))
             .ToListAsync(cancellationToken);
 
-        // 5. Популярные Альбомы (сортировка перед проекцией)
+        // 5. Popular Albums (sorted before projection)
         var popularAlbums = await _context.Albums
             .AsNoTracking()
             .OrderByDescending(a => a.Tracks.Sum(t => t.PlayCount))

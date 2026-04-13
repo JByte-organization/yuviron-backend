@@ -1,9 +1,7 @@
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Events;
-using System;
 
 namespace Yuviron.Infrastructure.Consumers;
 

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Features.Admin.Dashboard.Queries.GetDashboardStats;
-using Yuviron.Domain.Enums;
 
 namespace Yuviron.Api.Controllers.Admin;
 

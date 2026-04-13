@@ -1,5 +1,4 @@
-﻿using System;
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 

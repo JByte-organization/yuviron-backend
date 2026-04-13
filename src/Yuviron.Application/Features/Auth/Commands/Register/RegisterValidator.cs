@@ -1,5 +1,4 @@
 using FluentValidation;
-using System;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
 

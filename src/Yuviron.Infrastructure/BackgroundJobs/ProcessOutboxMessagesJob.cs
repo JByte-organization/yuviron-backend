@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using MassTransit;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

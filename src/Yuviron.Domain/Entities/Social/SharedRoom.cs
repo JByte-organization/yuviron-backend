@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;

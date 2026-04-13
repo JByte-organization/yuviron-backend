@@ -1,6 +1,4 @@
-﻿using System;
-using Yuviron.Domain.Common;
-
+﻿
 namespace Yuviron.Domain.Entities;
 
 public class ArtistPayoutSettings

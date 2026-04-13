@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks; 
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;

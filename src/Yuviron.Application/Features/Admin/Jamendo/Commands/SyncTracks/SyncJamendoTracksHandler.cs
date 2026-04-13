@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
-using Yuviron.Application.Integrations.Jamendo;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums; 
 
@@ -83,7 +77,7 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                     
                 if (hasMapping)
                 {
-                    _logger.LogInformation("Трек Jamendo:{Id} уже скачан. Пропускаем.", jt.Id);
+                    _logger.LogInformation("Jamendo track:{Id} is already downloaded. Skip.", jt.Id);
                     continue;
                 }
 
@@ -95,7 +89,7 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                     if (trackByIsrc != null)
                     {
                         existingTrackId = trackByIsrc.Id;
-                        _logger.LogInformation("БИНГО! Трек {Title} найден по ISRC. Связываем.", jt.Name);
+                        _logger.LogInformation("Track {Title} found via ISRC. Let's connect.", jt.Name);
                     }
                 }
 
@@ -127,11 +121,11 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                 
 
                 syncedCount++;
-                _logger.LogInformation("Трек {TrackName} успешно отправлен в обработку!", jt.Name);
+                _logger.LogInformation("Track {TrackName} has been successfully sent for processing!", jt.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при синхронизации трека Jamendo:{Id}", jt.Id);
+                _logger.LogError(ex, "Error syncing Jamendo track:{Id}", jt.Id);
             }
         }
 

@@ -3,8 +3,6 @@ using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions.Messaging;
 
 namespace Yuviron.Infrastructure.Services;

@@ -3,9 +3,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Yuviron.Application.Abstractions.Caching;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Yuviron.Infrastructure.Caching;
 
