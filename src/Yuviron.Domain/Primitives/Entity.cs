@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿
 namespace Yuviron.Domain.Common;
 
 public abstract class Entity

@@ -1,4 +1,3 @@
-using System.IO;
 using MediatR;
 
 namespace Yuviron.Application.Features.Files.Commands.UploadFile;

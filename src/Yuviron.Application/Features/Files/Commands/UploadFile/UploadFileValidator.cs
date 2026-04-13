@@ -4,10 +4,10 @@ namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
 public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
 {
-    // Белый список разрешенных расширений
+    // Whitelist of allowed extensions
     private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".mp3", ".wav" };
     
-    // Белый список разрешенных MIME-типов
+    // Whitelist of allowed MIME types
     private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "audio/mpeg", "audio/wav", "audio/x-wav" };
 
     public UploadFileValidator()

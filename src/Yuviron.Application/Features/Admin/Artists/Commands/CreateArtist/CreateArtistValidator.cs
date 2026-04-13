@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;

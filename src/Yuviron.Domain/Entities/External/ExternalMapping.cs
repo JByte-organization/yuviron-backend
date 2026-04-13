@@ -1,4 +1,3 @@
-using System;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 

@@ -1,7 +1,4 @@
 using Yuviron.Application.Integrations.Jamendo.Models;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Yuviron.Application.Abstractions.Services;
 

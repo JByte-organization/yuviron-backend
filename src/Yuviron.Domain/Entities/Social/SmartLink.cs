@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Yuviron.Domain.Common;
-using Yuviron.Domain.Enums; // Создай SmartLinkType в папке Enums
+﻿using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
 

@@ -5,10 +5,6 @@ using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Extensions; 
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;

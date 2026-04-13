@@ -1,4 +1,3 @@
-using System;
 
 namespace Yuviron.Application.Features.Admin.Moods.Queries.DTOs;
 

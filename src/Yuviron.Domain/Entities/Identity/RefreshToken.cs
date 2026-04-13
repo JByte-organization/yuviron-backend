@@ -1,5 +1,4 @@
 ﻿using Yuviron.Domain.Common;
-using System;
 
 namespace Yuviron.Domain.Entities;
 

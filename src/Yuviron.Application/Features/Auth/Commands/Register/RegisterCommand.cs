@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
-using System;
 
 namespace Yuviron.Application.Features.Auth.Commands.Register;
 

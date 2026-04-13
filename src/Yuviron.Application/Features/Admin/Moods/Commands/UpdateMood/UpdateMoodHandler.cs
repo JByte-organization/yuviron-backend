@@ -1,12 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events; // <-- ДОБАВИЛИ ДЛЯ ИВЕНТОВ
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
@@ -16,7 +13,6 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    // Убрали IFileStorageService!
 
     public UpdateMoodHandler(
         IApplicationDbContext context, 

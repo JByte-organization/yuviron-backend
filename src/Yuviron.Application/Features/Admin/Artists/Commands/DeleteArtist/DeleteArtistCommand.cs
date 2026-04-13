@@ -1,10 +1,6 @@
-﻿using FluentValidation;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
+﻿using MediatR;
 using Yuviron.Application.Abstractions;
-using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
-using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.DeleteArtist;
 

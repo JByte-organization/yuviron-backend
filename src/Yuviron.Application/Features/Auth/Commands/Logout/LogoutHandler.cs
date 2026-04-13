@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System; // <-- Добавлено
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 

@@ -1,4 +1,3 @@
-using System;
 
 namespace Yuviron.Domain.Entities;
 

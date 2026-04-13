@@ -1,6 +1,5 @@
-﻿using System;
-using Yuviron.Domain.Common;
-using Yuviron.Domain.Enums; // <-- Подключили енамку
+﻿using Yuviron.Domain.Common;
+using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Domain.Entities;
 

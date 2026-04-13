@@ -1,4 +1,3 @@
-using System;
 using MediatR;
 
 namespace Yuviron.Application.Features.Analytics.Commands.RecordTrackPlay;

@@ -1,11 +1,8 @@
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
-using Yuviron.Application.Extensions; // Тут лежит наш QueryableExtensions
+using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 
 namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;

@@ -73,7 +73,6 @@ public class LocalFileStorageService : IFileStorageService
 
         var sourcePath = GetValidatedFullPath(sourceFileKey);
         
-        // Сразу собираем целевые пути, чтобы было с чем сравнивать
         var targetDirectory = GetValidatedFullPath(destinationFolder);
         var fileName = Path.GetFileName(sourceFileKey);
         var targetFilePath = Path.Combine(targetDirectory, fileName);
@@ -81,15 +80,11 @@ public class LocalFileStorageService : IFileStorageService
 
         if (!File.Exists(sourcePath))
         {
-            // ИДЕМПОТЕНТНОСТЬ: Проверяем, не лежит ли файл УЖЕ в папке назначения
             if (File.Exists(targetFilePath))
             {
-                // Файл уже перенесен (скорее всего, в предыдущей попытке Outbox-воркера). 
-                // Молча рапортуем об успехе, чтобы воркер пометил сообщение как Processed!
                 return Task.FromResult(finalRelativePath);
             }
 
-            // Если файла нет ни в temp/, ни в целевой папке — только тогда кидаем ошибку для ретрая
             throw new FileNotFoundException($"Source temp file not found for moving: {sourcePath}");
         }
 

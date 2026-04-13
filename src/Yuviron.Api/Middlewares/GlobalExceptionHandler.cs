@@ -36,7 +36,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         switch (exception)
         {
-            // 1. Ошибки валидации FluentValidation (400)
+            // 1. FluentValidation validation errors (400)
             case ValidationException validationException:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Validation Error";
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                     );
                 break;
 
-            // 2. Стандартные системные исключения бизнес-логики (400)
+            // 2. Standard system business logic exceptions (400)
             case ArgumentException:
             case InvalidOperationException:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
@@ -57,21 +57,21 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = "The request could not be processed due to invalid parameters or state."; 
                 break;
 
-            // 3. Не найдено (404)
+            // 3. Not found (404)
             case NotFoundException notFoundEx:
                 problemDetails.Status = StatusCodes.Status404NotFound;
                 problemDetails.Title = "Resource Not Found";
                 problemDetails.Detail = notFoundEx.Message;
                 break;
 
-            // 4. Конфликты (409)
+            // 4. Conflicts (409)
             case UserAlreadyExistsException existsEx:
                 problemDetails.Status = StatusCodes.Status409Conflict;
                 problemDetails.Title = "Resource Conflict";
                 problemDetails.Detail = existsEx.Message;
                 break;
 
-            // 5. Проблемы с доступом (401 / 403)
+            // 5. Access problems (401 / 403)
             case UnauthorizedAccessException unauthorizedEx:
                 var isForbidden = unauthorizedEx.Message.StartsWith("Access denied", StringComparison.OrdinalIgnoreCase);
 
@@ -82,14 +82,14 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = unauthorizedEx.Message;
                 break;
 
-            // 6. Базовые доменные ошибки (400)
+            // 6. Basic domain errors (400)
             case DomainException domainEx:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Business Rule Violation";
                 problemDetails.Detail = domainEx.Message;
                 break;
 
-            // 7. Ловим гонки и дубликаты из базы (409)
+            // 7. We catch races and duplicates from the database (409)
             case DbUpdateException dbUpdateEx:
                 var innerMsg = dbUpdateEx.InnerException?.Message ?? dbUpdateEx.Message;
                 

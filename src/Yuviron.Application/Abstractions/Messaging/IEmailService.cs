@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
+﻿
 namespace Yuviron.Application.Abstractions.Messaging;
 
 public interface IEmailService

@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Genres.Commands.CreateGenre;
 using Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
