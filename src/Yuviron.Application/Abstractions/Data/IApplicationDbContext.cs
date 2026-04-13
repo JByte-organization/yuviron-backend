@@ -8,6 +8,7 @@ public interface IApplicationDbContext : IUnitOfWork
 {
     
     DbSet<OutboxMessage> OutboxMessages { get; }
+    DbSet<ExternalMapping> ExternalMappings { get; }
     
     // --- Identity ---
     DbSet<User> Users { get; }

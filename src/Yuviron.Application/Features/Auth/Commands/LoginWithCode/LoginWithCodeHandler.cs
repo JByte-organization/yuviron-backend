@@ -67,12 +67,34 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
 
         if (user == null) throw new UnauthorizedAccessException("User not found.");
 
-        if (user.AccountState == AccountState.Banned || user.AccountState == AccountState.Deleted)
+        if (user.AccountState == AccountState.Deleted)
         {
-            throw new UnauthorizedAccessException("This account has been banned or deleted.");
+            throw new UnauthorizedAccessException("This account has been deleted.");
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
+        if (user.AccountState == AccountState.Banned)
+        {
+            var activeBlocks = await _context.UserBlocks
+                .Where(b => b.UserId == user.Id && b.IsActive)
+                .ToListAsync(cancellationToken);
+
+            bool isStillBanned = activeBlocks.Any(b => b.EndsAt == null || b.EndsAt > utcNow);
+
+            if (isStillBanned)
+            {
+                throw new UnauthorizedAccessException("This account is currently banned.");
+            }
+
+            foreach (var block in activeBlocks)
+            {
+                block.Deactivate(utcNow);
+            }
+
+            user.SetAccountState(AccountState.Active, utcNow);
+        }
+
         user.UpdateLastLogin(utcNow);
 
         var permissions = _permissionService.CalculateUserPermissions(user, utcNow);

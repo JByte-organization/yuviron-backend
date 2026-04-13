@@ -33,7 +33,6 @@ public class SharedRoom : Entity
             CreatedAt = utcNow
         };
 
-        // Создатель автоматически становится хостом в списке участников
         room.Join(hostUserId, RoomRole.Host, utcNow);
 
         return room;

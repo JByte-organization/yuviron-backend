@@ -15,6 +15,8 @@ public class Artist : Entity
     public string? BannerUrl { get; private set; }
     public VerificationStatus VerificationStatus { get; private set; }
     
+    public long TotalPlays { get; private set; }
+    
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; } 
 
@@ -49,7 +51,8 @@ public class Artist : Entity
             VerificationStatus = verificationStatus,
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
-            IsDeleted = false
+            IsDeleted = false,
+            TotalPlays = 0 
         };
 
         if (initialOwnerUserId.HasValue)
@@ -136,7 +139,13 @@ public class Artist : Entity
         return false; 
     }
     
-    
+    public void AddPlays(long count)
+    {
+        if (count > 0) 
+        {
+            TotalPlays += count;
+        }
+    }
 
     public void Delete(DateTime utcNow)
     {

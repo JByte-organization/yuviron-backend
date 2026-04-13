@@ -14,7 +14,6 @@ public class PlaylistTrack
 
     private PlaylistTrack() { }
 
-    // ИСПОЛЬЗУЕМ КОНСТРУКТОР
     public PlaylistTrack(Guid playlistId, Guid trackId, int position, Guid addedBy, DateTime utcNow)
     {
         PlaylistId = playlistId;

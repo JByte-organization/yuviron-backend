@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Diagnostics;
+using System.Text;
+using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RabbitMQ.Client;
+using StackExchange.Redis;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
@@ -16,10 +20,8 @@ using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
-using Yuviron.Infrastructure.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using StackExchange.Redis;
 using Yuviron.Infrastructure.Services.Audio;
+using Yuviron.Infrastructure.HealthChecks;
 
 namespace Yuviron.Infrastructure;
 
@@ -27,9 +29,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-
         var connectionString = configuration.GetConnectionString("Default");
-
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException("Missing connection string: ConnectionStrings:Default");
@@ -37,20 +37,22 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
         {
-
             var serverVersion = new MySqlServerVersion(new Version(8, 0, 43));
-
             options.UseMySql(connectionString, serverVersion, builder =>
             {
- 
                 builder.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-
                 builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
         });
+        
+        services.AddSingleton(new ActivitySource("Yuviron.Infrastructure"));
+        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddScoped<AppDbContextInitializer>();
 
+        // 2. AUTHENTICATION AND JWT
         var jwtSettings = new JwtSettings();
         configuration.Bind(JwtSettings.SectionName, jwtSettings);
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
         services.AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -61,18 +63,22 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-
                     ValidIssuer = jwtSettings.Issuer,
                     ValidAudience = jwtSettings.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings.Secret))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
                 };
             });
 
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IIdentityManager, IdentityManager>();
 
-
+        // 3. CACHING (Redis)
         var redisConnectionString = configuration.GetConnectionString("Redis");
-
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = redisConnectionString;
@@ -82,39 +88,69 @@ public static class DependencyInjection
         {
             var options = ConfigurationOptions.Parse(redisConnectionString!);
             options.AbortOnConnectFail = false; 
-            
             return ConnectionMultiplexer.Connect(options);
         });
-        
+
+        services.AddSingleton<ICacheService, CacheService>();
+
+        // 4. MEDIA SERVICES
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IAudioMetadataService, AudioMetadataService>();
+        services.AddScoped<IHlsTranscodingService, HlsTranscodingService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddHttpClient<IJamendoApiService, JamendoApiService>();
+
+        // 5. UTILITIES
+        services.AddSingleton(TimeProvider.System);
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddSingleton<ITemplateService, FluidTemplateService>();
+        services.AddScoped<IOtpService, OtpService>();
+
+        // 6. HEALTH CHECKS
         services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" })
             .AddCheck<DatabaseHealthCheck>("mysql", tags: new[] { "ready" })
-            .AddCheck<RedisHealthCheck>("redis", tags: new[] { "ready" });
+            .AddCheck<RedisHealthCheck>("redis", tags: new[] { "ready" })
+            .AddRabbitMQ(
+                async _ => 
+                {
+                    var factory = new ConnectionFactory
+                    {
+                        Uri = new Uri($"amqp://guest:guest@{configuration["RabbitMQ:Host"] ?? "127.0.0.1"}/")
+                    };
+                    return await factory.CreateConnectionAsync();
+                },
+                "rabbitmq",
+                null,
+                new[] { "ready" }
+            );
 
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
-        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        return services;
+    }
 
-        services.AddScoped<AppDbContextInitializer>();
+    public static IServiceCollection AddApiBackgroundServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddMassTransit(x =>
+        {
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var host = configuration["RabbitMQ:Host"] ?? "127.0.0.1";
+                var user = configuration["RabbitMQ:Username"] ?? "guest";
+                var pass = configuration["RabbitMQ:Password"] ?? "guest";
 
-        services.AddScoped<IPasswordHasher, PasswordHasher>();
+                cfg.Host(host, "/", h => {
+                    h.Username(user);
+                    h.Password(pass);
+                });
+            });
+        });
 
-        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        // Background tasks that only the API runs
         services.AddHostedService<ProcessOutboxMessagesJob>();
-        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddSingleton<ICacheService, CacheService>();
-        services.AddSingleton<IEmailJobQueue, EmailJobQueue>();
-        services.AddHostedService<EmailBackgroundWorker>();
-        services.AddSingleton<ITemplateService, FluidTemplateService>();
-        services.AddScoped<IAudioMetadataService, AudioMetadataService>();
+        services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<TempFilesCleanupJob>();
-        services.AddScoped<IPermissionService, PermissionService>();
-        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
-        services.AddScoped<IOtpService, OtpService>();
-        services.AddHttpContextAccessor();
-        services.AddScoped<IUserContext, UserContext>();
-        services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddHostedService<SyncPlayCountsJob>();
 
         return services;
     }

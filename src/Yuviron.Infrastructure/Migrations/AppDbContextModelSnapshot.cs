@@ -214,6 +214,9 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<long>("TotalPlays")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -498,6 +501,36 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("custom_themes", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.ExternalMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid>("InternalId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "ExternalId", "EntityType")
+                        .IsUnique();
+
+                    b.ToTable("ExternalMappings");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Genre", b =>
                 {
                     b.Property<Guid>("Id")
@@ -652,6 +685,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("moods", (string)null);
                 });
 
@@ -720,6 +756,10 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<int>("RetryCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("TraceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1380,13 +1420,24 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<bool>("Explicit")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("HlsPlaylistUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<int>("PlayCount")
+                    b.Property<string>("Isrc")
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
+
+                    b.Property<long>("PlayCount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
+                    b.Property<int>("ProcessingStatus")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1402,6 +1453,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AlbumId");
+
+                    b.HasIndex("Isrc");
 
                     b.ToTable("tracks", (string)null);
                 });

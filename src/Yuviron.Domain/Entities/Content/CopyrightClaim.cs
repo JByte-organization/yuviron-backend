@@ -4,7 +4,7 @@ using Yuviron.Domain.Enums; // <-- Подключили енамку
 
 namespace Yuviron.Domain.Entities;
 
-public sealed class CopyrightClaim : Entity // <-- Добавили sealed
+public sealed class CopyrightClaim : Entity 
 {
     public CopyrightEntityType EntityType { get; private set; }
     public Guid EntityId { get; private set; } 

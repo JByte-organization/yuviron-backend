@@ -18,7 +18,8 @@ public sealed record CreateTrackCommand(
     VisibilityStatus VisibilityStatus,
     List<Guid> ArtistIds,
     List<Guid> GenreIds,
-    List<Guid> MoodIds
+    List<Guid> MoodIds,
+    string? Isrc = null
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

@@ -29,7 +29,7 @@ public class VerificationRequest : Entity
             Id = Guid.NewGuid(),
             ArtistId = artistId,
             SubmittedByUserId = userId,
-            Status = VerificationStatus.Pending, // Предполагаем, что в Enum есть Pending
+            Status = VerificationStatus.Pending, 
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };

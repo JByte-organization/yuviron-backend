@@ -12,7 +12,7 @@ public record TrackListItemDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl, 
-    int PlayCount,   
+    long PlayCount,  
     VisibilityStatus VisibilityStatus,
     DateTime CreatedAt,
     DateTime UpdatedAt

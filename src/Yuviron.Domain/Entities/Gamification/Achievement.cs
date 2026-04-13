@@ -5,7 +5,7 @@ namespace Yuviron.Domain.Entities;
 
 public class Achievement : Entity
 {
-    public string Code { get; private set; } = string.Empty; // Например: "meloman_1"
+    public string Code { get; private set; } = string.Empty; 
     public string Title { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
@@ -20,7 +20,7 @@ public class Achievement : Entity
         return new Achievement
         {
             Id = Guid.NewGuid(),
-            Code = code.Trim().ToLowerInvariant(), // Коды лучше всегда держать в нижнем регистре
+            Code = code.Trim().ToLowerInvariant(), 
             Title = title.Trim(),
             Description = description.Trim(),
             IsActive = isActive

@@ -13,7 +13,7 @@ public record AlbumDetailsDto(
     DateTime? ScheduledPublishAt,
     int TracksCount,     
     long TotalDurationMs, //mm:ss
-    int TotalPlays,     
+    long TotalPlays,     
     DateTime CreatedAt,  
     DateTime UpdatedAt, 
     List<ArtistSimpleDto> Artists

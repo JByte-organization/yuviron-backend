@@ -22,5 +22,43 @@ services:
     volumes:
       - yuviron_mysql_data:/var/lib/mysql
 
+  yuviron-seq:
+    image: datalust/seq:latest
+    container_name: yuviron_seq
+    restart: always
+    user: "root"
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
+    ports:
+      - "8081:80"
+      - "5341:5341"
+    volumes:
+      - yuviron_seq_data_new:/data
+
+  yuviron-aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    container_name: yuviron_dashboard
+    restart: always
+    environment:
+      - ASPIRE_ALLOW_UNSECURED_TRANSPORT=true
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+      - DOTNET_DASHBOARD_OTLP_ENDPOINT_URL=http://0.0.0.0:4317
+    ports:
+      - "18888:18888" 
+      - "4317:4317"  
+        
+  yuviron-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: yuviron_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
 volumes:
   yuviron_mysql_data:
+  yuviron_seq_data_new:

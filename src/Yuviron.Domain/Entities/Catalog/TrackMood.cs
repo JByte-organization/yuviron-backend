@@ -10,7 +10,7 @@ public class TrackMood
     public Guid MoodId { get; private set; }
     public virtual Mood Mood { get; private set; } = null!;
 
-    private TrackMood() { } // Для EF Core
+    private TrackMood() { } 
 
     public TrackMood(Guid trackId, Guid moodId)
     {

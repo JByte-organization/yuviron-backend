@@ -35,7 +35,7 @@ public class Mood : Entity
     {
         Name = name.Trim();
         CoverUrl = coverUrl?.Trim();
-        UpdatedAt = utcNow; // Обновляем время
+        UpdatedAt = utcNow;
     }
 
     public void Delete(DateTime utcNow)

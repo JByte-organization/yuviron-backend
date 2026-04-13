@@ -3,6 +3,7 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Data;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 
@@ -48,7 +49,14 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
         return await base.SaveChangesAsync(cancellationToken);
     }
+    
+    public async Task<IDbTransaction> BeginTransactionAsync(CancellationToken ct = default)
+    {
+        var transaction = await Database.BeginTransactionAsync(ct);
+        return new EfDbTransaction(transaction);
+    }
 
+    public DbSet<ExternalMapping>  ExternalMappings => Set<ExternalMapping>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();

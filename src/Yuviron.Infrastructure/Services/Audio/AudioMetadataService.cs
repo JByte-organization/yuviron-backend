@@ -22,7 +22,6 @@ public sealed class AudioMetadataService : IAudioMetadataService
 
     public async Task<AudioMetadata> GetAudioMetadataAsync(string storageKey, CancellationToken cancellationToken = default)
     {
-        // 1. Получаем поток файла из нашего хранилища (S3 или локальный диск)
         await using var stream = await _fileStorageService.GetFileStreamAsync(storageKey, cancellationToken);
         
         if (stream == null || stream.Length == 0)
@@ -32,10 +31,8 @@ public sealed class AudioMetadataService : IAudioMetadataService
 
         try
         {
-            // 2. Оборачиваем поток для TagLib
             var fileAbstraction = new StreamFileAbstraction(storageKey, stream);
             
-            // 3. Читаем метаданные. TagLib прочтет только первые байты (заголовки), это супер быстро!
             using var tfile = TagLib.File.Create(fileAbstraction);
 
             var properties = tfile.Properties;
@@ -44,7 +41,6 @@ public sealed class AudioMetadataService : IAudioMetadataService
                 throw new InvalidOperationException("Failed to extract duration. The file might be corrupted or not an audio file.");
             }
 
-            // 4. Защита от подмены (проверяем, что это реально медиа-файл, а не текст)
             if (!properties.MediaTypes.HasFlag(TagLib.MediaTypes.Audio))
             {
                 throw new InvalidOperationException("The uploaded file is not a valid audio format.");

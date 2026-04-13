@@ -24,10 +24,10 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
         _currentUser = currentUser;
     }
 
-   public async Task<Unit> Handle(AddTrackToPlaylistCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(AddTrackToPlaylistCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUser.UserId 
-            ?? throw new UnauthorizedAccessException("User context is required to modify a playlist.");
+            ?? throw new UnauthorizedAccessException("User context is required.");
 
         var playlist = await _context.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
@@ -43,24 +43,37 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
             .Where(pt => pt.PlaylistId == request.PlaylistId)
             .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
 
-        int insertPosition = request.Position;
-        if (insertPosition <= 0 || insertPosition > maxPosition + 1) insertPosition = maxPosition + 1;
+        int insertPosition = (request.Position <= 0 || request.Position > maxPosition + 1) 
+            ? maxPosition + 1 
+            : request.Position;
 
-        if (insertPosition <= maxPosition)
+        // ЧИСТАЯ ТРАНЗАКЦИЯ БЕЗ КОСТЫЛЕЙ
+        await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+        try
         {
-            await _context.PlaylistTracks
-                .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
-                .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+            if (insertPosition <= maxPosition)
+            {
+                await _context.PlaylistTracks
+                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
+                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+            }
+
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
+            
+            _context.PlaylistTracks.Add(newPlaylistTrack);
+            playlist.NotifyContentChanged(utcNow);
+
+            await _context.SaveChangesAsync(cancellationToken);
+            
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        
-        var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
-        _context.PlaylistTracks.Add(newPlaylistTrack);
-        
-        playlist.NotifyContentChanged(utcNow);
-        await _context.SaveChangesAsync(cancellationToken);
-        
         return Unit.Value;
     }
 }

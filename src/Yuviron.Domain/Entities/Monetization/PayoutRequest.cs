@@ -5,7 +5,7 @@ using Yuviron.Domain.Enums; // <-- Подключили енамку
 
 namespace Yuviron.Domain.Entities;
 
-public sealed class PayoutRequest : Entity // <-- Добавили sealed
+public sealed class PayoutRequest : Entity 
 {
     public Guid ArtistId { get; private set; }
     public decimal RequestedAmount { get; private set; }

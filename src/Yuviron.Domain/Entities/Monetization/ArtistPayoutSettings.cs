@@ -5,7 +5,7 @@ namespace Yuviron.Domain.Entities;
 
 public class ArtistPayoutSettings
 {
-    public Guid ArtistId { get; private set; } // PK и FK (1:1)
+    public Guid ArtistId { get; private set; }
 
     public decimal MinWithdrawAmount { get; private set; }
     public decimal MaxWithdrawAmount { get; private set; }

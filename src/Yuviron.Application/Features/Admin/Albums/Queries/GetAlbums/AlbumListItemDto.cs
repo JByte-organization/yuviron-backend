@@ -8,7 +8,7 @@ public record AlbumListItemDto(
     List<string> ArtistNames,
     string? CoverUrl,
     int TracksCount,       
-    int TotalPlays,        
+    long TotalPlays,       
     DateTime ReleaseDate,
     VisibilityStatus VisibilityStatus,
     DateTime CreatedAt,

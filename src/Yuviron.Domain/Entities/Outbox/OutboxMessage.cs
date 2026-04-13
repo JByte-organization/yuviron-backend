@@ -1,6 +1,5 @@
 namespace Yuviron.Domain.Entities;
 
-
 public sealed class OutboxMessage
 {
     public Guid Id { get; private set; }
@@ -12,9 +11,11 @@ public sealed class OutboxMessage
     public int RetryCount { get; private set; }
     public DateTime? NextAttemptUtc { get; private set; }
     
+    public string? TraceId { get; private set; } 
+    
     private OutboxMessage() { }
     
-    public static OutboxMessage Create(string type, string content, DateTime occurredOnUtc)
+    public static OutboxMessage Create(string type, string content, DateTime occurredOnUtc, string? traceId = null)
     {
         return new OutboxMessage
         {
@@ -23,11 +24,11 @@ public sealed class OutboxMessage
             Content = content,
             OccurredOnUtc = occurredOnUtc,
             RetryCount = 0,
-            NextAttemptUtc = occurredOnUtc
+            NextAttemptUtc = occurredOnUtc,
+            TraceId = traceId
         };
     }
 
-    
     public void MarkAsProcessed(DateTime processedOnUtc)
     {
         ProcessedOnUtc = processedOnUtc;

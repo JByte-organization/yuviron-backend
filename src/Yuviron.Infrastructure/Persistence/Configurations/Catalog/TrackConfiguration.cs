@@ -14,6 +14,9 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.Property(x => x.Title).IsRequired().HasMaxLength(256);
         builder.Property(x => x.CoverUrl).HasMaxLength(2048);
         builder.Property(x => x.AudioStorageKey).IsRequired().HasMaxLength(1024); 
+        
+        builder.Property(x => x.HlsPlaylistUrl).HasMaxLength(2048);
+        builder.Property(x => x.ProcessingStatus).IsRequired(); 
 
         builder.Property(x => x.PlayCount).HasDefaultValue(0);
         
@@ -22,6 +25,12 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
             .HasForeignKey(x => x.AlbumId)
             .IsRequired() 
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Property(t => t.Isrc)
+            .HasMaxLength(12)
+            .IsRequired(false);
+
+        builder.HasIndex(t => t.Isrc);
         
         builder.HasQueryFilter(x => !x.IsDeleted);
     }
