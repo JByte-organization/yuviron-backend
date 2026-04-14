@@ -42,33 +42,34 @@ builder.Host.UseSerilog();
 // =========================================================================
 
 // 1.0 OpenTelemetry (Traces and graphs)
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+var otlpHeaders = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"];
+
 builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing => 
-    {
+    .WithTracing(tracing => {
         tracing
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Yuviron.Api"))
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
             .AddSource("Yuviron.*")
-            .AddOtlpExporter(options => 
-            {
-                options.Endpoint = new Uri("http://localhost:4317"); 
-                options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc; 
+            .AddOtlpExporter(options => {
+                options.Endpoint = new Uri(otlpEndpoint!);
+                options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                options.Headers = otlpHeaders;
             });
     })
-    .WithMetrics(metrics => 
-    {
+    .WithMetrics(metrics => {
         metrics
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Yuviron.Api"))
-            .AddAspNetCoreInstrumentation() // Statistics on HTTP requests
-            .AddHttpClientInstrumentation() // Jamendo call statistics
-            .AddRuntimeInstrumentation()    // The most important: CPU, RAM, Garbage Collector
-            .AddProcessInstrumentation()   // Process data
-            .AddOtlpExporter(options => 
-            {
-                options.Endpoint = new Uri("http://localhost:4317");
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddProcessInstrumentation()
+            .AddOtlpExporter(options => {
+                options.Endpoint = new Uri(otlpEndpoint!);
                 options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                options.Headers = otlpHeaders;
             });
     });
 
