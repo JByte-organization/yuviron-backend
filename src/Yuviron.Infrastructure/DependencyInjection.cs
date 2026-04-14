@@ -114,12 +114,23 @@ public static class DependencyInjection
             .AddCheck<DatabaseHealthCheck>("mysql", tags: new[] { "ready" })
             .AddCheck<RedisHealthCheck>("redis", tags: new[] { "ready" })
             .AddRabbitMQ(
-                async _ => 
+                async _ =>
                 {
+                    var host = configuration["RabbitMQ:Host"] ?? "127.0.0.1";
+                    var port = configuration["RabbitMQ:Port"] ?? "5672";
+                    var username = configuration["RabbitMQ:Username"] ?? "guest";
+                    var password = configuration["RabbitMQ:Password"] ?? "guest";
+                    var virtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/";
+
                     var factory = new ConnectionFactory
                     {
-                        Uri = new Uri($"amqp://guest:guest@{configuration["RabbitMQ:Host"] ?? "127.0.0.1"}/")
+                        HostName = host,
+                        Port = int.Parse(port),
+                        UserName = username,
+                        Password = password,
+                        VirtualHost = virtualHost
                     };
+
                     return await factory.CreateConnectionAsync();
                 },
                 "rabbitmq",
@@ -156,7 +167,9 @@ public static class DependencyInjection
                 var user = configuration["RabbitMQ:Username"] ?? "guest";
                 var pass = configuration["RabbitMQ:Password"] ?? "guest";
 
-                cfg.Host(host, "/", h => {
+                var vhost = configuration["RabbitMQ:VirtualHost"] ?? "/yuviron";
+
+                cfg.Host(host, vhost, h => {
                     h.Username(user);
                     h.Password(pass);
                 });
