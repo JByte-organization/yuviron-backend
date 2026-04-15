@@ -7,7 +7,7 @@ using Yuviron.MediaWorker.Consumers;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.Seq("http://localhost:5341") 
+    .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
     .CreateBootstrapLogger();
 
 try
