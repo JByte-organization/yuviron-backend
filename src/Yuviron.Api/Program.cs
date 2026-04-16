@@ -49,7 +49,15 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => {
         tracing
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Yuviron.Api"))
-            .AddAspNetCoreInstrumentation()
+            .AddAspNetCoreInstrumentation(options => {
+                options.Filter = httpContext => {
+                    var path = httpContext.Request.Path.Value;
+
+                    return path is null ||
+                           (!path.Equals("/health/live", StringComparison.OrdinalIgnoreCase) &&
+                            !path.Equals("/health/ready", StringComparison.OrdinalIgnoreCase));
+                };
+            })
             .AddHttpClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
             .AddSource("Yuviron.*")
