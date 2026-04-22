@@ -7,10 +7,6 @@ using Yuviron.MediaWorker.Consumers;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    // .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
-    // Bootstrap logger инициализируется до создания Host, поэтому IConfiguration здесь недоступен.
-    // Использование Seq на этом этапе требует хардкода URL (и в Docker localhost невалиден).
-    // Основная настройка отправки логов в Seq выполняется ниже через UseSerilog с конфигурацией.
     .CreateBootstrapLogger();
 
 try
@@ -23,7 +19,6 @@ try
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
-        .WriteTo.Console()
         .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341"));
 
     builder.ConfigureServices((hostContext, services) =>
@@ -60,7 +55,6 @@ try
 
     var host = builder.Build();
     
-    await host.StartAsync();
     Log.Information("MediaWorker is ready and listening to RabbitMQ.");
     
     host.Run(); 
