@@ -4,11 +4,11 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Sinks.OpenTelemetry;
 using Yuviron.Api.Middlewares;
 using Yuviron.Application;
 using Yuviron.Infrastructure;
@@ -16,35 +16,51 @@ using Yuviron.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =========================================================================
-// PART 0: SETTING UP LOGGING (Serilog + Seq)
-// =========================================================================
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
-    .WriteTo.OpenTelemetry(options => 
-    {
-        options.Endpoint = "http://localhost:4317";
-        options.Protocol = OtlpProtocol.Grpc; 
-        options.ResourceAttributes = new Dictionary<string, object>
-        {
-            ["service.name"] = "Yuviron.Api"
-        };
-    })
-    .CreateLogger();
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"] 
+                   ?? builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 
-builder.Host.UseSerilog();
+var otlpHeaders = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"];
+
+
+// =========================================================================
+// PART 0: SETTING UP LOGGING (Serilog + Seq + Native OTLP Aspire)
+// =========================================================================
+
+// 1. Configuring Serilog (for Seq and Console)
+builder.Host.UseSerilog((context, services, loggerConfig) =>
+{
+    loggerConfig
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341");
+}, preserveStaticLogger: false, writeToProviders: true);
+
+// 2. Configuring native Microsoft OTLP to send logs to Aspire
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+    logging.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Yuviron.Api")); 
+
+    if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+    {
+        logging.AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(otlpEndpoint);
+            options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+            if (!string.IsNullOrWhiteSpace(otlpHeaders))
+            {
+                options.Headers = otlpHeaders;
+            }
+        });
+    }
+});
 
 // =========================================================================
 // PART 1: REGISTRATION OF SERVICES (DI Container)
 // =========================================================================
 
-// 1.0 OpenTelemetry (Traces and graphs)
-var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-var otlpHeaders = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"];
-
+// 1.0 OpenTelemetry (Traces and metrics)
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => {
         tracing
@@ -60,12 +76,19 @@ builder.Services.AddOpenTelemetry()
             })
             .AddHttpClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
-            .AddSource("Yuviron.*")
-            .AddOtlpExporter(options => {
-                options.Endpoint = new Uri(otlpEndpoint!);
+            .AddSource("Yuviron.*");
+
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            tracing.AddOtlpExporter(options => {
+                options.Endpoint = new Uri(otlpEndpoint);
                 options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                options.Headers = otlpHeaders;
+                if (!string.IsNullOrWhiteSpace(otlpHeaders))
+                {
+                    options.Headers = otlpHeaders;
+                }
             });
+        }
     })
     .WithMetrics(metrics => {
         metrics
@@ -73,12 +96,19 @@ builder.Services.AddOpenTelemetry()
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
             .AddRuntimeInstrumentation()
-            .AddProcessInstrumentation()
-            .AddOtlpExporter(options => {
-                options.Endpoint = new Uri(otlpEndpoint!);
+            .AddProcessInstrumentation();
+
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            metrics.AddOtlpExporter(options => {
+                options.Endpoint = new Uri(otlpEndpoint);
                 options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                options.Headers = otlpHeaders;
+                if (!string.IsNullOrWhiteSpace(otlpHeaders))
+                {
+                    options.Headers = otlpHeaders;
+                }
             });
+        }
     });
 
 // 1.1 Architectural layers
@@ -231,8 +261,6 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-        
-        // Allow players to read audio files
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
     }
 });
