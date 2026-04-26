@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Infrastructure.Utilities;
 
 namespace Yuviron.Infrastructure.Services;
 
@@ -22,7 +23,7 @@ public class LocalFileStorageService : IFileStorageService
 
     public async Task<string> UploadAsync(Stream stream, string folder, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
-        var targetDirectory = GetValidatedFullPath(folder);
+        var targetDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, folder);
         var extension = Path.GetExtension(fileName);
         var uniqueFileName = $"{Guid.NewGuid()}{extension}";
         
@@ -44,7 +45,7 @@ public class LocalFileStorageService : IFileStorageService
 
         try
         {
-            var fullPath = GetValidatedFullPath(fileKey);
+            var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
@@ -71,9 +72,9 @@ public class LocalFileStorageService : IFileStorageService
             return Task.FromResult(sourceFileKey); 
         }
 
-        var sourcePath = GetValidatedFullPath(sourceFileKey);
+        var sourcePath = StoragePathValidator.GetValidatedFullPath(_storageRoot, sourceFileKey);
+        var targetDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, destinationFolder);
         
-        var targetDirectory = GetValidatedFullPath(destinationFolder);
         var fileName = Path.GetFileName(sourceFileKey);
         var targetFilePath = Path.Combine(targetDirectory, fileName);
         var finalRelativePath = Path.Combine(destinationFolder, fileName).Replace("\\", "/");
@@ -105,7 +106,7 @@ public class LocalFileStorageService : IFileStorageService
             throw new ArgumentException("File key cannot be null or empty.", nameof(fileKey));
         }
 
-        var fullPath = GetValidatedFullPath(fileKey);
+        var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
 
         if (!File.Exists(fullPath))
         {
@@ -116,15 +117,6 @@ public class LocalFileStorageService : IFileStorageService
 
         return Task.FromResult(stream);
     }
-
-    private string GetValidatedFullPath(string subPath)
-    {
-        if (subPath.Contains("..")) throw new ArgumentException("Directory traversal characters ('..') are not allowed.");
-        var combinedPath = Path.Combine(_storageRoot, subPath);
-        var fullPath = Path.GetFullPath(combinedPath);
-        if (!fullPath.StartsWith(_storageRoot, StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Access denied.");
-        return fullPath;
-    }
     
     public Task DeleteDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
@@ -132,26 +124,26 @@ public class LocalFileStorageService : IFileStorageService
 
         try
         {
-            var fullPath = GetValidatedFullPath(directoryPath); 
+            var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, directoryPath); 
             
             if (Directory.Exists(fullPath))
             {
                 Directory.Delete(fullPath, recursive: true);
-                _logger.LogInformation("Успешно удалена директория и все её файлы: {Path}", fullPath);
+                _logger.LogInformation("The directory and all its files have been successfully deleted: {Path}", fullPath);
             }
             else
             {
-                _logger.LogWarning("Директория {Path} не найдена, удаление пропущено.", fullPath);
+                _logger.LogWarning("Directory {Path} not found, deletion skipped.", fullPath);
             }
         }
         catch (IOException ex)
         {
-            _logger.LogWarning(ex, "Директория {DirectoryPath} заблокирована и не может быть удалена прямо сейчас.", directoryPath);
+            _logger.LogWarning(ex, "The directory {DirectoryPath} is locked and cannot be deleted right now.", directoryPath);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Непредвиденная ошибка при удалении директории {DirectoryPath}.", directoryPath);
+            _logger.LogError(ex, "An unexpected error occurred while deleting the directory. {DirectoryPath}.", directoryPath);
             throw;
         }
 

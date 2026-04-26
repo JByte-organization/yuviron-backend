@@ -34,7 +34,7 @@ public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAuto
                 t.Id,
                 t.Title,
                 t.CoverUrl,
-                AlbumCoverUrl = t.Album.CoverUrl,
+                AlbumCoverUrl = t.Album != null ? t.Album.CoverUrl : null,
                 ArtistNamesList = t.TrackArtists.Select(ta => ta.Artist.Name).ToList()
             })
             .ToListAsync(cancellationToken);

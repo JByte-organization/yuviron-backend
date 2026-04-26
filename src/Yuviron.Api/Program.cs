@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -165,11 +166,18 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear(); 
+});
+
 // 1.4 Global error handling
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-// 1.5 Rate Limiter (Protection against DDoS and brute force)
+// 1.5 Rate Limiter
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -183,12 +191,18 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken: token);
     };
 
-    options.AddFixedWindowLimiter(policyName: "AuthPolicy", limiterOptions =>
+    options.AddPolicy("AuthPolicy", context =>
     {
-        limiterOptions.PermitLimit = 5; 
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0; 
+        // Теперь RemoteIpAddress будет содержать реальный IP пользователя (благодаря ForwardedHeaders)
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown_ip";
+
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5, 
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0 
+        });
     });
 });
 
@@ -201,6 +215,8 @@ var app = builder.Build();
 // Part 2: INITIALIZATION AND HTTP PIPELINE (Middlewares)
 // Attention: The order of app.Use... calls is of great importance!
 // =========================================================================
+
+app.UseForwardedHeaders();
 
 // 2.1 Initializing the Database (Migrations and Seed)
 using (var scope = app.Services.CreateScope())
@@ -215,7 +231,9 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during database initialisation.");
+        logger.LogCritical(ex, "FATAL: An error occurred during database initialisation. The application will not start.");
+        
+        throw; 
     }
 }
 
@@ -261,7 +279,14 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        
+        var origin = ctx.Context.Request.Headers["Origin"].ToString();
+        var isAllowed = allowedOrigins.Contains(origin) || allowedOrigins.Contains("*");
+
+        if (isAllowed && !string.IsNullOrEmpty(origin))
+        {
+            ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+        }
     }
 });
 
