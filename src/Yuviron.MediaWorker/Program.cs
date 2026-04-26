@@ -37,7 +37,7 @@ try
                 var user = rabbitConfig["Username"] ?? "guest";
                 var pass = rabbitConfig["Password"] ?? "guest";
 
-                var vhost = rabbitConfig["VirtualHost"] ?? "/yuviron";
+                var vhost = rabbitConfig["VirtualHost"] ?? "/";
 
                 cfg.Host(host, vhost, h => {
                     h.Username(user);

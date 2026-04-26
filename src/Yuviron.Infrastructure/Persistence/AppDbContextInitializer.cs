@@ -54,12 +54,28 @@ public class AppDbContextInitializer
     {
         try
         {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
             await SeedEssentialDataAsync();
 
-            await SeedUserFromConfigAsync("Admin", "SeedUsers:Admin", "Admin", Gender.NotSpecified, -30, isPremium: false);
-            await SeedUserFromConfigAsync("ManagementUser", "SeedUsers:Manager", "Manager", Gender.NotSpecified, -25, isPremium: false);
-            await SeedUserFromConfigAsync("User", "SeedUsers:User", "Simple User", Gender.Male, -20, isPremium: false);
-            await SeedUserFromConfigAsync("User", "SeedUsers:Premium", "Premium User", Gender.Female, -22, isPremium: true);
+            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole != null)
+            {
+                bool hasAnyAdmin = await _context.UserRoles.AnyAsync(ur => ur.RoleId == adminRole.Id);
+                
+                if (!hasAnyAdmin)
+                {
+                    _logger.LogInformation("No admin found in the database. Bootstrapping the first admin account...");
+                    await SeedUserFromConfigAsync("Admin", "SeedUsers:Admin", "Super Admin", Gender.NotSpecified, -30, isPremium: false);
+                }
+            }
+
+            if (env == "Development")
+            {
+                await SeedUserFromConfigAsync("ManagementUser", "SeedUsers:Manager", "Manager", Gender.NotSpecified, -25, isPremium: false);
+                await SeedUserFromConfigAsync("User", "SeedUsers:User", "Simple User", Gender.Male, -20, isPremium: false);
+                await SeedUserFromConfigAsync("User", "SeedUsers:Premium", "Premium User", Gender.Female, -22, isPremium: true);
+            }
         }
         catch (Exception ex)
         {

@@ -3,6 +3,7 @@ using FFMpegCore.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Infrastructure.Utilities;
 
 namespace Yuviron.Infrastructure.Services.Audio;
 
@@ -23,9 +24,10 @@ public class HlsTranscodingService : IHlsTranscodingService
 
     public async Task<string> TranscodeToHlsAsync(string inputStorageKey, string trackIdStr, CancellationToken cancellationToken = default)
     {
-        var inputFilePath = Path.Combine(_storageRoot, inputStorageKey);
+        var inputFilePath = StoragePathValidator.GetValidatedFullPath(_storageRoot, inputStorageKey);
         
-        var outputDirectory = Path.Combine(_storageRoot, "tracks", trackIdStr);
+        var outputDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, Path.Combine("tracks", trackIdStr));
+        
         if (!Directory.Exists(outputDirectory))
         {
             Directory.CreateDirectory(outputDirectory);

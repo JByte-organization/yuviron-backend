@@ -18,6 +18,7 @@ namespace Yuviron.Api.Controllers;
 public class AuthController : ApiControllerBase
 {
     [HttpPost("check-email")]
+    [EnableRateLimiting("AuthPolicy")]
     [ProducesResponseType(typeof(CheckEmailResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckEmail([FromBody] CheckEmailQuery query, CancellationToken ct)
     {
@@ -38,13 +39,14 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("login-with-code")]
     [EnableRateLimiting("AuthPolicy")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginWithCode([FromBody] LoginWithCodeCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
         SetRefreshTokenCookie(result.RefreshToken);
-        return Ok(result);
+        
+        return Ok(new { result.UserId, result.Token, result.Email, result.Permissions });
     }
 
     [HttpPost("register")]
@@ -59,13 +61,14 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("login")]
     [EnableRateLimiting("AuthPolicy")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
         SetRefreshTokenCookie(result.RefreshToken);
-        return Ok(result);
+        
+        return Ok(new { result.UserId, result.Token, result.Email, result.Permissions });
     }
 
     [HttpGet("me/permissions")]
@@ -92,8 +95,15 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh(CancellationToken ct) 
+    public async Task<IActionResult> Refresh(
+        [FromHeader(Name = "X-CSRF-Protection")] string? csrfHeader, 
+        CancellationToken ct) 
     {
+        if (string.IsNullOrEmpty(csrfHeader))
+        {
+            return Unauthorized("Missing Anti-CSRF header.");
+        }
+
         var refreshToken = Request.Cookies["refreshToken"];
         
         if (string.IsNullOrEmpty(refreshToken))
@@ -106,11 +116,11 @@ public class AuthController : ApiControllerBase
         
         SetRefreshTokenCookie(result.RefreshToken);
         
-        return Ok(result);
+        return Ok(new { AccessToken = result.AccessToken });
     }
     
     [HttpPost("logout")]
-    [Authorize] 
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {

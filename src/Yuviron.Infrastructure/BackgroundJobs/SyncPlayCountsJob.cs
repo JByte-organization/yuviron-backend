@@ -41,39 +41,83 @@ public class SyncPlayCountsJob : BackgroundService
     {
         var db = _redis.GetDatabase();
         
-        // Достаем ID треков и артистов, которые изменились
-        var trackIdsRaw = await db.SetPopAsync("dirty_counters:tracks", 1000);
-        var artistIdsRaw = await db.SetPopAsync("dirty_counters:artists", 1000);
+        var trackIdsRaw = await db.SetMembersAsync("dirty_counters:tracks");
+        var artistIdsRaw = await db.SetMembersAsync("dirty_counters:artists");
 
         if (trackIdsRaw.Length == 0 && artistIdsRaw.Length == 0) return;
 
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
-        // Обновляем треки
+        var tracksToReset = new Dictionary<RedisKey, long>();
+        var artistsToReset = new Dictionary<RedisKey, long>();
+
+        
         foreach (var idRaw in trackIdsRaw)
         {
             var trackId = Guid.Parse(idRaw.ToString());
-            var count = (long)await db.StringGetDeleteAsync($"track:{trackId}:plays");
+            var redisKey = new RedisKey($"track:{trackId}:plays");
+            
+            var countRaw = await db.StringGetSetAsync(redisKey, 0); 
+            if (!countRaw.HasValue) continue;
+            
+            long count = (long)countRaw;
             if (count > 0)
             {
                 var track = await context.Tracks.FirstOrDefaultAsync(t => t.Id == trackId, ct);
-                track?.AddPlays(count);
+                if (track != null)
+                {
+                    track.AddPlays(count);
+                    tracksToReset[redisKey] = count; 
+                }
             }
         }
 
-        // Обновляем артистов
         foreach (var idRaw in artistIdsRaw)
         {
             var artistId = Guid.Parse(idRaw.ToString());
-            var count = (long)await db.StringGetDeleteAsync($"artist:{artistId}:plays");
+            var redisKey = new RedisKey($"artist:{artistId}:plays");
+            
+            var countRaw = await db.StringGetSetAsync(redisKey, 0);
+            if (!countRaw.HasValue) continue;
+
+            long count = (long)countRaw;
             if (count > 0)
             {
                 var artist = await context.Artists.FirstOrDefaultAsync(a => a.Id == artistId, ct);
-                artist?.AddPlays(count);
+                if (artist != null)
+                {
+                    artist.AddPlays(count);
+                    artistsToReset[redisKey] = count;
+                }
             }
         }
 
-        await context.SaveChangesAsync(ct);
+        try
+        {
+            await context.SaveChangesAsync(ct);
+            
+            if (trackIdsRaw.Length > 0)
+            {
+                await db.SetRemoveAsync("dirty_counters:tracks", trackIdsRaw);
+            }
+            if (artistIdsRaw.Length > 0)
+            {
+                await db.SetRemoveAsync("dirty_counters:artists", artistIdsRaw);
+            }
+        }
+        catch (Exception)
+        {
+            foreach (var kvp in tracksToReset)
+            {
+                await db.StringIncrementAsync(kvp.Key, kvp.Value);
+            }
+            foreach (var kvp in artistsToReset)
+            {
+                await db.StringIncrementAsync(kvp.Key, kvp.Value);
+            }
+            
+            throw;
+        }
     }
 }
