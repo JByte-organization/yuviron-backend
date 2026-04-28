@@ -55,11 +55,22 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
         byte[] headerBytes = new byte[12];
         
         stream.Position = 0;
-        stream.Read(headerBytes, 0, 12);
-        
-        stream.Position = 0;
 
-        if (headerBytes.Length < 4) return false;
+        try
+        {
+            stream.ReadExactly(headerBytes, 0, 12);
+        }
+        catch (System.IO.EndOfStreamException)
+        {
+            // If the file is smaller than 12 bytes, it can't be a valid media file
+            // for our supported formats anyway.
+            return false;
+        }
+        finally
+        {
+            // Always reset the position, even if reading fails
+            stream.Position = 0;
+        }
 
         return extension switch
         {
