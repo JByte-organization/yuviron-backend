@@ -35,13 +35,15 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
         var jamendoTracks = await _jamendoApi.GetTracksAsync(request.Limit, request.Offset, cancellationToken);
         if (!jamendoTracks.Any()) return 0;
 
-        var defaultGenre = await GetOrCreateGenreAsync("Jamendo Hits", cancellationToken);
-        var defaultMood = await GetOrCreateMoodAsync("Various", cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken); 
-
         var localArtistCache = new Dictionary<string, Artist>();
         var localAlbumCache = new Dictionary<string, Album>();
+        var downloadedCovers = new Dictionary<string, string>(); 
+        
+        var localGenreCache = new Dictionary<string, Guid>();
+        var localMoodCache = new Dictionary<string, Guid>();
 
+        var currentAlbumPositions = new Dictionary<Guid, int>();
+        
         int syncedCount = 0;
 
         foreach (var jt in jamendoTracks)
@@ -49,6 +51,19 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
             try
             {
                 bool hasNewPrerequisites = false;
+
+                string? coverKey = null;
+                if (!string.IsNullOrWhiteSpace(jt.CoverUrl))
+                {
+                    if (!downloadedCovers.TryGetValue(jt.CoverUrl, out coverKey))
+                    {
+                        coverKey = await _jamendoApi.DownloadFileToTempAsync(jt.CoverUrl, ".jpg", cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(coverKey))
+                        {
+                            downloadedCovers[jt.CoverUrl] = coverKey;
+                        }
+                    }
+                }
 
                 if (!localArtistCache.TryGetValue(jt.ArtistId, out var artist))
                 {
@@ -60,9 +75,65 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                 var safeAlbumTitle = string.IsNullOrWhiteSpace(jt.AlbumName) ? "Singles" : jt.AlbumName;
                 if (!localAlbumCache.TryGetValue(jt.AlbumId, out var album))
                 {
-                    album = await GetOrCreateAlbumAsync(safeAlbumTitle, jt.AlbumId, artist.Id, cancellationToken);
+                    album = await GetOrCreateAlbumAsync(safeAlbumTitle, jt.AlbumId, artist.Id, coverKey, cancellationToken);
                     localAlbumCache[jt.AlbumId] = album;
                     hasNewPrerequisites = true;
+                }
+
+                var trackGenreIds = new List<Guid>();
+                if (jt.MusicInfo?.Tags?.Genres != null && jt.MusicInfo.Tags.Genres.Any())
+                {
+                    foreach (var genreName in jt.MusicInfo.Tags.Genres)
+                    {
+                        var formattedName = char.ToUpper(genreName[0]) + genreName.Substring(1).ToLower();
+                        if (!localGenreCache.TryGetValue(formattedName, out var genreId))
+                        {
+                            var genre = await GetOrCreateGenreAsync(formattedName, cancellationToken);
+                            genreId = genre.Id;
+                            localGenreCache[formattedName] = genreId;
+                            hasNewPrerequisites = true;
+                        }
+                        trackGenreIds.Add(genreId);
+                    }
+                }
+                else
+                {
+                    if (!localGenreCache.TryGetValue("Unknown", out var genreId))
+                    {
+                        var fallbackGenre = await GetOrCreateGenreAsync("Unknown", cancellationToken);
+                        genreId = fallbackGenre.Id;
+                        localGenreCache["Unknown"] = genreId;
+                        hasNewPrerequisites = true;
+                    }
+                    trackGenreIds.Add(genreId);
+                }
+
+                var trackMoodIds = new List<Guid>();
+                if (jt.MusicInfo?.Tags?.Moods != null && jt.MusicInfo.Tags.Moods.Any())
+                {
+                    foreach (var moodName in jt.MusicInfo.Tags.Moods)
+                    {
+                        var formattedName = char.ToUpper(moodName[0]) + moodName.Substring(1).ToLower();
+                        if (!localMoodCache.TryGetValue(formattedName, out var moodId))
+                        {
+                            var mood = await GetOrCreateMoodAsync(formattedName, cancellationToken);
+                            moodId = mood.Id;
+                            localMoodCache[formattedName] = moodId;
+                            hasNewPrerequisites = true;
+                        }
+                        trackMoodIds.Add(moodId);
+                    }
+                }
+                else
+                {
+                    if (!localMoodCache.TryGetValue("Various", out var moodId))
+                    {
+                        var fallbackMood = await GetOrCreateMoodAsync("Various", cancellationToken);
+                        moodId = fallbackMood.Id;
+                        localMoodCache["Various"] = moodId;
+                        hasNewPrerequisites = true;
+                    }
+                    trackMoodIds.Add(moodId);
                 }
 
                 if (hasNewPrerequisites)
@@ -82,7 +153,6 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                 }
 
                 Guid? existingTrackId = null;
-
                 if (!string.IsNullOrWhiteSpace(jt.Isrc))
                 {
                     var trackByIsrc = await _context.Tracks.FirstOrDefaultAsync(t => t.Isrc == jt.Isrc, cancellationToken);
@@ -97,28 +167,42 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
                 {
                     var newMapping = ExternalMapping.Create(existingTrackId.Value, nameof(Track), ExternalProvider.Jamendo, jt.Id);
                     _context.ExternalMappings.Add(newMapping);
-                    
                     syncedCount++;
                     continue;
                 }
 
-                int position = jt.Position > 0 ? jt.Position : 1;
+                if (!currentAlbumPositions.TryGetValue(album.Id, out int maxPos))
+                {
+                    maxPos = await _context.Tracks
+                        .Where(t => t.AlbumId == album.Id)
+                        .MaxAsync(t => (int?)t.AlbumPosition, cancellationToken) ?? 0;
+                }
 
+                // Берем позицию от Jamendo, если она адекватная
+                int position = jt.Position > 0 ? jt.Position : maxPos + 1;
+
+                // Защита от дубликатов: если Jamendo прислал две одинаковые позиции (например, две "1")
+                if (position <= maxPos)
+                {
+                    position = maxPos + 1;
+                }
+
+                // Запоминаем новую максимальную позицию, чтобы следующий трек встал за ним
+                currentAlbumPositions[album.Id] = position;
+                
                 var audioKey = await _jamendoApi.DownloadFileToTempAsync(jt.AudioDownloadUrl, ".mp3", cancellationToken);
-                var coverKey = await _jamendoApi.DownloadFileToTempAsync(jt.CoverUrl, ".jpg", cancellationToken);
-
+                
                 if (string.IsNullOrWhiteSpace(audioKey)) continue;
 
                 var createTrackCmd = new CreateTrackCommand(
                     album.Id, position, jt.Name, false, audioKey, coverKey, VisibilityStatus.Published,
-                    new List<Guid> { artist.Id }, new List<Guid> { defaultGenre.Id }, new List<Guid> { defaultMood.Id }, jt.Isrc
+                    new List<Guid> { artist.Id }, trackGenreIds, trackMoodIds, jt.Isrc
                 );
 
                 var trackId = await _sender.Send(createTrackCmd, cancellationToken);
                 
                 var trackMapping = ExternalMapping.Create(trackId, nameof(Track), ExternalProvider.Jamendo, jt.Id);
                 _context.ExternalMappings.Add(trackMapping);
-                
 
                 syncedCount++;
                 _logger.LogInformation("Track {TrackName} has been successfully sent for processing!", jt.Name);
@@ -129,14 +213,10 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
             }
         }
 
-        if (syncedCount > 0)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        if (syncedCount > 0) await _context.SaveChangesAsync(cancellationToken);
 
         return syncedCount;
     }
-
 
     private async Task<Genre> GetOrCreateGenreAsync(string name, CancellationToken cancellationToken)
     {
@@ -177,7 +257,7 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
         return artist;
     }
 
-    private async Task<Album> GetOrCreateAlbumAsync(string title, string jamendoId, Guid artistId, CancellationToken ct)
+    private async Task<Album> GetOrCreateAlbumAsync(string title, string jamendoId, Guid artistId, string? coverKey, CancellationToken ct)
     {
         var safeTitle = string.IsNullOrWhiteSpace(title) ? "Singles" : title; 
 
@@ -187,7 +267,17 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
         if (mapping != null)
             return await _context.Albums.FirstAsync(a => a.Id == mapping.InternalId, ct);
 
-        var album = Album.Create(safeTitle, "Imported from Jamendo", null, DateTime.UtcNow, VisibilityStatus.Published, null, new List<Guid> { artistId }, DateTime.UtcNow);
+        var finalCoverUrl = !string.IsNullOrWhiteSpace(coverKey) && coverKey.StartsWith("temp/") 
+            ? coverKey.Replace("temp/", "covers/") 
+            : coverKey;
+
+        var album = Album.Create(safeTitle, "Imported from Jamendo", finalCoverUrl, DateTime.UtcNow, VisibilityStatus.Published, null, new List<Guid> { artistId }, DateTime.UtcNow);
+        
+        if (!string.IsNullOrWhiteSpace(coverKey) && coverKey.StartsWith("temp/"))
+        {
+            album.AddDomainEvent(new Yuviron.Domain.Events.TempFileNeedsMovingEvent(coverKey, "covers"));
+        }
+
         _context.Albums.Add(album);
         
         var newMapping = ExternalMapping.Create(album.Id, nameof(Album), ExternalProvider.Jamendo, jamendoId);

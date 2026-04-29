@@ -32,7 +32,7 @@ public class JamendoApiService : IJamendoApiService
 
     public async Task<List<JamendoTrackDto>> GetTracksAsync(int limit = 10, int offset = 0, CancellationToken cancellationToken = default)
     {
-        var url = $"{_baseUrl}/tracks/?client_id={_clientId}&format=json&limit={limit}&offset={offset}&order=releasedate_desc&hasimage=true&audiodlformat=mp32";
+        var url = $"{_baseUrl}/tracks/?client_id={_clientId}&format=json&limit={limit}&offset={offset}&order=releasedate_desc&hasimage=true&audiodlformat=mp32&include=musicinfo";
         
         _logger.LogInformation("Request {Limit} of tracks (offset {Offset}) from Jamendo API", limit, offset);
         

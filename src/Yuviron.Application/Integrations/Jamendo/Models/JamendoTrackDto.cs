@@ -33,4 +33,25 @@ public class JamendoTrackDto
     
     [JsonPropertyName("isrc")]
     public string? Isrc { get; set; } 
+
+    [JsonPropertyName("musicinfo")]
+    public JamendoMusicInfo? MusicInfo { get; set; }
+}
+
+public class JamendoMusicInfo
+{
+    [JsonPropertyName("tags")]
+    public JamendoTags? Tags { get; set; }
+}
+
+public class JamendoTags
+{
+    [JsonPropertyName("genres")]
+    public List<string>? Genres { get; set; }
+    
+    [JsonPropertyName("instruments")]
+    public List<string>? Instruments { get; set; }
+    
+    [JsonPropertyName("vartags")]
+    public List<string>? Moods { get; set; } 
 }

@@ -30,6 +30,14 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         var albumExists = await _context.Albums.AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
         if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
+        var isPositionTaken = await _context.Tracks
+            .AnyAsync(t => t.AlbumId == request.AlbumId && t.AlbumPosition == request.AlbumPosition, cancellationToken);
+
+        if (isPositionTaken)
+        {
+            throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
+        }
+        
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
         if (existingArtistsCount != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "One or more provided IDs");
