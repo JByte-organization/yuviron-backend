@@ -23,7 +23,19 @@ public class AnalyticsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> CommitPlay([FromBody] CommitPlayRequest request, CancellationToken ct)
     {
-        var command = new CommitTrackPlayCommand(request.PlaySessionId, request.TrackId, request.ArtistId, UserId);
+        var countryCode = Request.Headers["CF-IPCountry"].FirstOrDefault();
+
+        var command = new CommitTrackPlayCommand(
+            request.PlaySessionId, 
+            request.TrackId, 
+            request.ArtistId, 
+            UserId,
+            request.DeviceType,
+            request.SourceType,
+            request.SourceId,
+            countryCode
+        );
+
         await Mediator.Send(command, ct);
         
         return Ok();

@@ -42,7 +42,7 @@ public sealed class AnalyticsService : IAnalyticsService
         return sessionId;
     }
 
-    public async Task CommitPlaySessionAsync(Guid sessionId, Guid trackId, Guid artistId, Guid userId, CancellationToken ct = default)
+    public async Task<int> CommitPlaySessionAsync(Guid sessionId, Guid trackId, Guid artistId, Guid userId, CancellationToken ct = default)
     {
         try
         {
@@ -54,7 +54,7 @@ public sealed class AnalyticsService : IAnalyticsService
             if (!startTimeVal.HasValue)
             {
                 _logger.LogWarning("Anti-fraud: Сессия не найдена, истекла или уже обработана другим потоком. User: {UserId}", userId);
-                return; 
+                return 0; 
             }
 
             long startTime = long.Parse(startTimeVal!);
@@ -63,8 +63,12 @@ public sealed class AnalyticsService : IAnalyticsService
             if (currentTime - startTime < 30)
             {
                 _logger.LogWarning("Anti-fraud: Слишком быстро! Блокируем накрутку от User {UserId}", userId);
-                return; 
+                return 0; 
             }
+
+            int msPlayed = (int)(currentTime - startTime) * 1000;
+            
+            if (msPlayed < 30000) return 0;
 
             var batch = db.CreateBatch();
             var t1 = batch.StringIncrementAsync($"track:{trackId}:plays");
@@ -73,8 +77,9 @@ public sealed class AnalyticsService : IAnalyticsService
             var t4 = batch.SetAddAsync("dirty_counters:artists", artistId.ToString());
             
             batch.Execute(); 
-            
             await Task.WhenAll(t1, t2, t3, t4); 
+            
+            return msPlayed; 
         }
         catch (Exception ex)
         {
@@ -90,6 +95,7 @@ public sealed class AnalyticsService : IAnalyticsService
 
             _context.OutboxMessages.Add(message);
             await _context.SaveChangesAsync(ct);
+            return 0;
         }
     }
 }
