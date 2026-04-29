@@ -158,6 +158,7 @@ public static class DependencyInjection
             x.AddConsumer<UserPermissionsChangedConsumer>();
             x.AddConsumer<RevokeTokensOnPasswordChangedConsumer>();
             x.AddConsumer<SendWelcomeEmailConsumer>();
+            x.AddConsumer<TrackSuccessfullyPlayedConsumer>();
             
             x.AddConsumer<TrackPlayedFallbackConsumer>();
 

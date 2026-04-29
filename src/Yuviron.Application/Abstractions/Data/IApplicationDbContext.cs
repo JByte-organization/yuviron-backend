@@ -67,6 +67,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<SmartLinkClick> SmartLinkClicks { get; }
 
     // --- Content & Analytics & Gamification ---
+    DbSet<Banner> Banners { get; }
     DbSet<Lyrics> Lyrics { get; }
     DbSet<LyricsSegment> LyricsSegments { get; }
     DbSet<CopyrightClaim> CopyrightClaims { get; }

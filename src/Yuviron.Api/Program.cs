@@ -125,6 +125,33 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("client", new OpenApiInfo 
+    { 
+        Title = "Yuviron Client API", 
+        Version = "v1",
+        Description = "API для клиентского приложения (поиск, авторизация, файлы и т.д.)"
+    });
+
+    c.SwaggerDoc("admin", new OpenApiInfo 
+    { 
+        Title = "Yuviron Admin API", 
+        Version = "v1",
+        Description = "API для панели администратора"
+    });
+
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        var relativePath = apiDesc.RelativePath;
+        if (string.IsNullOrEmpty(relativePath)) return false;
+
+        bool isAdminRoute = relativePath.StartsWith("api/admin", StringComparison.OrdinalIgnoreCase);
+
+        if (docName == "admin") return isAdminRoute;
+        if (docName == "client") return !isAdminRoute;
+
+        return false;
+    });
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter JWT access token without the Bearer prefix.",
@@ -140,11 +167,7 @@ builder.Services.AddSwaggerGen(c =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
             new List<string>()
         }
@@ -245,7 +268,11 @@ var swaggerEnabled = app.Environment.IsDevelopment() || builder.Configuration.Ge
 if (swaggerEnabled)
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/client/swagger.json", "Client API");
+        c.SwaggerEndpoint("/swagger/admin/swagger.json", "Admin API");
+    });
 }
 
 if (!app.Environment.IsDevelopment())
