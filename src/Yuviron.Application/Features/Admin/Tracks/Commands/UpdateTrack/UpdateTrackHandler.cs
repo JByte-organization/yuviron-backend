@@ -37,6 +37,16 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var albumExists = await _context.Albums.AsNoTracking().AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
         if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
+        var isPositionTaken = await _context.Tracks
+            .AnyAsync(t => t.AlbumId == request.AlbumId 
+                           && t.AlbumPosition == request.AlbumPosition 
+                           && t.Id != request.TrackId, cancellationToken);
+
+        if (isPositionTaken)
+        {
+            throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
+        }
+        
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
         var existingArtists = await _context.Artists.AsNoTracking().CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
         if (existingArtists != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "Invalid artists provided.");

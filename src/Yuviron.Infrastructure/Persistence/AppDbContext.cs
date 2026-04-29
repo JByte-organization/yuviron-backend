@@ -101,6 +101,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SharedRoomQueueItem> SharedRoomQueueItems => Set<SharedRoomQueueItem>();
     public DbSet<SmartLink> SmartLinks => Set<SmartLink>();
     public DbSet<SmartLinkClick> SmartLinkClicks => Set<SmartLinkClick>();
+    public DbSet<Banner>  Banners => Set<Banner>();
     public DbSet<Lyrics> Lyrics => Set<Lyrics>();
     public DbSet<LyricsSegment> LyricsSegments => Set<LyricsSegment>();
     public DbSet<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();

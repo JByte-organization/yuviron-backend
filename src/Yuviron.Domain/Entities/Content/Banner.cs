@@ -1,0 +1,61 @@
+using Yuviron.Domain.Common;
+using Yuviron.Domain.Events;
+
+namespace Yuviron.Domain.Entities;
+
+public class Banner : Entity
+{
+    // Внутреннее название банера (для админов, например: "Летний плейлист 2026")
+    public string Title { get; private set; } = string.Empty; 
+    
+    // Ссылка на картинку
+    public string BannerUrl { get; private set; } = string.Empty;
+    
+    // Куда ведет клик. Обычно это относительный путь для фронта, например: "/album/123-456-789" или "/playlist/987-654"
+    public string TargetUrl { get; private set; } = string.Empty;
+    
+    public int SortOrder { get; private set; }
+    
+    public bool IsActive { get; private set; }
+
+    public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
+
+    private Banner() { }
+
+    public static Banner Create(string title, string bannerUrl, string targetUrl, int sortOrder, bool isActive, DateTime utcNow)
+    {
+        return new Banner
+        {
+            Id = Guid.NewGuid(),
+            Title = title.Trim(),
+            BannerUrl = bannerUrl.Trim(),
+            TargetUrl = targetUrl.Trim(),
+            SortOrder = sortOrder,
+            IsActive = isActive,
+            CreatedAt = utcNow,
+            UpdatedAt = utcNow
+        };
+    }
+
+    public void Update(string title, string bannerUrl, string targetUrl, int sortOrder, bool isActive, DateTime utcNow)
+    {
+        Title = title.Trim();
+        BannerUrl = bannerUrl.Trim();
+        TargetUrl = targetUrl.Trim();
+        SortOrder = sortOrder;
+        IsActive = isActive;
+        UpdatedAt = utcNow;
+    }
+
+    public void ToggleStatus(DateTime utcNow)
+    {
+        IsActive = !IsActive;
+        UpdatedAt = utcNow;
+    }
+
+    public void Delete()
+    {
+        AddDomainEvent(new FileNeedsDeletionEvent(BannerUrl));
+    }
+}

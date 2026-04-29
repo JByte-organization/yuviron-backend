@@ -43,6 +43,7 @@ public class HlsTranscodingService : IHlsTranscodingService
         await FFMpegArguments
             .FromFileInput(inputFilePath)
             .OutputToFile(playlistPath, overwrite: true, options => options
+                .WithCustomArgument("-vn")
                 .WithAudioCodec(AudioCodec.Aac)
                 .WithAudioBitrate(AudioQuality.Good) 
                 .WithCustomArgument("-af loudnorm=I=-14:LRA=11:TP=-1.5")
