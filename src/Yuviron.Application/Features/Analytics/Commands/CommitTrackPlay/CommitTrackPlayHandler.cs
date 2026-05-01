@@ -28,19 +28,22 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
 
     public async Task<Unit> Handle(CommitTrackPlayCommand request, CancellationToken ct)
     {
-        // 1. Идем в Redis. Он вернет >30000, если всё честно.
         int msPlayed = await _analyticsService.CommitPlaySessionAsync(
-            request.PlaySessionId, request.TrackId, request.ArtistId, request.UserId, ct);
+            request.PlaySessionId, request.TrackId, request.UserId, ct);
             
-        // 2. Если трек реально послушали - сохраняем историю через Outbox
+        // 2. Если трек реально послушали (>= 30 сек) - сохраняем историю
         if (msPlayed >= 30000)
         {
             var playedAt = _timeProvider.GetUtcNow().UtcDateTime;
             
-            // Формируем событие без хардкода (всё берем из request)
             var successEvent = new TrackSuccessfullyPlayedEvent(
-                request.UserId, request.TrackId, msPlayed, playedAt, 
-                request.DeviceType, request.SourceType, request.SourceId);
+                request.UserId, 
+                request.TrackId, 
+                msPlayed, 
+                playedAt, 
+                request.DeviceType, 
+                request.SourceType, 
+                request.SourceId);
 
             var message = OutboxMessage.Create(
                 typeof(TrackSuccessfullyPlayedEvent).AssemblyQualifiedName!,

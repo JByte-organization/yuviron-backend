@@ -28,8 +28,7 @@ public class AnalyticsController : ApiControllerBase
         var command = new CommitTrackPlayCommand(
             request.PlaySessionId, 
             request.TrackId, 
-            request.ArtistId, 
-            UserId,
+            UserId, 
             request.DeviceType,
             request.SourceType,
             request.SourceId,

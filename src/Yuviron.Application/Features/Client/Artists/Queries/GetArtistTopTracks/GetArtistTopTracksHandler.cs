@@ -1,11 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Security; 
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Entities;
@@ -16,11 +13,19 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IStreamTokenService _streamTokenService; 
+    private readonly TimeProvider _timeProvider;            
 
-    public GetArtistTopTracksHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetArtistTopTracksHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser,
+        IStreamTokenService streamTokenService,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
+        _streamTokenService = streamTokenService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<List<ArtistTopTrackDto>> Handle(GetArtistTopTracksQuery request, CancellationToken cancellationToken)
@@ -35,7 +40,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 
         bool isAuthenticated = _currentUser.UserId.HasValue;
 
-        var topTracks = await _context.Tracks
+        var rawTracks = await _context.Tracks
             .AsNoTracking()
             .Where(t => !t.IsDeleted 
                      && t.VisibilityStatus == VisibilityStatus.Published
@@ -43,25 +48,49 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                      && t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId))
             .OrderByDescending(t => t.PlayCount)
             .Take(request.Limit)
-            .Select(t => new ArtistTopTrackDto(
+            .Select(t => new 
+            {
                 t.Id,
                 t.Title,
                 t.DurationMs,
                 t.Explicit,
-                t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
-                isAuthenticated 
-                    ? (!string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey) 
-                    : null,
+                CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
+                FileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey,
                 t.PlayCount,
                 t.AlbumId,
-                t.Album != null ? t.Album.Title : "Unknown Album",
-                t.TrackArtists.Select(ta => new ArtistTopTrackArtistDto(
+                AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
+                Artists = t.TrackArtists.Select(ta => new ArtistTopTrackArtistDto(
                     ta.Artist.Id,
                     ta.Artist.Name
                 )).ToList()
-            ))
+            })
             .ToListAsync(cancellationToken);
 
-        return topTracks;
+        var expiration = _timeProvider.GetUtcNow().AddHours(6);
+        var expUnix = expiration.ToUnixTimeSeconds();
+
+        return rawTracks.Select(t => 
+        {
+            string? audioUrl = null;
+            if (isAuthenticated && !string.IsNullOrWhiteSpace(t.FileKey))
+            {
+                var signature = _streamTokenService.GenerateToken(t.Id, expiration);
+                var fileName = Path.GetFileName(t.FileKey);
+                audioUrl = $"/api/stream/tracks/{t.Id}/{fileName}?exp={expUnix}&sig={signature}";
+            }
+
+            return new ArtistTopTrackDto(
+                t.Id,
+                t.Title,
+                t.DurationMs,
+                t.Explicit,
+                t.CoverUrl,
+                audioUrl,
+                t.PlayCount,
+                t.AlbumId,
+                t.AlbumTitle,
+                t.Artists
+            );
+        }).ToList();
     }
 }
