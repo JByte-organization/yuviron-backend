@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Sync backend source
         run: |
-          set -e
+          set -Eeuo pipefail
           cd /opt/yuviron-server/src/yuviron-backend
           git fetch origin dev
           git reset --hard origin/dev
@@ -36,7 +36,7 @@ jobs:
           SEED_PREMIUM_PASSWORD: ${{ secrets.SEED_PREMIUM_PASSWORD }}
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
         run: |
-          set -e
+          set -Eeuo pipefail
           ENV_FILE="Development"
 
           API_CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ENV_FILE}.json"
@@ -113,7 +113,7 @@ jobs:
 
           python3 -m json.tool "$API_CONFIG_PATH" >/dev/null
           python3 -m json.tool "$WORKER_CONFIG_PATH" >/dev/null
-    
+
       - name: Preflight check
         run: |
           set -Eeuo pipefail
@@ -122,48 +122,57 @@ jobs:
 
       - name: Build backend and worker services
         run: |
-          set -e
+          set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
+            --env-file ./generated/dev/deploy.env \
             -p yuviron-dev \
-            -f ./infra/compose.base.yml \
-            -f ./infra/compose.dev.yml \
+            -f ./infra/compose.yml \
+            -f ./generated/dev/compose.frontends.yml \
             build migrator backend media-worker
 
       - name: Apply migrations
         run: |
-          set -e
+          set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
+            --env-file ./generated/dev/deploy.env \
             -p yuviron-dev \
-            -f ./infra/compose.base.yml \
-            -f ./infra/compose.dev.yml \
+            -f ./infra/compose.yml \
+            -f ./generated/dev/compose.frontends.yml \
             run --rm migrator
 
       - name: Restart backend and media worker
         run: |
-          set -e
+          set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
+            --env-file ./generated/dev/deploy.env \
             -p yuviron-dev \
-            -f ./infra/compose.base.yml \
-            -f ./infra/compose.dev.yml \
+            -f ./infra/compose.yml \
+            -f ./generated/dev/compose.frontends.yml \
             up -d --no-deps backend media-worker
 
       - name: Show running services
+        if: always()
         run: |
+          set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
+            --env-file ./generated/dev/deploy.env \
             -p yuviron-dev \
-            -f ./infra/compose.base.yml \
-            -f ./infra/compose.dev.yml \
+            -f ./infra/compose.yml \
+            -f ./generated/dev/compose.frontends.yml \
             ps
-    
+
       - name: Show media worker logs
+        if: always()
         run: |
+          set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
+            --env-file ./generated/dev/deploy.env \
             -p yuviron-dev \
-            -f ./infra/compose.base.yml \
-            -f ./infra/compose.dev.yml \
+            -f ./infra/compose.yml \
+            -f ./generated/dev/compose.frontends.yml \
             logs --tail=100 media-worker
