@@ -284,38 +284,40 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("YuvironCorsPolicy");
 app.UseRateLimiter();
 
-// 2.5 Distribution of static files (Music, Covers)
+// 2.5 Distribution of static files (ТОЛЬКО публичные папки)
 var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
                   ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
                   ?? "/var/yuviron/storage";
 
-if (!Directory.Exists(storageRoot))
-{
-    Directory.CreateDirectory(storageRoot);
-}
+var publicFolders = new[] { "avatars", "covers", "banners" };
 
-var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
-contentTypeProvider.Mappings[".m3u8"] = "application/vnd.apple.mpegurl";
-contentTypeProvider.Mappings[".ts"] = "video/MP2T";
-
-app.UseStaticFiles(new StaticFileOptions
+foreach (var folder in publicFolders)
 {
-    FileProvider = new PhysicalFileProvider(storageRoot),
-    RequestPath = "/storage",
-    ContentTypeProvider = contentTypeProvider,
-    OnPrepareResponse = ctx =>
+    var folderPath = Path.Combine(storageRoot, folder);
+    
+    if (!Directory.Exists(folderPath))
     {
-        ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-        
-        var origin = ctx.Context.Request.Headers["Origin"].ToString();
-        var isAllowed = allowedOrigins.Contains(origin) || allowedOrigins.Contains("*");
-
-        if (isAllowed && !string.IsNullOrEmpty(origin))
-        {
-            ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
-        }
+        Directory.CreateDirectory(folderPath);
     }
-});
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(folderPath),
+        RequestPath = $"/storage/{folder}",
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+            
+            var origin = ctx.Context.Request.Headers["Origin"].ToString();
+            var isAllowed = allowedOrigins.Contains(origin) || allowedOrigins.Contains("*");
+
+            if (isAllowed && !string.IsNullOrEmpty(origin))
+            {
+                ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+            }
+        }
+    });
+}
 
 // 2.6 Authentication and Authorization (Strictly in that order!)
 app.UseAuthentication();

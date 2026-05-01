@@ -1,12 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Security;
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Entities;
@@ -17,11 +13,19 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IStreamTokenService _streamTokenService; 
+    private readonly TimeProvider _timeProvider;            
 
-    public GetTrackRecommendationsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetTrackRecommendationsHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser,
+        IStreamTokenService streamTokenService,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
+        _streamTokenService = streamTokenService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<List<RecommendedTrackDto>> Handle(GetTrackRecommendationsQuery request, CancellationToken cancellationToken)
@@ -42,7 +46,6 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
         var genreIds = baseTrack.TrackGenres.Select(g => g.GenreId).ToList();
         var moodIds = baseTrack.TrackMoods.Select(m => m.MoodId).ToList();
 
-        // КРОК 1: Знаходимо ТІЛЬКИ ID рекомендованих треків (швидко і без помилок генерації SQL)
         var recommendedTrackIds = await _context.Tracks
             .AsNoTracking()
             .Where(t => t.Id != request.TrackId 
@@ -55,7 +58,7 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
                          t.TrackMoods.Any(m => moodIds.Contains(m.MoodId))
                      ))
             .OrderByDescending(t => t.PlayCount) 
-            .Select(t => t.Id) // <-- Беремо ТІЛЬКИ ідентифікатори
+            .Select(t => t.Id) 
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
@@ -64,35 +67,46 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
             return new List<RecommendedTrackDto>();
         }
 
-        // КРОК 2: Витягуємо повні треки з усіма Include, використовуючи знайдені ID
         var tracks = await _context.Tracks
             .Include(t => t.Album)
             .Include(t => t.TrackArtists)
                 .ThenInclude(ta => ta.Artist)
             .AsNoTracking()
-            .Where(t => recommendedTrackIds.Contains(t.Id)) // <-- Проста і надійна умова
+            .Where(t => recommendedTrackIds.Contains(t.Id)) 
             .ToListAsync(cancellationToken);
 
-        // Відновлюємо правильне сортування за популярністю, бо IN(...) може збити порядок
         tracks = tracks.OrderByDescending(t => t.PlayCount).ToList();
 
         bool isAuthenticated = _currentUser.UserId.HasValue;
 
-        // Мапинг у DTO
-        var recommendations = tracks.Select(t => new RecommendedTrackDto(
-            t.Id,
-            t.Title,
-            t.DurationMs,
-            t.Explicit,
-            t.CoverUrl ?? t.Album?.CoverUrl,
-            isAuthenticated 
-                ? (!string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey) 
-                : null,
-            t.TrackArtists.Select(ta => new RecommendedTrackArtistDto(
-                ta.Artist.Id,
-                ta.Artist.Name
-            )).ToList() 
-        )).ToList();
+        var expiration = _timeProvider.GetUtcNow().AddHours(6);
+        var expUnix = expiration.ToUnixTimeSeconds();
+
+        var recommendations = tracks.Select(t => 
+        {
+            string? audioUrl = null;
+            var fileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey;
+
+            if (isAuthenticated && !string.IsNullOrWhiteSpace(fileKey))
+            {
+                var signature = _streamTokenService.GenerateToken(t.Id, expiration);
+                var fileName = Path.GetFileName(fileKey);
+                audioUrl = $"/api/stream/tracks/{t.Id}/{fileName}?exp={expUnix}&sig={signature}";
+            }
+
+            return new RecommendedTrackDto(
+                t.Id,
+                t.Title,
+                t.DurationMs,
+                t.Explicit,
+                t.CoverUrl ?? t.Album?.CoverUrl,
+                audioUrl,
+                t.TrackArtists.Select(ta => new RecommendedTrackArtistDto(
+                    ta.Artist.Id,
+                    ta.Artist.Name
+                )).ToList() 
+            );
+        }).ToList();
 
         return recommendations;
     }

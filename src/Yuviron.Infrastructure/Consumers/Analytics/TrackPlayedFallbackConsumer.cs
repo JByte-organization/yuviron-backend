@@ -17,14 +17,23 @@ public class TrackPlayedFallbackConsumer : IConsumer<TrackPlayedFallbackEvent>
     public async Task Consume(ConsumeContext<TrackPlayedFallbackEvent> context)
     {
         var track = await _context.Tracks
+            .Include(t => t.TrackArtists)
+            .ThenInclude(ta => ta.Artist) 
             .FirstOrDefaultAsync(t => t.Id == context.Message.TrackId, context.CancellationToken);
             
-        var artist = await _context.Artists
-            .FirstOrDefaultAsync(a => a.Id == context.Message.ArtistId, context.CancellationToken);
+        if (track != null)
+        {
+            track.AddPlays(1);
 
-        track?.AddPlays(1);
-        artist?.AddPlays(1);
+            foreach (var trackArtist in track.TrackArtists)
+            {
+                if (trackArtist.Artist != null)
+                {
+                    trackArtist.Artist.AddPlays(1);
+                }
+            }
 
-        await _context.SaveChangesAsync(context.CancellationToken);
+            await _context.SaveChangesAsync(context.CancellationToken);
+        }
     }
 }
