@@ -35,6 +35,7 @@ jobs:
           SEED_PREMIUM_EMAIL: ${{ secrets.SEED_PREMIUM_EMAIL }}
           SEED_PREMIUM_PASSWORD: ${{ secrets.SEED_PREMIUM_PASSWORD }}
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
+          STREAM_SECRET: ${{ secrets.STREAM_SECRET }}
         run: |
           set -Eeuo pipefail
           ENV_FILE="Development"
@@ -92,6 +93,9 @@ jobs:
               },
               "JamendoApi": {
                   "ClientId": os.environ["JAMENDO_CLIENT_ID"]
+              },
+              "StreamSecurity": {
+                  "SecretKey": os.environ["STREAM_SECRET"]
               }
           }
 
