@@ -1,3 +1,6 @@
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using Yuviron.Application.Abstractions.Services;
 
@@ -14,17 +17,21 @@ public sealed class UploadFileHandler : IRequestHandler<UploadFileCommand, Uploa
 
     public async Task<UploadResponse> Handle(UploadFileCommand request, CancellationToken cancellationToken)
     {
+        var targetFolder = "temp"; 
+
         var filePath = await _fileStorageService.UploadAsync(
             request.FileStream,
-            "temp", 
+            targetFolder, 
             request.FileName,
             request.ContentType,
             cancellationToken
         );
 
+        var fileName = Path.GetFileName(filePath);
+        
         return new UploadResponse(
             Path: filePath,
-            Url: $"/storage/{filePath}"
+            Url: $"/api/files/temp/{fileName}" 
         );
     }
 }

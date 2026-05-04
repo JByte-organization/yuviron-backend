@@ -42,7 +42,7 @@ public sealed class AnalyticsService : IAnalyticsService
         return sessionId;
     }
 
-    public async Task<int> CommitPlaySessionAsync(Guid sessionId, Guid trackId, Guid artistId, Guid userId, CancellationToken ct = default)
+    public async Task<int> CommitPlaySessionAsync(Guid sessionId, Guid trackId, Guid userId, CancellationToken ct = default)
     {
         try
         {
@@ -72,12 +72,10 @@ public sealed class AnalyticsService : IAnalyticsService
 
             var batch = db.CreateBatch();
             var t1 = batch.StringIncrementAsync($"track:{trackId}:plays");
-            var t2 = batch.StringIncrementAsync($"artist:{artistId}:plays");
-            var t3 = batch.SetAddAsync("dirty_counters:tracks", trackId.ToString());
-            var t4 = batch.SetAddAsync("dirty_counters:artists", artistId.ToString());
+            var t2 = batch.SetAddAsync("dirty_counters:tracks", trackId.ToString());
             
             batch.Execute(); 
-            await Task.WhenAll(t1, t2, t3, t4); 
+            await Task.WhenAll(t1, t2); 
             
             return msPlayed; 
         }
@@ -85,7 +83,7 @@ public sealed class AnalyticsService : IAnalyticsService
         {
             _logger.LogWarning(ex, "Redis недоступен, пишем прослушивание в Outbox для {TrackId}", trackId);
             
-            var fallbackEvent = new TrackPlayedFallbackEvent(trackId, artistId);
+            var fallbackEvent = new TrackPlayedFallbackEvent(trackId); 
             var traceId = Activity.Current?.Id; 
             var message = OutboxMessage.Create(
                 typeof(TrackPlayedFallbackEvent).AssemblyQualifiedName!,

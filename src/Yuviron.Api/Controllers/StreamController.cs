@@ -1,0 +1,28 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Yuviron.Application.Features.Client.Stream.Queries.GetAudioStream;
+
+namespace Yuviron.Api.Controllers.Client;
+
+[Route("api/stream")]
+[ApiExplorerSettings(GroupName = "client")]
+public class StreamController : ApiControllerBase
+{
+    [AllowAnonymous]
+    [HttpGet("tracks/{trackId:guid}/{**fileName}")]
+    public async Task<IActionResult> GetAudioStream(
+        [FromRoute] Guid trackId, 
+        [FromRoute] string fileName, 
+        [FromQuery] long exp, 
+        [FromQuery] string sig, 
+        CancellationToken ct = default)
+    {
+        var query = new GetAudioStreamQuery(trackId, fileName, exp, sig);
+        var result = await Mediator.Send(query, ct);
+
+        return File(result.Stream, result.ContentType, enableRangeProcessing: true);
+    }
+}

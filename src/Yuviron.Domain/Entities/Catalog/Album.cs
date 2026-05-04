@@ -46,17 +46,26 @@ public class Album : Entity
     }
 
     public void UpdateDetails(
-        string title, string? description, string? coverUrl, DateTime releaseDate,
+        string title, string? description, string? newCoverUrl, DateTime releaseDate,
         VisibilityStatus visibilityStatus, DateTime? scheduledPublishAt,
         IEnumerable<Guid> artistIds, DateTime utcNow)
     {
         Title = title.Trim();
         Description = description?.Trim();
-        CoverUrl = coverUrl?.Trim();
         ReleaseDate = releaseDate;
         VisibilityStatus = visibilityStatus;
         ScheduledPublishAt = NormalizeScheduledPublishAt(visibilityStatus, scheduledPublishAt);
         UpdatedAt = utcNow;
+
+        var sanitizedNewCoverUrl = newCoverUrl?.Trim();
+
+        if (!string.Equals(CoverUrl, sanitizedNewCoverUrl, StringComparison.OrdinalIgnoreCase) 
+            && !string.IsNullOrWhiteSpace(CoverUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(CoverUrl));
+        }
+
+        CoverUrl = sanitizedNewCoverUrl;
 
         SyncArtists(artistIds);
     }

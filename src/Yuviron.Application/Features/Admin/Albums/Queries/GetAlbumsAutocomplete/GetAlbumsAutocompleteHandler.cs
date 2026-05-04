@@ -22,11 +22,11 @@ public sealed class GetAlbumsAutocompleteHandler : IRequestHandler<GetAlbumsAuto
         if (string.IsNullOrWhiteSpace(request.SearchTerm))
             return new List<AlbumAutocompleteDto>();
 
-        var searchTerm = request.SearchTerm.Trim().ToLower();
+        var searchTerm = request.SearchTerm.Trim();
 
         var albumsData = await _context.Albums
             .AsNoTracking()
-            .Where(a => !a.IsDeleted && a.Title.ToLower().Contains(searchTerm))
+            .Where(a => !a.IsDeleted && a.Title.Contains(searchTerm))
             .OrderBy(a => a.Title)
             .Take(request.Limit)
             .Select(a => new
