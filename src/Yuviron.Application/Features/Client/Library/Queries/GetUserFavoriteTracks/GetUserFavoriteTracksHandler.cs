@@ -23,30 +23,31 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-        IQueryable<UserFavoriteTrackDto> projectedQuery = _context.UserSavedTracks
+        var query = _context.UserSavedTracks
             .AsNoTracking()
-            .Where(ust => ust.UserId == userId && !ust.Track.IsDeleted)
-            .Select(ust => new UserFavoriteTrackDto(
-                ust.TrackId,
-                ust.Track.Title,
-                ust.Track.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
-                ust.Track.AlbumId,
-                ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",
-                ust.Track.CoverUrl ?? (ust.Track.Album != null ? ust.Track.Album.CoverUrl : null),
-                ust.Track.DurationMs,
-                ust.SavedAt
-            ));
+            .Where(ust => ust.UserId == userId && !ust.Track.IsDeleted);
 
         var sortBy = request.SortBy?.ToLowerInvariant() ?? "savedat";
         var sortOrder = request.SortOrder?.ToLowerInvariant() ?? "desc";
 
-        projectedQuery = sortBy switch
+        query = sortBy switch
         {
-            "title" when sortOrder == "asc" => projectedQuery.OrderBy(t => t.Title),
-            "title" => projectedQuery.OrderByDescending(t => t.Title),
-            _ when sortOrder == "asc" => projectedQuery.OrderBy(t => t.SavedAt),
-            _ => projectedQuery.OrderByDescending(t => t.SavedAt)
+            "title" when sortOrder == "asc" => query.OrderBy(ust => ust.Track.Title),
+            "title" => query.OrderByDescending(ust => ust.Track.Title),
+            _ when sortOrder == "asc" => query.OrderBy(ust => ust.SavedAt),
+            _ => query.OrderByDescending(ust => ust.SavedAt)
         };
+
+        var projectedQuery = query.Select(ust => new UserFavoriteTrackDto(
+            ust.TrackId,
+            ust.Track.Title,
+            ust.Track.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+            ust.Track.AlbumId,
+            ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",
+            ust.Track.CoverUrl ?? (ust.Track.Album != null ? ust.Track.Album.CoverUrl : null),
+            ust.Track.DurationMs,
+            ust.SavedAt
+        ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
