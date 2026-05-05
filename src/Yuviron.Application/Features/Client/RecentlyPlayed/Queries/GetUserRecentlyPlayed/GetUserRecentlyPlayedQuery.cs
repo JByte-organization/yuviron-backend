@@ -2,4 +2,12 @@ using MediatR;
 
 namespace Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
-public record GetUserRecentlyPlayedQuery(int Limit = 5) : IRequest<List<RecentlyPlayedTrackDto>>;
+public static class GetUserRecentlyPlayedLimits
+{
+    public const int DefaultLimit = 5;
+    public const int MaxLimit = 5;
+}
+
+public record GetUserRecentlyPlayedQuery(
+    int Limit = GetUserRecentlyPlayedLimits.DefaultLimit
+) : IRequest<List<RecentlyPlayedTrackDto>>;
