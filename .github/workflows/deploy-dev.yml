@@ -155,7 +155,7 @@ jobs:
             -p yuviron-dev \
             -f ./infra/compose.yml \
             -f ./generated/dev/compose.frontends.yml \
-            run --rm --no-deps migrator
+            run --rm migrator
 
       - name: Start backend runtime services
         run: |
