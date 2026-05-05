@@ -3,12 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System;
 using Yuviron.Application.Features.Client.Home.Queries.GetHomeBanners;
 using Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserFavoriteArtists;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
-using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -50,14 +48,5 @@ public class HomeController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetUserFavoriteArtistsQuery(limit), ct);
         return Ok(result);
-    }
-    
-    [HttpGet("recently-played")]
-    [Authorize]
-    public async Task<IActionResult> GetRecentlyPlayed([FromQuery] int limit = 5)
-    {
-        var query = new GetUserRecentlyPlayedQuery(limit);
-        var result = await Mediator.Send(query);
-        return Ok(result);
-    }
+    }    
 }
