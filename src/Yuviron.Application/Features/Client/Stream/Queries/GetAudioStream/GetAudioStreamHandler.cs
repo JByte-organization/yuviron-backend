@@ -14,6 +14,9 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
     private readonly IFileStorageService _fileStorage;
     private readonly IStreamTokenService _tokenService;
 
+    // Жесткий Allowlist для двойной проверки
+    private static readonly string[] AllowedExtensions = { ".m3u8", ".ts", ".key" };
+
     public GetAudioStreamHandler(IFileStorageService fileStorage, IStreamTokenService tokenService)
     {
         _fileStorage = fileStorage;
@@ -27,16 +30,25 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
             throw new UnauthorizedAccessException("Invalid or expired stream token.");
         }
 
-        var actualFileName = request.FileName.Equals("key", StringComparison.OrdinalIgnoreCase) 
+        var sanitizedFileName = Path.GetFileName(request.FileName);
+
+        var actualFileName = sanitizedFileName.Equals("key", StringComparison.OrdinalIgnoreCase) 
             ? "encryption.key" 
-            : request.FileName;
+            : sanitizedFileName;
+
+        var extension = Path.GetExtension(actualFileName).ToLowerInvariant();
+        if (Array.IndexOf(AllowedExtensions, extension) < 0)
+        {
+            throw new UnauthorizedAccessException("Forbidden file extension requested.");
+        }
 
         var relativeFilePath = $"tracks/{request.TrackId}/{actualFileName}";
+        
         var stream = await _fileStorage.GetFileStreamAsync(relativeFilePath, cancellationToken);
 
         string contentType = GetContentType(actualFileName);
 
-        if (request.FileName.EndsWith(".m3u8"))
+        if (extension == ".m3u8")
         {
             using var reader = new StreamReader(stream);
             var content = await reader.ReadToEndAsync(cancellationToken);
@@ -44,7 +56,6 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
             var queryParams = $"?exp={request.Exp}&sig={request.Sig}";
         
             var modifiedContent = content.Replace(".ts", $".ts{queryParams}");
-            
             modifiedContent = modifiedContent.Replace("/key\"", $"/key{queryParams}\"");
 
             var modifiedStream = new MemoryStream(Encoding.UTF8.GetBytes(modifiedContent));
@@ -56,11 +67,13 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
 
     private string GetContentType(string fileName)
     {
-        if (fileName.EndsWith(".m3u8")) return "application/vnd.apple.mpegurl";
-        if (fileName.EndsWith(".ts")) return "video/MP2T";
-        if (fileName.EndsWith(".key")) return "application/octet-stream"; 
-        if (fileName.EndsWith(".mp3")) return "audio/mpeg";
-        
-        return "application/octet-stream";
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch
+        {
+            ".m3u8" => "application/vnd.apple.mpegurl",
+            ".ts" => "video/MP2T",
+            ".key" => "application/octet-stream",
+            _ => "application/octet-stream"
+        };
     }
 }
