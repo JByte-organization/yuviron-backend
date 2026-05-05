@@ -12,6 +12,7 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
     public UploadFileValidator()
     {
         RuleFor(x => x.FileStream)
+            .Cascade(CascadeMode.Stop)
             .NotNull().WithMessage("The file cannot be empty.")
             .Must(stream => stream.Length > 0).WithMessage("The file cannot be empty.")
             .Must(stream => stream.Length <= 50 * 1024 * 1024).WithMessage("File size must not exceed 50 MB.");

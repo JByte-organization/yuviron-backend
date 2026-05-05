@@ -38,7 +38,9 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
         }
         
-        var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
+        var uniqueArtists = request.Artists.DistinctBy(a => a.Id).ToList();
+        var uniqueArtistIds = uniqueArtists.Select(a => a.Id).ToList();
+        
         var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
         if (existingArtistsCount != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "One or more provided IDs");
 
@@ -71,7 +73,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             request.AudioStorageKey, 
             request.VisibilityStatus,
             request.Isrc,
-            uniqueArtistIds,
+            uniqueArtists.Select(a => (a.Id, a.Role)),
             uniqueGenreIds,
             uniqueMoodIds, 
             utcNow);

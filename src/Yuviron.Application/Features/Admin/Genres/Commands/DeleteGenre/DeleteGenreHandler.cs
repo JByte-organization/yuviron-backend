@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions; 
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
@@ -12,9 +11,7 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteGenreHandler(
-        IApplicationDbContext context, 
-        TimeProvider timeProvider)
+    public DeleteGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -34,15 +31,7 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
             throw new InvalidOperationException("Cannot delete this genre because it is currently associated with one or more tracks.");
         }
 
-        var coverUrlToDelete = genre.CoverUrl; 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        
-        genre.Delete(utcNow);
-
-        if (!string.IsNullOrWhiteSpace(coverUrlToDelete))
-        {
-            genre.AddDomainEvent(new FileNeedsDeletionEvent(coverUrlToDelete));
-        }
+        genre.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
         await _context.SaveChangesAsync(cancellationToken);
 

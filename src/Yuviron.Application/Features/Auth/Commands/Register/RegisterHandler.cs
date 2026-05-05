@@ -47,6 +47,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         }
 
         var rolesToAssign = await _context.Roles
+            .AsNoTracking()
             .Where(r => roleNamesToAssign.Contains(r.Name))
             .ToListAsync(cancellationToken);
 

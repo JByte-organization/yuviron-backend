@@ -1,3 +1,4 @@
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistTopTracks;
 
@@ -11,10 +12,5 @@ public record ArtistTopTrackDto(
     long PlayCount,
     Guid AlbumId,
     string AlbumTitle,
-    List<ArtistTopTrackArtistDto> Artists
-);
-
-public record ArtistTopTrackArtistDto(
-    Guid Id,
-    string Name
+    IEnumerable<SimpleArtistDto> Artists 
 );

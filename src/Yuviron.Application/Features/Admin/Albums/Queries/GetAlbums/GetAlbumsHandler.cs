@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
+using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 
@@ -31,7 +32,7 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
             .Select(a => new AlbumListItemDto(
                 a.Id,
                 a.Title,
-                a.AlbumArtists.Select(aa => aa.Artist.Name).ToList(), 
+                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)), 
                 a.CoverUrl,
                 a.Tracks.Count,                 
                 a.Tracks.Sum(t => t.PlayCount),   

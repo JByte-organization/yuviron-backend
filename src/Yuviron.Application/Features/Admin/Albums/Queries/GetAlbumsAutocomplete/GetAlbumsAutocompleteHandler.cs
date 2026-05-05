@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumsAutocomplete;
 
@@ -24,27 +25,17 @@ public sealed class GetAlbumsAutocompleteHandler : IRequestHandler<GetAlbumsAuto
 
         var searchTerm = request.SearchTerm.Trim();
 
-        var albumsData = await _context.Albums
+        return await _context.Albums
             .AsNoTracking()
             .Where(a => !a.IsDeleted && a.Title.Contains(searchTerm))
             .OrderBy(a => a.Title)
             .Take(request.Limit)
-            .Select(a => new
-            {
-                a.Id,
-                a.Title,
-                a.CoverUrl,
-                ArtistNamesList = a.AlbumArtists.Select(aa => aa.Artist.Name).ToList() 
-            })
-            .ToListAsync(cancellationToken);
-
-        return albumsData
             .Select(a => new AlbumAutocompleteDto(
                 a.Id,
                 a.Title,
-                string.Join(", ", a.ArtistNamesList),
+                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)),
                 a.CoverUrl
             ))
-            .ToList();
+            .ToListAsync(cancellationToken);
     }
 }

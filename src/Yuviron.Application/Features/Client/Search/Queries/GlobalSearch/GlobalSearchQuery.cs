@@ -4,21 +4,11 @@ using System.Collections.Generic;
 
 namespace Yuviron.Application.Features.Client.Search.Queries.GlobalSearch;
 
-
-public record SearchResultItemDto(
-    Guid Id,
-    string Title,
-    string? Subtitle,
-    string? CoverUrl,
-    string Type
-);
-
 public record GlobalSearchResponse(
-    List<SearchResultItemDto> Tracks,
-    List<SearchResultItemDto> Artists,
-    List<SearchResultItemDto> Playlists
+    List<SearchTrackDto> Tracks,
+    List<SearchArtistDto> Artists,
+    List<SearchPlaylistDto> Playlists
 );
-
 
 public record GlobalSearchQuery(
     string Query,

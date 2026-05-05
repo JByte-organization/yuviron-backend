@@ -23,8 +23,13 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
             .WithMessage("Invalid file path.")
             .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
 
-        RuleFor(x => x.VisibilityStatus).IsInEnum();
-        RuleFor(x => x.ArtistIds).NotEmpty().WithMessage("Track must have at least one artist.");
+        RuleFor(x => x.VisibilityStatus)
+            .IsInEnum();
+
+        RuleFor(x => x.Artists)
+            .NotEmpty()
+            .WithMessage("Track must have at least one artist.");
+
         RuleFor(x => x.GenreIds).NotEmpty().WithMessage("Track must have at least one genre.");
         RuleFor(x => x.MoodIds).NotEmpty().WithMessage("Track must have at least one mood.");
     }

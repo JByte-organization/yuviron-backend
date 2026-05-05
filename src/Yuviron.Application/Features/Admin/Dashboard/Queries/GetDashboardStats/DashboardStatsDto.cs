@@ -6,7 +6,8 @@ public record AdminDashboardDto(
     List<RecentUserDto> RecentUsers,
     List<TopEntityDto> TopGenres,
     List<TopEntityDto> TopMoods,
-    List<PopularAlbumDto> PopularAlbums
+    List<PopularAlbumDto> PopularAlbums,
+    List<TopEntityDto> TopArtists
 );
 
 public record DashboardSummaryDto(

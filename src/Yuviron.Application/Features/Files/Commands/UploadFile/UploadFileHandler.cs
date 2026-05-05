@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,20 +19,24 @@ public sealed class UploadFileHandler : IRequestHandler<UploadFileCommand, Uploa
     public async Task<UploadResponse> Handle(UploadFileCommand request, CancellationToken cancellationToken)
     {
         var targetFolder = "temp"; 
+        
+        var extension = Path.GetExtension(request.FileName).ToLowerInvariant();
+        
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
 
         var filePath = await _fileStorageService.UploadAsync(
             request.FileStream,
             targetFolder, 
-            request.FileName,
+            uniqueFileName,
             request.ContentType,
             cancellationToken
         );
 
-        var fileName = Path.GetFileName(filePath);
+        var savedFileName = Path.GetFileName(filePath);
         
         return new UploadResponse(
             Path: filePath,
-            Url: $"/api/files/temp/{fileName}" 
+            Url: $"/api/files/temp/{savedFileName}" 
         );
     }
 }

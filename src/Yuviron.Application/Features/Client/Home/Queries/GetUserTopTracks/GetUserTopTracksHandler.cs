@@ -1,12 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Common.Models; 
+using Yuviron.Application.Extensions; 
 
 namespace Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
 
@@ -14,7 +11,7 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly TimeProvider _timeProvider; // <-- Добавляем
+    private readonly TimeProvider _timeProvider;
 
     public GetUserTopTracksHandler(
         IApplicationDbContext context, 
@@ -31,9 +28,9 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
         var userId = _currentUserService.UserId 
                      ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-        var minDate = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-30); 
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var minDate = utcNow.AddDays(-30); 
         
-
         var topTrackIds = await _context.ListeningEvents
             .Where(le => le.UserId == userId && 
                          le.PlayedAt >= minDate && 
@@ -48,12 +45,13 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
 
         var dbTracks = await _context.Tracks
             .AsNoTracking()
-            .Where(t => topTrackIds.Contains(t.Id) && !t.IsDeleted)
+            .AvailableForPublic(utcNow)
+            .Where(t => topTrackIds.Contains(t.Id))
             .Select(t => new
             {
                 t.Id,
                 t.Title,
-                ArtistNamesList = t.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)), 
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             })
             .ToListAsync(cancellationToken);
@@ -64,7 +62,7 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
             .Select(t => new TopTrackDto(
                 t!.Id,
                 t.Title,
-                string.Join(", ", t.ArtistNamesList),
+                t.Artists,
                 t.CoverUrl
             ))
             .ToList();

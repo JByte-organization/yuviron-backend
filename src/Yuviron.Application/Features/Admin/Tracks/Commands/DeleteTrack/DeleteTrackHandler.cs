@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrack;
@@ -12,9 +11,7 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteTrackHandler(
-        IApplicationDbContext context, 
-        TimeProvider timeProvider) 
+    public DeleteTrackHandler(IApplicationDbContext context, TimeProvider timeProvider) 
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -26,28 +23,7 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken)
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var coverUrlToDelete = track.CoverUrl;
-        var audioKeyToDelete = track.AudioStorageKey;
-        var hlsPlaylistUrlToDelete = track.HlsPlaylistUrl;
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
-        track.Delete(utcNow); 
-
-        if (!string.IsNullOrWhiteSpace(coverUrlToDelete))
-            track.AddDomainEvent(new FileNeedsDeletionEvent(coverUrlToDelete));
-
-        if (!string.IsNullOrWhiteSpace(audioKeyToDelete))
-            track.AddDomainEvent(new FileNeedsDeletionEvent(audioKeyToDelete));
-
-        if (!string.IsNullOrWhiteSpace(hlsPlaylistUrlToDelete))
-        {
-            var directoryPath = System.IO.Path.GetDirectoryName(hlsPlaylistUrlToDelete)?.Replace("\\", "/");
-            
-            if (!string.IsNullOrWhiteSpace(directoryPath))
-            {
-                track.AddDomainEvent(new DirectoryNeedsDeletionEvent(directoryPath));
-            }
-        }
+        track.Delete(_timeProvider.GetUtcNow().UtcDateTime); 
 
         await _context.SaveChangesAsync(cancellationToken);
 

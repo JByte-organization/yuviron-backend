@@ -12,9 +12,7 @@ public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteUserHandler(
-        IApplicationDbContext context,
-        TimeProvider timeProvider)
+    public DeleteUserHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -27,18 +25,10 @@ public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
                        .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
-        var avatarUrlToDelete = user.Profile!.AvatarUrl;
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
-        user.Delete(utcNow);
+        user.Delete(_timeProvider.GetUtcNow().UtcDateTime);
         
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
 
-        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete))
-        {
-            user.AddDomainEvent(new FileNeedsDeletionEvent(avatarUrlToDelete));
-        }
-        
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

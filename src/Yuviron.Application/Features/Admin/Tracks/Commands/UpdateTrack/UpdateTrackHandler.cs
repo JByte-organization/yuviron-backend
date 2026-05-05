@@ -47,7 +47,9 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
         }
         
-        var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
+        var uniqueArtists = request.Artists.DistinctBy(a => a.Id).ToList();
+        var uniqueArtistIds = uniqueArtists.Select(a => a.Id).ToList();
+        
         var existingArtists = await _context.Artists.AsNoTracking().CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
         if (existingArtists != uniqueArtistIds.Count) throw new NotFoundException(nameof(Artist), "Invalid artists provided.");
             
@@ -91,7 +93,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             request.AudioStorageKey,
             request.VisibilityStatus,
             request.Isrc,
-            uniqueArtistIds,
+            uniqueArtists.Select(a => (a.Id, a.Role)),
             uniqueGenreIds,
             uniqueMoodIds, 
             utcNow);

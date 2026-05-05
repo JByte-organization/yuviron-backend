@@ -34,7 +34,6 @@ public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAu
                 a.Id,
                 a.Name,
                 a.AvatarUrl,
-                // Магия EF Core: ищем Овнера и берем его Email
                 a.TeamMembers
                     .Where(tm => tm.Role == ArtistTeamRole.Owner)
                     .Select(tm => tm.User.Email)

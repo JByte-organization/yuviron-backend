@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using Yuviron.Application.Common.Models; 
 
 namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackRecommendations;
 
@@ -8,10 +11,5 @@ public record RecommendedTrackDto(
     bool Explicit,
     string? CoverUrl,
     string? AudioUrl,
-    List<RecommendedTrackArtistDto> Artists
-);
-
-public record RecommendedTrackArtistDto(
-    Guid Id,
-    string Name
+    IEnumerable<TrackArtistDto> Artists 
 );

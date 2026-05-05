@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Auth.Commands.Login;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
@@ -68,26 +69,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        if (user.AccountState == AccountState.Banned)
-        {
-            var activeBlocks = await _context.UserBlocks
-                .Where(b => b.UserId == user.Id && b.IsActive)
-                .ToListAsync(cancellationToken);
-
-            bool isStillBanned = activeBlocks.Any(b => b.EndsAt == null || b.EndsAt > utcNow);
-
-            if (isStillBanned)
-            {
-                throw new UnauthorizedAccessException("This account is currently banned.");
-            }
-
-            foreach (var block in activeBlocks)
-            {
-                block.Deactivate(utcNow);
-            }
-
-            user.SetAccountState(AccountState.Active, utcNow);
-        }
+        await user.EnsureAllowedToLoginAsync(_context, utcNow, cancellationToken);
 
         user.UpdateLastLogin(utcNow);
 
