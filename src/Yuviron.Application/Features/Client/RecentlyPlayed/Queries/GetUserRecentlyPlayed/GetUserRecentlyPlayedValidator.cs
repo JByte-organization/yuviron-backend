@@ -8,6 +8,6 @@ public sealed class GetUserRecentlyPlayedValidator : AbstractValidator<GetUserRe
     {
         RuleFor(x => x.Limit)
             .GreaterThan(0)
-            .LessThanOrEqualTo(50);
+            .LessThanOrEqualTo(GetUserRecentlyPlayedLimits.MaxLimit);
     }
 }
