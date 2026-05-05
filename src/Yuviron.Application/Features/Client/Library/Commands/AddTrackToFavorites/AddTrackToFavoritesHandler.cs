@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions; // <-- Подключаем наши экстеншены
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -28,8 +29,11 @@ public sealed class AddTrackToFavoritesHandler : IRequestHandler<AddTrackToFavor
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
         var trackExists = await _context.Tracks
-            .AnyAsync(t => t.Id == request.TrackId && !t.IsDeleted, cancellationToken);
+            .AvailableForPublic(utcNow) 
+            .AnyAsync(t => t.Id == request.TrackId, cancellationToken);
 
         if (!trackExists)
         {
@@ -43,8 +47,6 @@ public sealed class AddTrackToFavoritesHandler : IRequestHandler<AddTrackToFavor
         {
             return Unit.Value;
         }
-
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         _context.UserSavedTracks.Add(new UserSavedTrack(userId, request.TrackId, utcNow));
         await _context.SaveChangesAsync(cancellationToken);

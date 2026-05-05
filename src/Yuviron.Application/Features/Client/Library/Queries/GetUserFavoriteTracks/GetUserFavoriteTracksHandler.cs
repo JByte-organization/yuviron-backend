@@ -1,9 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
-using Yuviron.Application.Extensions;
+using Yuviron.Application.Common.Models;
+using Yuviron.Application.Extensions; // <-- Подключаем экстеншены
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
 
@@ -11,11 +16,16 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly TimeProvider _timeProvider; // <-- ДОБАВИЛИ TimeProvider
 
-    public GetUserFavoriteTracksHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserFavoriteTracksHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUserService,
+        TimeProvider timeProvider) // <-- ДОБАВИЛИ В КОНСТРУКТОР
     {
         _context = context;
         _currentUserService = currentUserService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<PaginatedList<UserFavoriteTrackDto>> Handle(GetUserFavoriteTracksQuery request, CancellationToken cancellationToken)
@@ -23,9 +33,12 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
         var query = _context.UserSavedTracks
             .AsNoTracking()
-            .Where(ust => ust.UserId == userId && !ust.Track.IsDeleted);
+            .Where(ust => ust.UserId == userId && 
+                          _context.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
 
         var sortBy = request.SortBy?.ToLowerInvariant() ?? "savedat";
         var sortOrder = request.SortOrder?.ToLowerInvariant() ?? "desc";
@@ -41,7 +54,7 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
         var projectedQuery = query.Select(ust => new UserFavoriteTrackDto(
             ust.TrackId,
             ust.Track.Title,
-            ust.Track.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+            ust.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)),
             ust.Track.AlbumId,
             ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",
             ust.Track.CoverUrl ?? (ust.Track.Album != null ? ust.Track.Album.CoverUrl : null),

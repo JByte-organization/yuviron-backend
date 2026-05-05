@@ -1,12 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Common.Models;
+using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
@@ -14,11 +11,16 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly TimeProvider _timeProvider;
 
-    public GetUserRecentlyPlayedHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserRecentlyPlayedHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUserService,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<List<RecentlyPlayedTrackDto>> Handle(GetUserRecentlyPlayedQuery request, CancellationToken cancellationToken)
@@ -41,15 +43,16 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
         if (!recentTracksData.Any()) return new List<RecentlyPlayedTrackDto>();
 
         var trackIds = recentTracksData.Select(x => x.TrackId).ToList();
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var dbTracks = await _context.Tracks
-            .AsNoTracking()
+            .AvailableForPublic(utcNow) 
             .Where(t => trackIds.Contains(t.Id))
             .Select(t => new
             {
                 t.Id,
                 t.Title,
-                ArtistNamesList = t.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)),
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             })
             .ToListAsync(cancellationToken);
@@ -62,7 +65,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
                 return new RecentlyPlayedTrackDto(
                     track.Id,
                     track.Title,
-                    string.Join(", ", track.ArtistNamesList),
+                    track.Artists, 
                     track.CoverUrl,
                     data.LastPlayed
                 );

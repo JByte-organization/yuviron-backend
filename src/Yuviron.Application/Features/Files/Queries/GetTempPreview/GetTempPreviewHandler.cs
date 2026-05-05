@@ -17,10 +17,17 @@ public sealed class GetTempPreviewHandler : IRequestHandler<GetTempPreviewQuery,
 
     public async Task<GetTempPreviewResponse> Handle(GetTempPreviewQuery request, CancellationToken cancellationToken)
     {
-        var relativePath = $"temp/{request.FileName}";
+        var safeFileName = Path.GetFileName(request.FileName);
+
+        if (string.IsNullOrWhiteSpace(safeFileName))
+        {
+            throw new System.ArgumentException("Invalid file name.");
+        }
+
+        var relativePath = $"temp/{safeFileName}";
         var stream = await _fileStorage.GetFileStreamAsync(relativePath, cancellationToken);
 
-        var ext = Path.GetExtension(request.FileName).ToLowerInvariant();
+        var ext = Path.GetExtension(safeFileName).ToLowerInvariant();
         var contentType = ext switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackById;
 
@@ -16,13 +17,7 @@ public record TrackDetailsDto(
     string AlbumTitle,
     int AlbumPosition,
     
-    List<TrackArtistDto> Artists,
-    List<string> Genres,
-    List<string> Moods
-);
-
-public record TrackArtistDto(
-    Guid Id,
-    string Name,
-    string Role
+    IEnumerable<TrackArtistDto> Artists,
+    IEnumerable<string> Genres,
+    IEnumerable<string> Moods
 );

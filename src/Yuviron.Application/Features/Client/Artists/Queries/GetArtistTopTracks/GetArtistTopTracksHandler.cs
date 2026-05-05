@@ -1,11 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Abstractions.Security; 
 using Yuviron.Domain.Exceptions;
-using Yuviron.Domain.Enums;
 using Yuviron.Domain.Entities;
+using Yuviron.Application.Extensions;
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistTopTracks;
 
@@ -33,19 +34,15 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
         bool artistExists = await _context.Artists
             .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
 
-        if (!artistExists)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+        if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         bool isAuthenticated = _currentUser.UserId.HasValue;
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var rawTracks = await _context.Tracks
             .AsNoTracking()
-            .Where(t => !t.IsDeleted 
-                     && t.VisibilityStatus == VisibilityStatus.Published
-                     && t.ProcessingStatus == TrackProcessingStatus.Ready
-                     && t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId))
+            .AvailableForPublic(utcNow)
+            .Where(t => t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId))
             .OrderByDescending(t => t.PlayCount)
             .Take(request.Limit)
             .Select(t => new 
@@ -59,10 +56,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                 t.PlayCount,
                 t.AlbumId,
                 AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
-                Artists = t.TrackArtists.Select(ta => new ArtistTopTrackArtistDto(
-                    ta.Artist.Id,
-                    ta.Artist.Name
-                )).ToList()
+                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
             })
             .ToListAsync(cancellationToken);
 
