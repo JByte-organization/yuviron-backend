@@ -31,27 +31,33 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
         int msPlayed = await _analyticsService.CommitPlaySessionAsync(
             request.PlaySessionId, request.TrackId, request.UserId, ct);
             
-        // 2. Если трек реально послушали (>= 30 сек) - сохраняем историю
-        if (msPlayed >= 30000)
+        if (msPlayed > 0)
         {
             var playedAt = _timeProvider.GetUtcNow().UtcDateTime;
             
+            var listeningEvent = ListeningEvent.Create(
+                request.UserId,
+                request.TrackId,
+                msPlayed,
+                request.DeviceType,
+                request.CountryCode,
+                request.SourceType,
+                request.SourceId,
+                playedAt
+            );
+            _context.ListeningEvents.Add(listeningEvent);
+
             var successEvent = new TrackSuccessfullyPlayedEvent(
-                request.UserId, 
-                request.TrackId, 
-                msPlayed, 
-                playedAt, 
-                request.DeviceType, 
-                request.SourceType, 
-                request.SourceId);
+                request.UserId, request.TrackId, msPlayed, playedAt, 
+                request.DeviceType, request.SourceType, request.SourceId);
 
             var message = OutboxMessage.Create(
                 typeof(TrackSuccessfullyPlayedEvent).AssemblyQualifiedName!,
                 JsonSerializer.Serialize(successEvent),
-                playedAt,
-                Activity.Current?.Id);
+                playedAt, Activity.Current?.Id);
 
             _context.OutboxMessages.Add(message);
+            
             await _context.SaveChangesAsync(ct);
         }
             

@@ -20,4 +20,9 @@ public class TrackArtist
         ArtistId = artistId;
         Role = role;
     }
+    
+    public void UpdateRole(ArtistRole newRole)
+    {
+        Role = newRole;
+    }
 }

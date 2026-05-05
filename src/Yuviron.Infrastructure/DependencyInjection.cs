@@ -15,6 +15,7 @@ using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Features.Admin.Tracks.Consumers;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
@@ -155,6 +156,7 @@ public static class DependencyInjection
             x.AddConsumer<AlbumDeletedConsumer>();
             x.AddConsumer<HideArtistAlbumsConsumer>();
             x.AddConsumer<RemoveTrackFromPlaylistsConsumer>();
+            x.AddConsumer<TrackDeletedConsumer>();
             
             x.AddConsumer<CancelUserSubscriptionsConsumer>();
             x.AddConsumer<ClearUserProfileConsumer>();
@@ -162,6 +164,7 @@ public static class DependencyInjection
             x.AddConsumer<RevokeTokensOnPasswordChangedConsumer>();
             x.AddConsumer<SendWelcomeEmailConsumer>();
             x.AddConsumer<TrackSuccessfullyPlayedConsumer>();
+            
             
             x.AddConsumer<TrackPlayedFallbackConsumer>();
 

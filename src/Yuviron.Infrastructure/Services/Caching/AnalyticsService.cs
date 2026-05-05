@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Yuviron.Application.Abstractions;
@@ -35,7 +36,7 @@ public sealed class AnalyticsService : IAnalyticsService
 
         string sessionKey = $"play_session:{sessionId}:user:{userId}:track:{trackId}";
         
-        long startTimeStamp = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        long startTimeStamp = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
         
         await db.StringSetAsync(sessionKey, startTimeStamp.ToString(), TimeSpan.FromHours(1));
 
@@ -58,32 +59,43 @@ public sealed class AnalyticsService : IAnalyticsService
             }
 
             long startTime = long.Parse(startTimeVal!);
-            long currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-            
-            if (currentTime - startTime < 30)
+            long currentTime = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+            int msPlayed = (int)(currentTime - startTime);
+
+            if (msPlayed < 30000) 
             {
-                _logger.LogWarning("Anti-fraud: Слишком быстро! Блокируем накрутку от User {UserId}", userId);
-                return 0; 
+                return msPlayed; 
             }
-
-            int msPlayed = (int)(currentTime - startTime) * 1000;
             
-            if (msPlayed < 30000) return 0;
-
+            var artistIds = await _context.TrackArtists
+                .AsNoTracking()
+                .Where(ta => ta.TrackId == trackId)
+                .Select(ta => ta.ArtistId)
+                .ToListAsync(ct);
+            
             var batch = db.CreateBatch();
-            var t1 = batch.StringIncrementAsync($"track:{trackId}:plays");
-            var t2 = batch.SetAddAsync("dirty_counters:tracks", trackId.ToString());
+            var tasks = new List<Task>();
             
-            batch.Execute(); 
-            await Task.WhenAll(t1, t2); 
+            tasks.Add(batch.StringIncrementAsync($"track:{trackId}:plays"));
+            tasks.Add(batch.SetAddAsync("dirty_counters:tracks", trackId.ToString()));
+
+            foreach (var artistId in artistIds)
+            {
+                tasks.Add(batch.StringIncrementAsync($"artist:{artistId}:plays"));
+                tasks.Add(batch.SetAddAsync("dirty_counters:artists", artistId.ToString()));
+            }
             
-            return msPlayed; 
+            batch.Execute();
+            await Task.WhenAll(tasks);
+            
+            return msPlayed;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Redis недоступен, пишем прослушивание в Outbox для {TrackId}", trackId);
             
-            var fallbackEvent = new TrackPlayedFallbackEvent(trackId); 
+            var fallbackEvent = new TrackPlayedFallbackEvent(trackId, userId); 
+            
             var traceId = Activity.Current?.Id; 
             var message = OutboxMessage.Create(
                 typeof(TrackPlayedFallbackEvent).AssemblyQualifiedName!,

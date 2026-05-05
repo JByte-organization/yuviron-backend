@@ -39,7 +39,8 @@ public class Track : Entity
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, VisibilityStatus status,
         string? isrc,
-        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
+        IEnumerable<(Guid ArtistId, ArtistRole Role)> artists,
+        IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
         DateTime utcNow)
     {
@@ -67,7 +68,7 @@ public class Track : Entity
             UpdatedAt = utcNow
         };
 
-        track.SyncArtists(artistIds);
+        track.SyncArtists(artists);
         track.SyncGenres(genreIds);
         track.SyncMoods(moodIds);
         
@@ -100,9 +101,10 @@ public class Track : Entity
         Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl, 
         string audioKey, VisibilityStatus status,
         string? isrc,
-        IEnumerable<Guid> artistIds, IEnumerable<Guid> genreIds, 
+        IEnumerable<(Guid ArtistId, ArtistRole Role)> artists,
+        IEnumerable<Guid> genreIds, 
         IEnumerable<Guid> moodIds,
-        DateTime utcNow)
+        DateTime utcNow, bool audioChanged = false)
     {
         AlbumId = albumId;
         AlbumPosition = albumPosition;
@@ -115,23 +117,37 @@ public class Track : Entity
         VisibilityStatus = status;
         UpdatedAt = utcNow;
 
-        SyncArtists(artistIds);
+        if (audioChanged)
+        {
+            ProcessingStatus = TrackProcessingStatus.Ready;
+            HlsPlaylistUrl = null;
+        }
+
+        SyncArtists(artists); 
         SyncGenres(genreIds);
         SyncMoods(moodIds);
     }
 
-    private void SyncArtists(IEnumerable<Guid> ids)
+    private void SyncArtists(IEnumerable<(Guid ArtistId, ArtistRole Role)> artists)
     {
-        var newIds = ids.Distinct().ToList();
+        var newArtists = artists.DistinctBy(a => a.ArtistId).ToList();
+        var newIds = newArtists.Select(a => a.ArtistId).ToList();
         
         var toRemove = TrackArtists.Where(ta => !newIds.Contains(ta.ArtistId)).ToList();
         foreach (var item in toRemove) TrackArtists.Remove(item);
 
-        var currentIds = TrackArtists.Select(ta => ta.ArtistId).ToList();
-        
-        foreach (var id in newIds.Where(id => !currentIds.Contains(id)))
+        foreach (var newArtist in newArtists)
         {
-            TrackArtists.Add(new TrackArtist(this.Id, id, ArtistRole.Main));
+            var existingArtist = TrackArtists.FirstOrDefault(ta => ta.ArtistId == newArtist.ArtistId);
+            
+            if (existingArtist == null)
+            {
+                TrackArtists.Add(new TrackArtist(this.Id, newArtist.ArtistId, newArtist.Role));
+            }
+            else if (existingArtist.Role != newArtist.Role)
+            {
+                existingArtist.UpdateRole(newArtist.Role);
+            }
         }
     }
 
