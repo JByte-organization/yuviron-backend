@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Common.Models;
 using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
@@ -34,9 +35,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                 a.Tracks.Sum(t => t.PlayCount),             
                 a.CreatedAt,
                 a.UpdatedAt,
-                a.AlbumArtists.Select(aa => new ArtistSimpleDto(
-                    aa.ArtistId, 
-                    aa.Artist.Name)).ToList()
+                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name))
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

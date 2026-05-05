@@ -22,11 +22,11 @@ public sealed class GetGenresAutocompleteHandler : IRequestHandler<GetGenresAuto
         if (string.IsNullOrWhiteSpace(request.SearchTerm))
             return new List<GenreAutocompleteDto>();
 
-        var searchTerm = request.SearchTerm.Trim().ToLower();
+        var searchTerm = request.SearchTerm.Trim();
 
         return await _context.Genres
             .AsNoTracking()
-            .Where(g => !g.IsDeleted && g.Name.ToLower().Contains(searchTerm))
+            .Where(g => !g.IsDeleted && g.Name.Contains(searchTerm)) 
             .OrderBy(g => g.Name)
             .Take(request.Limit)
             .Select(g => new GenreAutocompleteDto(

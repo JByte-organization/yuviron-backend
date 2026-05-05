@@ -22,11 +22,11 @@ public sealed class GetMoodsAutocompleteHandler : IRequestHandler<GetMoodsAutoco
         if (string.IsNullOrWhiteSpace(request.SearchTerm))
             return new List<MoodAutocompleteDto>();
 
-        var searchTerm = request.SearchTerm.Trim().ToLower();
+        var searchTerm = request.SearchTerm.Trim();
 
         return await _context.Moods
             .AsNoTracking()
-            .Where(m => !m.IsDeleted && m.Name.ToLower().Contains(searchTerm))
+            .Where(m => !m.IsDeleted && m.Name.Contains(searchTerm))
             .OrderBy(m => m.Name)
             .Take(request.Limit)
             .Select(m => new MoodAutocompleteDto(

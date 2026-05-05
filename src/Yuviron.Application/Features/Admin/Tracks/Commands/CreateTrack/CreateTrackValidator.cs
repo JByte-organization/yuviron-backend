@@ -28,10 +28,11 @@ public sealed class CreateTrackCommandValidator : AbstractValidator<CreateTrackC
             
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();
-        
-        RuleFor(x => x.ArtistIds)
+
+        RuleFor(x => x.Artists)
             .NotEmpty()
             .WithMessage("Track must have at least one artist.");
+
         RuleFor(x => x.GenreIds)
             .NotEmpty()
             .WithMessage("Track must have at least one genre.");

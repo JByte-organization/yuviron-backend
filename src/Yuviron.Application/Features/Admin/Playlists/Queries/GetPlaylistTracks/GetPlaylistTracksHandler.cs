@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
+using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks;
@@ -21,7 +22,8 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .Select(pt => new PlaylistTrackItemDto(
                 pt.TrackId,
                 pt.Track.Title,
-                pt.Track.TrackArtists.Select(ta => ta.Artist.Name).ToList(),
+                // Мапим в нормальные DTO:
+                pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
                 pt.Track.AlbumId,
                 pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
                 pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),

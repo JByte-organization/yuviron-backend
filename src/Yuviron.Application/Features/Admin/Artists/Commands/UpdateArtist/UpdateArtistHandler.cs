@@ -45,7 +45,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
         var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
-        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "uploads");
+        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "banners");
         
         artist.UpdateDetails(
             request.Name,
@@ -59,7 +59,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
 
         if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "uploads"));
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "banners"));
 
         if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAvatarUrl))
             artist.AddDomainEvent(new FileNeedsDeletionEvent(oldAvatarUrl));

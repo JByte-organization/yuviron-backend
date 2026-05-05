@@ -28,7 +28,7 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
         var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
-        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "uploads");
+        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "banners");
         
         var artist = Artist.Create(
             request.OwnerUserId,
@@ -43,7 +43,7 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
             artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
 
         if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "uploads"));
+            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "banners"));
 
         _context.Artists.Add(artist);
 

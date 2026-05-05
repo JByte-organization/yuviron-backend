@@ -29,9 +29,8 @@ public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrack
         if (playlistTrack != null)
         {
             int removedPosition = playlistTrack.Position;
-            _context.PlaylistTracks.Remove(playlistTrack);
             
-            await _context.SaveChangesAsync(cancellationToken);
+            _context.PlaylistTracks.Remove(playlistTrack);
 
             await _context.PlaylistTracks
                 .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > removedPosition)
@@ -39,7 +38,7 @@ public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrack
 
             var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
             playlist.NotifyContentChanged(utcNow);
-            
+
             await _context.SaveChangesAsync(cancellationToken);
         }
 

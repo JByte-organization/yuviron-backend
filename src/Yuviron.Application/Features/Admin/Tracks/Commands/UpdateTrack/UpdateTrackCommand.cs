@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Common.Models;
+using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
@@ -13,7 +15,7 @@ public sealed record UpdateTrackCommand(
     string AudioStorageKey,
     string? CoverUrl,
     VisibilityStatus VisibilityStatus,
-    List<Guid> ArtistIds,
+    List<TrackArtistDto> Artists,
     List<Guid> GenreIds,
     List<Guid> MoodIds,
     string? Isrc = null
@@ -21,7 +23,3 @@ public sealed record UpdateTrackCommand(
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;
 }
-
-
-
-

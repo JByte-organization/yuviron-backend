@@ -24,9 +24,6 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
         var artist = await _context.Artists.Include(a => a.TeamMembers).FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var avatarUrlToDelete = artist.AvatarUrl;
-        var bannerUrlToDelete = artist.BannerUrl;
-
         artist.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
         var memberUserIds = artist.TeamMembers.Select(tm => tm.UserId).ToList();
@@ -49,9 +46,6 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
                 }
             }
         }
-
-        if (!string.IsNullOrWhiteSpace(avatarUrlToDelete)) artist.AddDomainEvent(new FileNeedsDeletionEvent(avatarUrlToDelete));
-        if (!string.IsNullOrWhiteSpace(bannerUrlToDelete)) artist.AddDomainEvent(new FileNeedsDeletionEvent(bannerUrlToDelete));
 
         await _context.SaveChangesAsync(cancellationToken);
         

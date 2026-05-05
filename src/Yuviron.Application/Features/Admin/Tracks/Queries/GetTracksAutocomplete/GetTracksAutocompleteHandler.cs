@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplete;
 
@@ -22,30 +23,19 @@ public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAuto
         if (string.IsNullOrWhiteSpace(request.SearchTerm))
             return new List<TrackAutocompleteDto>();
 
-        var searchTerm = request.SearchTerm.Trim().ToLower();
+        var searchTerm = request.SearchTerm.Trim(); 
 
-        var tracksData = await _context.Tracks
+        return await _context.Tracks
             .AsNoTracking()
-            .Where(t => !t.IsDeleted && t.Title.ToLower().Contains(searchTerm))
+            .Where(t => !t.IsDeleted && t.Title.Contains(searchTerm)) 
             .OrderBy(t => t.Title)
             .Take(request.Limit)
-            .Select(t => new
-            {
-                t.Id,
-                t.Title,
-                t.CoverUrl,
-                AlbumCoverUrl = t.Album != null ? t.Album.CoverUrl : null,
-                ArtistNamesList = t.TrackArtists.Select(ta => ta.Artist.Name).ToList()
-            })
-            .ToListAsync(cancellationToken);
-
-        return tracksData
             .Select(t => new TrackAutocompleteDto(
                 t.Id,
                 t.Title,
-                string.Join(", ", t.ArtistNamesList), 
-                t.CoverUrl ?? t.AlbumCoverUrl 
+                t.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)), 
+                t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))
-            .ToList();
+            .ToListAsync(cancellationToken);
     }
 }

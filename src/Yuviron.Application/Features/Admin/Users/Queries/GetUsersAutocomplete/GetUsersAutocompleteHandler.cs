@@ -20,12 +20,12 @@ public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutoco
             return new List<UserAutocompleteDto>();
         }
 
-        var searchTerm = request.SearchTerm.Trim().ToLower();
+        var searchTerm = request.SearchTerm.Trim();
 
         var users = await _context.Users
             .AsNoTracking()
-            .Where(u => u.Email.ToLower().Contains(searchTerm) || 
-                        u.Profile.FirstName.ToLower().Contains(searchTerm)) 
+            .Where(u => u.Email.Contains(searchTerm) || 
+                        u.Profile.FirstName.Contains(searchTerm)) 
             .OrderBy(u => u.Email)
             .Take(request.Limit) 
             .Select(u => new UserAutocompleteDto(

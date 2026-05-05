@@ -1,3 +1,4 @@
+using Yuviron.Application.Common.Models;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
@@ -5,7 +6,7 @@ namespace Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
 public record AlbumListItemDto(
     Guid Id,
     string Title,
-    List<string> ArtistNames,
+    IEnumerable<SimpleArtistDto> Artists,
     string? CoverUrl,
     int TracksCount,       
     long TotalPlays,       

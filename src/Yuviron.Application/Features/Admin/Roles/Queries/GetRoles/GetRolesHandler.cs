@@ -33,8 +33,9 @@ public sealed class GetRolesHandler : IRequestHandler<GetRolesQuery, List<RoleDt
             r.Name,
             r.UserCount,
             r.PermissionNames
-                .Where(name => Enum.TryParse<AppPermission>(name, out _)) 
-                .Select(Enum.Parse<AppPermission>)
+                .Select(name => Enum.TryParse<AppPermission>(name, out var perm) ? perm : (AppPermission?)null)
+                .Where(p => p.HasValue)
+                .Select(p => p!.Value) 
                 .ToList()
         )).ToList();
 
