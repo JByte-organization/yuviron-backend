@@ -3,21 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 
-namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
+namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistSingles;
 
-public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuery, PaginatedList<ArtistAlbumDto>>
+public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQuery, PaginatedList<ArtistAlbumDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public GetArtistAlbumsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetArtistSinglesHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
     }
 
-    public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistAlbumsQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistSinglesQuery request, CancellationToken cancellationToken)
     {
         await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
 
@@ -26,7 +27,7 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        var query = ArtistQueries.BuildPublicArtistReleasesQuery(_context, request.ArtistId, utcNow)
+        var projectedQuery = ArtistQueries.BuildPublicArtistReleasesQuery(_context, request.ArtistId, utcNow)
             .Select(a => new
             {
                 a.Id,
@@ -35,15 +36,8 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
                 a.ReleaseDate,
                 a.CreatedAt,
                 PublicTracksCount = publicTracks.Count(t => t.AlbumId == a.Id)
-            });
-
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            query = query.Where(a => a.Title.Contains(request.SearchTerm));
-        }
-
-        var projectedQuery = query
-            .Where(a => a.PublicTracksCount > 1)
+            })
+            .Where(a => a.PublicTracksCount == 1)
             .OrderByDescending(a => a.ReleaseDate)
             .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(
