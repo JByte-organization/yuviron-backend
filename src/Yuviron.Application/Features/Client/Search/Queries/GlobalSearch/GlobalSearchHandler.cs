@@ -43,7 +43,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
             .Select(t => new SearchTrackDto(
                 t.Id,
                 t.Title,
-                t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)), 
+                t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)), 
                 t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))
             .ToListAsync(ct);

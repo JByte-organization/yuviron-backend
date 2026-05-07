@@ -72,6 +72,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 break;
 
             // 5. Access problems (401 / 403)
+            case ForbiddenException forbiddenEx:
+                problemDetails.Status = StatusCodes.Status403Forbidden;
+                problemDetails.Title = "Forbidden";
+                problemDetails.Detail = forbiddenEx.Message;
+                break;
+
             case UnauthorizedAccessException unauthorizedEx:
                 var isForbidden = unauthorizedEx.Message.StartsWith("Access denied", StringComparison.OrdinalIgnoreCase);
 

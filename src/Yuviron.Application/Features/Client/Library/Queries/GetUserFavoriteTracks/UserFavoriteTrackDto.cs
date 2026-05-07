@@ -5,7 +5,7 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTra
 public record UserFavoriteTrackDto(
     Guid TrackId,
     string Title,
-    IEnumerable<SimpleArtistDto> ArtistNames,
+    IEnumerable<TrackArtistDto> ArtistNames,
     Guid AlbumId,
     string AlbumTitle,
     string? CoverUrl,

@@ -22,7 +22,6 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .Select(pt => new PlaylistTrackItemDto(
                 pt.TrackId,
                 pt.Track.Title,
-                // Мапим в нормальные DTO:
                 pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
                 pt.Track.AlbumId,
                 pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
