@@ -35,8 +35,8 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         var dbTracks = await _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
-            .Where(t => t.Title.ToLower().Contains(searchTerm) || 
-                        t.TrackArtists.Any(ta => ta.Artist.Name.ToLower().Contains(searchTerm)))
+            .Where(t => t.Title.Contains(searchTerm) || 
+                        t.TrackArtists.Any(ta => ta.Artist.Name.Contains(searchTerm)))
             .OrderByDescending(t => t.PlayCount)
             .ThenBy(t => t.Title)
             .Take(limit)
@@ -55,7 +55,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
     {
         var dbArtists = await _context.Artists
             .AsNoTracking()
-            .Where(a => !a.IsDeleted && a.Name.ToLower().Contains(searchTerm))
+            .Where(a => !a.IsDeleted && a.Name.Contains(searchTerm))
             .OrderByDescending(a => a.TotalPlays)
             .ThenBy(a => a.Name)
             .Take(limit)
@@ -75,7 +75,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
             .AsNoTracking()
             .Where(p => !p.IsDeleted && 
                         p.Visibility == PlaylistVisibility.Public && 
-                        p.Title.ToLower().Contains(searchTerm))
+                        p.Title.Contains(searchTerm))
             .OrderBy(p => p.Title)
             .Take(limit)
             .Select(p => new SearchPlaylistDto(

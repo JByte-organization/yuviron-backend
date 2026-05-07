@@ -43,32 +43,36 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
             ? maxPosition + 1 
             : request.Position;
 
-        // ЧИСТАЯ ТРАНЗАКЦИЯ БЕЗ КОСТЫЛЕЙ
-        await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
-        try
+        var strategy = ((DbContext)_context).Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
         {
-            if (insertPosition <= maxPosition)
+            await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+            try
             {
-                await _context.PlaylistTracks
-                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
-                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+                if (insertPosition <= maxPosition)
+                {
+                    await _context.PlaylistTracks
+                        .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
+                        .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
+                }
+
+                var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+                var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
+                
+                _context.PlaylistTracks.Add(newPlaylistTrack);
+                playlist.NotifyContentChanged(utcNow);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                
+                await transaction.CommitAsync(cancellationToken);
             }
-
-            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-            var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
-            
-            _context.PlaylistTracks.Add(newPlaylistTrack);
-            playlist.NotifyContentChanged(utcNow);
-
-            await _context.SaveChangesAsync(cancellationToken);
-            
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
 
         return Unit.Value;
     }

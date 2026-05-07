@@ -6,7 +6,7 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateArtist;
 
 public sealed record UpdateArtistCommand(
     Guid ArtistId,
-    Guid OwnerUserId,
+    Guid? OwnerUserId,
     string Name,
     string? Bio,
     string? AvatarUrl,

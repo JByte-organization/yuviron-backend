@@ -1,8 +1,6 @@
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Files.Queries.GetTempPreview;
 
@@ -21,11 +19,17 @@ public sealed class GetTempPreviewHandler : IRequestHandler<GetTempPreviewQuery,
 
         if (string.IsNullOrWhiteSpace(safeFileName))
         {
-            throw new System.ArgumentException("Invalid file name.");
+            throw new System.ArgumentException("Invalid file name."); 
         }
 
         var relativePath = $"temp/{safeFileName}";
+        
         var stream = await _fileStorage.GetFileStreamAsync(relativePath, cancellationToken);
+
+        if (stream == null)
+        {
+            throw new NotFoundException("TempFile", safeFileName);
+        }
 
         var ext = Path.GetExtension(safeFileName).ToLowerInvariant();
         var contentType = ext switch

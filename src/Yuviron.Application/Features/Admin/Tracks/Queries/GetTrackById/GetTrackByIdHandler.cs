@@ -20,7 +20,7 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
     {
         var track = await _context.Tracks
             .AsNoTracking()
-            .Where(t => t.Id == request.TrackId)
+            .Where(t => t.Id == request.TrackId && !t.IsDeleted)
             .Select(t => new TrackDetailsDto(
                 t.Id,
                 t.AlbumId,

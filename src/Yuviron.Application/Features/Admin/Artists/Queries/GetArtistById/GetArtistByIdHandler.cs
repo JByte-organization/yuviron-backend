@@ -20,7 +20,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
     {
         var artist = await _context.Artists
             .AsNoTracking()
-            .Where(a => a.Id == request.ArtistId)
+            .Where(a => a.Id == request.ArtistId && !a.IsDeleted)
             .Select(a => new ArtistDetailsDto(
                 a.Id,
                 a.TeamMembers
@@ -28,7 +28,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                     .Select(tm => new ArtistOwnerDto(
                         tm.UserId,
                         tm.User.Email,
-                        tm.User.Profile.FirstName // Берем имя напрямую
+                        tm.User.Profile.FirstName
                     ))
                     .FirstOrDefault(), 
                 a.Name,

@@ -18,7 +18,9 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
 
     public async Task<PaginatedList<TrackListItemDto>> Handle(GetTracksQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Tracks.AsNoTracking();
+        var query = _context.Tracks
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(t => t.Title.Contains(request.SearchTerm));

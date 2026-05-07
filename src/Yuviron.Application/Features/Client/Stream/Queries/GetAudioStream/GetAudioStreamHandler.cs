@@ -14,7 +14,6 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
     private readonly IFileStorageService _fileStorage;
     private readonly IStreamTokenService _tokenService;
 
-    // Жесткий Allowlist для двойной проверки
     private static readonly string[] AllowedExtensions = { ".m3u8", ".ts", ".key" };
 
     public GetAudioStreamHandler(IFileStorageService fileStorage, IStreamTokenService tokenService)

@@ -47,7 +47,10 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
 
         _context.Artists.Add(artist);
 
-        await _identityManager.EnsureManagementRoleAsync(request.OwnerUserId, cancellationToken);
+        if (request.OwnerUserId.HasValue)
+        {
+            await _identityManager.EnsureManagementRoleAsync(request.OwnerUserId.Value, cancellationToken);
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

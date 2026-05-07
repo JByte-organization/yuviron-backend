@@ -44,24 +44,36 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
 
         if (baseTrackTags == null) throw new NotFoundException("Track", request.TrackId);
 
+        var artistIds = baseTrackTags.ArtistIds.ToList();
+        var genreIds = baseTrackTags.GenreIds.ToList();
+        var moodIds = baseTrackTags.MoodIds.ToList();
+
         var rawRecommendations = await _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => t.Id != request.TrackId 
-                     && (t.TrackArtists.Any(a => baseTrackTags.ArtistIds.Contains(a.ArtistId)) ||
-                         t.TrackGenres.Any(g => baseTrackTags.GenreIds.Contains(g.GenreId)) ||
-                         t.TrackMoods.Any(m => baseTrackTags.MoodIds.Contains(m.MoodId))))
-            .OrderByDescending(t => t.PlayCount) 
-            .Take(request.Limit)
+                     && (t.TrackArtists.Any(a => artistIds.Contains(a.ArtistId)) ||
+                         t.TrackGenres.Any(g => genreIds.Contains(g.GenreId)) ||
+                         t.TrackMoods.Any(m => moodIds.Contains(m.MoodId))))
             .Select(t => new {
-                t.Id,
-                t.Title,
-                t.DurationMs,
-                t.Explicit,
-                CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
-                FileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey,
-                Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role))
+                Track = new {
+                    t.Id,
+                    t.Title,
+                    t.DurationMs,
+                    t.Explicit,
+                    CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
+                    FileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey,
+                    Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
+                    t.PlayCount
+                },
+                MatchScore = (t.TrackArtists.Any(a => artistIds.Contains(a.ArtistId)) ? 3 : 0) +
+                             (t.TrackGenres.Any(g => genreIds.Contains(g.GenreId)) ? 2 : 0) +
+                             (t.TrackMoods.Any(m => moodIds.Contains(m.MoodId)) ? 1 : 0)
             })
+            .OrderByDescending(x => x.MatchScore)
+            .ThenByDescending(x => x.Track.PlayCount)
+            .Take(request.Limit)
+            .Select(x => x.Track)
             .ToListAsync(cancellationToken);
 
         bool isAuthenticated = _currentUser.UserId.HasValue;

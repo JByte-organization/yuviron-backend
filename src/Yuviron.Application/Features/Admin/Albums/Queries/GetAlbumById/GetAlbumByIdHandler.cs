@@ -21,7 +21,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
     {
         var album = await _context.Albums
             .AsNoTracking()
-            .Where(a => a.Id == request.AlbumId)
+            .Where(a => a.Id == request.AlbumId && !a.IsDeleted)
             .Select(a => new AlbumDetailsDto(
                 a.Id,
                 a.Title,

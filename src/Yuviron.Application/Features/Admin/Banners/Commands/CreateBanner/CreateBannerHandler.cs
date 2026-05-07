@@ -26,13 +26,15 @@ public sealed class CreateBannerHandler : IRequestHandler<CreateBannerCommand, G
 
     public async Task<Guid> Handle(CreateBannerCommand request, CancellationToken cancellationToken)
     {
-        
-        var isPositionTaken = await _context.Banners
-            .AnyAsync(b => b.SortOrder == request.SortOrder, cancellationToken);
-
-        if (isPositionTaken)
+        if (request.IsActive)
         {
-            throw new PositionConflictException(request.SortOrder, "Banner");
+            var isPositionTaken = await _context.Banners
+                .AnyAsync(b => b.SortOrder == request.SortOrder && b.IsActive, cancellationToken);
+
+            if (isPositionTaken)
+            {
+                throw new PositionConflictException(request.SortOrder, "Banner");
+            }
         }
         
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;

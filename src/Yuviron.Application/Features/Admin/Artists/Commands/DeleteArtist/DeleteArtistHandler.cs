@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -12,11 +14,19 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IPermissionService _permissionService;
+    private readonly ILogger<DeleteArtistHandler> _logger;
 
-    public DeleteArtistHandler(IApplicationDbContext context, TimeProvider timeProvider) 
+    public DeleteArtistHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        IPermissionService permissionService,
+        ILogger<DeleteArtistHandler> logger)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _permissionService = permissionService;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(DeleteArtistCommand request, CancellationToken cancellationToken)
@@ -48,6 +58,18 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        
+        foreach (var userId in userIdsToRevokeRole)
+        {
+            try
+            {
+                await _permissionService.InvalidatePermissionsAsync(userId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to invalidate cache for User {UserId}.", userId);
+            }
+        }
         
         return Unit.Value;
     }

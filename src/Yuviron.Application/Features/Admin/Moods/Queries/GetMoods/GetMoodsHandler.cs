@@ -14,7 +14,9 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
 
     public async Task<PaginatedList<MoodDto>> Handle(GetMoodsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Moods.AsNoTracking();
+        var query = _context.Moods
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
