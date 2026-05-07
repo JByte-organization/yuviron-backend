@@ -54,7 +54,7 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
         var projectedQuery = query.Select(ust => new UserFavoriteTrackDto(
             ust.TrackId,
             ust.Track.Title,
-            ust.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)),
+            ust.Track.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
             ust.Track.AlbumId,
             ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",
             ust.Track.CoverUrl ?? (ust.Track.Album != null ? ust.Track.Album.CoverUrl : null),

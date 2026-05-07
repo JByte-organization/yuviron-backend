@@ -5,7 +5,7 @@ namespace Yuviron.Application.Features.Client.Search.Queries.GlobalSearch;
 public record SearchTrackDto(
     Guid Id, 
     string Title, 
-    IEnumerable<SimpleArtistDto> Artists,
+    IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl
 );
 
