@@ -15,6 +15,7 @@ public class ArtistConfiguration : IEntityTypeConfiguration<Artist>
         builder.Property(x => x.Bio).HasMaxLength(2000);
         builder.Property(x => x.AvatarUrl).HasMaxLength(2048); 
         builder.Property(x => x.BannerUrl).HasMaxLength(2048); 
+        builder.Property(x => x.MonthlyListenersCount).HasDefaultValue(0);
 
         builder.HasIndex(x => x.Name);
 

@@ -9,6 +9,7 @@ public record AlbumDetailsDto(
     string? Description,
     string? CoverUrl,
     DateTime ReleaseDate,
+    ReleaseType ReleaseType,
     VisibilityStatus VisibilityStatus,
     DateTime? ScheduledPublishAt,
     int TracksCount,     

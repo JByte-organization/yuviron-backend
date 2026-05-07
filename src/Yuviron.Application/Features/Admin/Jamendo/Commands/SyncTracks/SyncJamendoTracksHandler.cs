@@ -295,7 +295,11 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
             ? coverKey.Replace("temp/", "covers/")
             : coverKey;
 
-        var album = Album.Create(safeTitle, "Imported from Jamendo", finalCoverUrl, _timeProvider.GetUtcNow().UtcDateTime, VisibilityStatus.Published, null, new List<Guid> { artistId }, _timeProvider.GetUtcNow().UtcDateTime);
+        var releaseType = string.Equals(safeTitle, "Singles", StringComparison.OrdinalIgnoreCase)
+            ? ReleaseType.Single
+            : ReleaseType.Album;
+
+        var album = Album.Create(safeTitle, "Imported from Jamendo", finalCoverUrl, _timeProvider.GetUtcNow().UtcDateTime, releaseType, VisibilityStatus.Published, null, new List<Guid> { artistId }, _timeProvider.GetUtcNow().UtcDateTime);
         
         if (!string.IsNullOrWhiteSpace(coverKey) && coverKey.StartsWith("temp/"))
         {

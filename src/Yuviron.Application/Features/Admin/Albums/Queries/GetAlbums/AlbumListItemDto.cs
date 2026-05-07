@@ -11,6 +11,7 @@ public record AlbumListItemDto(
     int TracksCount,       
     long TotalPlays,       
     DateTime ReleaseDate,
+    ReleaseType ReleaseType,
     VisibilityStatus VisibilityStatus,
     DateTime CreatedAt,
     DateTime UpdatedAt

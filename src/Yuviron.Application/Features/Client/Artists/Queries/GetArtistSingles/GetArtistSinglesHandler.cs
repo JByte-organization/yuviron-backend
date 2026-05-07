@@ -3,24 +3,25 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
 
-namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
+namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistSingles;
 
-public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuery, PaginatedList<ArtistAlbumDto>>
+public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQuery, PaginatedList<ArtistAlbumDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public GetArtistAlbumsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetArtistSinglesHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
     }
 
-    public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistAlbumsQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistSinglesQuery request, CancellationToken cancellationToken)
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
@@ -33,18 +34,11 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var query = _context.Albums
+        var projectedQuery = _context.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .Where(a => a.ReleaseType == ReleaseType.Album);
-
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            query = query.Where(a => a.Title.Contains(request.SearchTerm));
-        }
-
-        var projectedQuery = query
+            .Where(a => a.ReleaseType == ReleaseType.Single)
             .OrderByDescending(a => a.ReleaseDate)
             .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(

@@ -13,6 +13,7 @@ public class Artist : Entity
     public VerificationStatus VerificationStatus { get; private set; }
     
     public long TotalPlays { get; private set; }
+    public int MonthlyListenersCount { get; private set; }
     
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; } 
@@ -49,7 +50,8 @@ public class Artist : Entity
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
             IsDeleted = false,
-            TotalPlays = 0 
+            TotalPlays = 0,
+            MonthlyListenersCount = 0
         };
 
         if (initialOwnerUserId.HasValue)
@@ -142,6 +144,11 @@ public class Artist : Entity
         {
             TotalPlays += count;
         }
+    }
+
+    public void SetMonthlyListenersCount(int count)
+    {
+        MonthlyListenersCount = Math.Max(0, count);
     }
 
     public void Delete(DateTime utcNow)

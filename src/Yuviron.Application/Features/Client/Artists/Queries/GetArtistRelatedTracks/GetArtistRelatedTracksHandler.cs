@@ -8,16 +8,16 @@ using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
-namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistTopTracks;
+namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistRelatedTracks;
 
-public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTracksQuery, List<ArtistTopTrackDto>>
+public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRelatedTracksQuery, List<RelatedTrackDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IStreamTokenService _streamTokenService;
     private readonly TimeProvider _timeProvider;
 
-    public GetArtistTopTracksHandler(
+    public GetArtistRelatedTracksHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IStreamTokenService streamTokenService,
@@ -29,7 +29,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
         _timeProvider = timeProvider;
     }
 
-    public async Task<List<ArtistTopTrackDto>> Handle(GetArtistTopTracksQuery request, CancellationToken cancellationToken)
+    public async Task<List<RelatedTrackDto>> Handle(GetArtistRelatedTracksQuery request, CancellationToken cancellationToken)
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
@@ -40,16 +40,25 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
             throw new NotFoundException(nameof(Artist), request.ArtistId);
         }
 
-        var isAuthenticated = _currentUser.UserId.HasValue;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var artistGenreIds = await _context.Tracks
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
+            .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (artistGenreIds.Count == 0)
+        {
+            return new List<RelatedTrackDto>();
+        }
 
         var rawTracks = await _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
-            .OrderByDescending(t => t.PlayCount)
-            .ThenBy(t => t.Title)
-            .Take(request.Limit)
+            .Where(t => !t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId) &&
+                        t.TrackGenres.Any(tg => artistGenreIds.Contains(tg.GenreId)))
             .Select(t => new
             {
                 t.Id,
@@ -58,13 +67,17 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                 t.Explicit,
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
                 FileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey,
+                SharedGenresCount = t.TrackGenres.Count(tg => artistGenreIds.Contains(tg.GenreId)),
                 t.PlayCount,
-                t.AlbumId,
-                AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
-                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
+                Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role))
             })
+            .OrderByDescending(t => t.SharedGenresCount)
+            .ThenByDescending(t => t.PlayCount)
+            .ThenBy(t => t.Title)
+            .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
+        var isAuthenticated = _currentUser.UserId.HasValue;
         var expiration = _timeProvider.GetUtcNow().AddHours(6);
         var expUnix = expiration.ToUnixTimeSeconds();
 
@@ -80,16 +93,13 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                     audioUrl = $"/api/stream/tracks/{t.Id}/{fileName}?exp={expUnix}&sig={signature}";
                 }
 
-                return new ArtistTopTrackDto(
+                return new RelatedTrackDto(
                     t.Id,
                     t.Title,
                     t.DurationMs,
                     t.Explicit,
                     t.CoverUrl,
                     audioUrl,
-                    t.PlayCount,
-                    t.AlbumId,
-                    t.AlbumTitle,
                     t.Artists
                 );
             })

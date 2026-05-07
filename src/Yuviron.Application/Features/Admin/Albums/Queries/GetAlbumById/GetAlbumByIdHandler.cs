@@ -28,6 +28,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                 a.Description,
                 a.CoverUrl,
                 a.ReleaseDate,
+                a.ReleaseType,
                 a.VisibilityStatus,
                 a.ScheduledPublishAt,
                 a.Tracks.Count,                           

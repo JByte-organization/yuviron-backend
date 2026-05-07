@@ -41,6 +41,7 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
             request.Description,
             finalCoverUrl, 
             request.ReleaseDate,
+            request.ReleaseType,
             request.VisibilityStatus,
             request.ScheduledPublishAt,
             uniqueArtistIds,

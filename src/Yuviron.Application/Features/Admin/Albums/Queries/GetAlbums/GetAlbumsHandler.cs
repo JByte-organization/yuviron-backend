@@ -37,6 +37,7 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
                 a.Tracks.Count,                 
                 a.Tracks.Sum(t => t.PlayCount),   
                 a.ReleaseDate,
+                a.ReleaseType,
                 a.VisibilityStatus,
                 a.CreatedAt,
                 a.UpdatedAt

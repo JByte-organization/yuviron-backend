@@ -8,6 +8,7 @@ public class Album : Entity
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public string? CoverUrl { get; private set; }
+    public ReleaseType ReleaseType { get; private set; }
     public DateTime ReleaseDate { get; private set; }
     public VisibilityStatus VisibilityStatus { get; private set; }
     public DateTime? ScheduledPublishAt { get; private set; }
@@ -23,6 +24,7 @@ public class Album : Entity
 
     public static Album Create(
         string title, string? description, string? coverUrl, DateTime releaseDate,
+        ReleaseType releaseType,
         VisibilityStatus visibilityStatus, DateTime? scheduledPublishAt,
         IEnumerable<Guid> artistIds, DateTime utcNow)
     {
@@ -34,6 +36,7 @@ public class Album : Entity
             Title = title.Trim(),
             Description = description?.Trim(),
             CoverUrl = coverUrl?.Trim(),
+            ReleaseType = releaseType,
             ReleaseDate = releaseDate,
             VisibilityStatus = visibilityStatus,
             ScheduledPublishAt = NormalizeScheduledPublishAt(visibilityStatus, scheduledPublishAt),
@@ -47,11 +50,13 @@ public class Album : Entity
 
     public void UpdateDetails(
         string title, string? description, string? newCoverUrl, DateTime releaseDate,
+        ReleaseType releaseType,
         VisibilityStatus visibilityStatus, DateTime? scheduledPublishAt,
         IEnumerable<Guid> artistIds, DateTime utcNow)
     {
         Title = title.Trim();
         Description = description?.Trim();
+        ReleaseType = releaseType;
         ReleaseDate = releaseDate;
         VisibilityStatus = visibilityStatus;
         ScheduledPublishAt = NormalizeScheduledPublishAt(visibilityStatus, scheduledPublishAt);
