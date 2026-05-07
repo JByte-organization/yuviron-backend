@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistPlaylists;
 
@@ -20,18 +22,29 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
 
     public async Task<PaginatedList<ArtistPlaylistDto>> Handle(GetArtistPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var publicTracks = _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
-        var publicArtistTrackIds = ArtistQueries.BuildPublicArtistTracksQuery(_context, request.ArtistId, utcNow)
+        var publicArtistTrackIds = _context.Tracks
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
             .Select(t => t.Id);
 
         var projectedQuery = _context.Playlists
             .AsNoTracking()
             .Where(p => p.Visibility == PlaylistVisibility.Public)
+            .Where(p => p.PlaylistTracks.Any(pt => publicArtistTrackIds.Contains(pt.TrackId)))
             .Select(p => new
             {
                 p.Id,
@@ -45,7 +58,6 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
                 TracksCount = p.PlaylistTracks.Count(pt => publicTracks.Any(t => t.Id == pt.TrackId)),
                 ArtistTracksCount = p.PlaylistTracks.Count(pt => publicArtistTrackIds.Contains(pt.TrackId))
             })
-            .Where(p => p.ArtistTracksCount > 0)
             .OrderByDescending(p => p.ArtistTracksCount)
             .ThenByDescending(p => p.UpdatedAt)
             .ThenBy(p => p.Title)

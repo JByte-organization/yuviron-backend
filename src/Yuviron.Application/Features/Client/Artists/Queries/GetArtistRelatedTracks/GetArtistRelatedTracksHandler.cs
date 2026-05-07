@@ -5,6 +5,8 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistRelatedTracks;
 
@@ -29,10 +31,20 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
 
     public async Task<List<RelatedTrackDto>> Handle(GetArtistRelatedTracksQuery request, CancellationToken cancellationToken)
     {
-        await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var artistGenreIds = await ArtistQueries.BuildPublicArtistTracksQuery(_context, request.ArtistId, utcNow)
+        var artistGenreIds = await _context.Tracks
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
             .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);

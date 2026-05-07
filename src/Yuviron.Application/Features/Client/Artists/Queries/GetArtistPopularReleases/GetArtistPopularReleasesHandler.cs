@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistPopularReleases;
 
@@ -19,14 +21,24 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
 
     public async Task<List<ArtistAlbumDto>> Handle(GetArtistPopularReleasesQuery request, CancellationToken cancellationToken)
     {
-        await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var publicTracks = _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        return await ArtistQueries.BuildPublicArtistReleasesQuery(_context, request.ArtistId, utcNow)
+        return await _context.Albums
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
             .Select(a => new
             {
                 a.Id,

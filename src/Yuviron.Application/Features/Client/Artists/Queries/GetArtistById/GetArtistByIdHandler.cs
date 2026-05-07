@@ -17,6 +17,15 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
 
     public async Task<ArtistDetailsDto> Handle(GetArtistByIdQuery request, CancellationToken cancellationToken)
     {
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
+
         var artist = await _context.Artists
             .AsNoTracking()
             .Where(a => a.Id == request.ArtistId && !a.IsDeleted)
@@ -27,20 +36,9 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                 a.AvatarUrl,
                 a.BannerUrl,
                 a.VerificationStatus,
-                _context.ListeningEvents
-                    .Where(le => le.UserId.HasValue &&
-                                 le.MsPlayed >= 30000 &&
-                                 le.Track.TrackArtists.Any(ta => ta.ArtistId == a.Id))
-                    .Select(le => le.UserId!.Value)
-                    .Distinct()
-                    .Count()
+                a.MonthlyListenersCount
             ))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (artist is null)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+            .FirstAsync(cancellationToken);
 
         return artist;
     }

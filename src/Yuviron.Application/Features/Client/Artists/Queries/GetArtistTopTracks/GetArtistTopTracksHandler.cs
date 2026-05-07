@@ -5,6 +5,8 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistTopTracks;
 
@@ -29,12 +31,22 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 
     public async Task<List<ArtistTopTrackDto>> Handle(GetArtistTopTracksQuery request, CancellationToken cancellationToken)
     {
-        await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         var isAuthenticated = _currentUser.UserId.HasValue;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var rawTracks = await ArtistQueries.BuildPublicArtistTracksQuery(_context, request.ArtistId, utcNow)
+        var rawTracks = await _context.Tracks
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
             .OrderByDescending(t => t.PlayCount)
             .ThenBy(t => t.Title)
             .Take(request.Limit)

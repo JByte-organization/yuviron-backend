@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 
@@ -19,23 +22,22 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
 
     public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistAlbumsQuery request, CancellationToken cancellationToken)
     {
-        await ArtistQueries.EnsureArtistExistsAsync(_context, request.ArtistId, cancellationToken);
+        var artistExists = await _context.Artists
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+
+        if (!artistExists)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var publicTracks = _context.Tracks
-            .AsNoTracking()
-            .AvailableForPublic(utcNow);
 
-        var query = ArtistQueries.BuildPublicArtistReleasesQuery(_context, request.ArtistId, utcNow)
-            .Select(a => new
-            {
-                a.Id,
-                a.Title,
-                a.CoverUrl,
-                a.ReleaseDate,
-                a.CreatedAt,
-                PublicTracksCount = publicTracks.Count(t => t.AlbumId == a.Id)
-            });
+        var query = _context.Albums
+            .AsNoTracking()
+            .AvailableForPublic(utcNow)
+            .ForArtist(request.ArtistId)
+            .Where(a => a.ReleaseType == ReleaseType.Album);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -43,7 +45,6 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
         }
 
         var projectedQuery = query
-            .Where(a => a.PublicTracksCount > 1)
             .OrderByDescending(a => a.ReleaseDate)
             .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(
