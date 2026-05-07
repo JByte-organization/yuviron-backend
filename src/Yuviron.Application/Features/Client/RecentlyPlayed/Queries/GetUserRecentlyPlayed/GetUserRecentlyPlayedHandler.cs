@@ -29,6 +29,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
                      ?? throw new UnauthorizedAccessException();
 
         var recentTracksData = await _context.ListeningEvents
+            .AsNoTracking()
             .Where(le => le.UserId == userId)
             .GroupBy(le => le.TrackId)
             .Select(g => new
@@ -40,12 +41,14 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
-        if (!recentTracksData.Any()) return new List<RecentlyPlayedTrackDto>();
+        if (recentTracksData.Count == 0) 
+            return new List<RecentlyPlayedTrackDto>();
 
         var trackIds = recentTracksData.Select(x => x.TrackId).ToList();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var dbTracks = await _context.Tracks
+        var dbTracksDict = await _context.Tracks
+            .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => trackIds.Contains(t.Id))
             .Select(t => new
@@ -55,13 +58,13 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
                 Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             })
-            .ToListAsync(cancellationToken);
+            .ToDictionaryAsync(t => t.Id, cancellationToken); 
 
         return recentTracksData
-            .Select(data => {
-                var track = dbTracks.FirstOrDefault(t => t.Id == data.TrackId);
-                if (track == null) return null;
-
+            .Where(data => dbTracksDict.ContainsKey(data.TrackId)) 
+            .Select(data => 
+            {
+                var track = dbTracksDict[data.TrackId];
                 return new RecentlyPlayedTrackDto(
                     track.Id,
                     track.Title,
@@ -70,7 +73,6 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
                     data.LastPlayed
                 );
             })
-            .Where(x => x != null)
-            .ToList()!;
+            .ToList();
     }
 }

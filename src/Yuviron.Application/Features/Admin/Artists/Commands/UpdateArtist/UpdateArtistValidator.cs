@@ -9,10 +9,6 @@ public sealed class UpdateArtistCommandValidator : AbstractValidator<UpdateArtis
         RuleFor(x => x.ArtistId)
             .NotEqual(Guid.Empty);
 
-        RuleFor(x => x.OwnerUserId)
-            .NotEqual(Guid.Empty)
-            .WithMessage("Owner user ID is required.");
-
         RuleFor(x => x.Name)
             .NotEmpty()
             .MaximumLength(200);

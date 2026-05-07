@@ -17,7 +17,7 @@ public sealed class GetGenreByIdHandler : IRequestHandler<GetGenreByIdQuery, Gen
     {
         var genre = await _context.Genres
             .AsNoTracking()
-            .Where(g => g.Id == request.GenreId)
+            .Where(g => g.Id == request.GenreId && !g.IsDeleted)
             .Select(g => new GenreDetailsDto(
                 g.Id,
                 g.Name,

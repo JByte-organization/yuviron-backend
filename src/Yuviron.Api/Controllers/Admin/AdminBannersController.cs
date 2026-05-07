@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Banners.Commands.CreateBanner;
 using Yuviron.Application.Features.Admin.Banners.Commands.DeleteBanner;
+using Yuviron.Application.Features.Admin.Banners.Commands.ToggleBannerStatus;
 using Yuviron.Application.Features.Admin.Banners.Commands.UpdateBanner;
 using Yuviron.Application.Features.Admin.Banners.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerById;
@@ -50,6 +51,16 @@ public class AdminBannersController : ApiControllerBase
     {
         var commandWithId = command with { BannerId = id };
         await Mediator.Send(commandWithId, ct);
+        return NoContent();
+    }
+    
+    [HttpPatch("{id:guid}/toggle-status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleBannerStatus(Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new ToggleBannerStatusCommand(id), ct);
         return NoContent();
     }
 

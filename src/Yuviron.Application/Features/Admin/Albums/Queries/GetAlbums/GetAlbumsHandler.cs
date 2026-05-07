@@ -19,7 +19,9 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
 
     public async Task<PaginatedList<AlbumListItemDto>> Handle(GetAlbumsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Albums.AsNoTracking();
+        var query = _context.Albums
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Title.Contains(request.SearchTerm));

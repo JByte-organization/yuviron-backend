@@ -32,14 +32,6 @@ public class LibraryController : ApiControllerBase
         return Ok(result);
     }
 
-    [HttpGet("playlists")]
-    [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PaginatedList<UserPlaylistDto>>> GetUserPlaylists([FromQuery] GetUserPlaylistsQuery query, CancellationToken ct)
-    {
-        var result = await Mediator.Send(query, ct);
-        return Ok(result);
-    }
-
     [HttpGet("favorite-artists")]
     [ProducesResponseType(typeof(PaginatedList<UserFavoriteArtistDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<UserFavoriteArtistDto>>> GetFavoriteArtists([FromQuery] GetUserFavoriteArtistsQuery query, CancellationToken ct)

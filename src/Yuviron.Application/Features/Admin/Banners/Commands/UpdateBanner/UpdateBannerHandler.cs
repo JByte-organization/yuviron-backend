@@ -27,12 +27,18 @@ public sealed class UpdateBannerHandler : IRequestHandler<UpdateBannerCommand, U
                          .FirstOrDefaultAsync(b => b.Id == request.BannerId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Banner), request.BannerId);
 
-        var isPositionTaken = await _context.Banners
-            .AnyAsync(b => b.SortOrder == request.SortOrder && b.Id != request.BannerId, cancellationToken);
-
-        if (isPositionTaken)
+        if (request.IsActive)
         {
-            throw new PositionConflictException(request.SortOrder, "Banner");
+            var isPositionTaken = await _context.Banners
+                .AnyAsync(b => b.SortOrder == request.SortOrder 
+                               && b.Id != request.BannerId 
+                               && b.IsActive,
+                    cancellationToken);
+
+            if (isPositionTaken)
+            {
+                throw new PositionConflictException(request.SortOrder, "Banner");
+            }
         }
         
         var oldBannerUrl = banner.BannerUrl; 

@@ -14,7 +14,9 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
 
     public async Task<PaginatedList<PlaylistDto>> Handle(GetPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Playlists.AsNoTracking();
+        var query = _context.Playlists
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

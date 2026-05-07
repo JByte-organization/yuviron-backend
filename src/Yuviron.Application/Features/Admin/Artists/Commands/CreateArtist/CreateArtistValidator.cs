@@ -6,9 +6,7 @@ public sealed class CreateArtistCommandValidator : AbstractValidator<CreateArtis
 {
     public CreateArtistCommandValidator()
     {
-        RuleFor(x => x.OwnerUserId)
-            .NotEqual(Guid.Empty)
-            .WithMessage("Owner user ID is required.");
+        RuleFor(x => x.OwnerUserId).NotEqual(Guid.Empty).When(x => x.OwnerUserId.HasValue);
 
         RuleFor(x => x.Name)
             .NotEmpty()

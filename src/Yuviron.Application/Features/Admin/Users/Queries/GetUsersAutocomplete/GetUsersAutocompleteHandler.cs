@@ -24,8 +24,8 @@ public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutoco
 
         var users = await _context.Users
             .AsNoTracking()
-            .Where(u => u.Email.Contains(searchTerm) || 
-                        u.Profile.FirstName.Contains(searchTerm)) 
+            .Where(u => !u.IsDeleted && 
+                        (u.Email.Contains(searchTerm) || u.Profile.FirstName.Contains(searchTerm))) 
             .OrderBy(u => u.Email)
             .Take(request.Limit) 
             .Select(u => new UserAutocompleteDto(

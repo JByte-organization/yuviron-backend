@@ -21,7 +21,9 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
 
     public async Task<PaginatedList<UserListItemDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Users.AsNoTracking();
+        var query = _context.Users
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

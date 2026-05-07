@@ -1,23 +1,28 @@
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Yuviron.Application.Common;
 using Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.UpdatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.DeletePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.AddTrackToPlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.RemoveTrackFromPlaylist;
+using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 
 namespace Yuviron.Api.Controllers.Client;
 
 [Authorize]
 [Route("api/user/playlists")]
 [ApiExplorerSettings(GroupName = "client")]
-public class UserPlaylistsController : ApiControllerBase
+public class PlaylistsController : ApiControllerBase
 {
+    [HttpGet("playlists")]
+    [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<UserPlaylistDto>>> GetUserPlaylists([FromQuery] GetUserPlaylistsQuery query, CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+    
     [HttpPost]
     [ProducesResponseType(typeof(CreatePlaylistResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreatePlaylist([FromBody] CreatePlaylistRequest request, CancellationToken ct)

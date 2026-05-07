@@ -19,7 +19,9 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
 
     public async Task<PaginatedList<ArtistListItemDto>> Handle(GetArtistsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Artists.AsNoTracking();
+        var query = _context.Artists
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Name.StartsWith(request.SearchTerm));

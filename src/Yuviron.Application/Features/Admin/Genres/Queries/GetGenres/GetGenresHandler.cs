@@ -15,7 +15,9 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
 
     public async Task<PaginatedList<GenreListItemDto>> Handle(GetGenresQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Genres.AsNoTracking();
+        var query = _context.Genres
+            .AsNoTracking()
+            .Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));

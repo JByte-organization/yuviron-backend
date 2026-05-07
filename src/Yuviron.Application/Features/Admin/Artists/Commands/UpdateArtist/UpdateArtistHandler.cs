@@ -33,11 +33,14 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var ownerExists = await _context.Users
-            .AsNoTracking()
-            .AnyAsync(u => u.Id == request.OwnerUserId, cancellationToken);
+        if (request.OwnerUserId.HasValue)
+        {
+            var ownerExists = await _context.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
 
-        if (!ownerExists) throw new NotFoundException(nameof(User), request.OwnerUserId);
+            if (!ownerExists) throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
+        }
 
         var oldAvatarUrl = artist.AvatarUrl;
         var oldBannerUrl = artist.BannerUrl;
@@ -80,18 +83,21 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
                 if (oldOwnerUser != null) oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
             }
 
-            var isNewOwnerInTeam = artist.TeamMembers.Any(tm => tm.UserId == newOwnerId);
-
-            if (isNewOwnerInTeam)
+            if (newOwnerId.HasValue)
             {
-                artist.UpdateTeamMemberRole(newOwnerId, ArtistTeamRole.Owner, utcNow);
-            }
-            else
-            {
-                artist.AddTeamMember(newOwnerId, ArtistTeamRole.Owner, utcNow);
-            }
+                var isNewOwnerInTeam = artist.TeamMembers.Any(tm => tm.UserId == newOwnerId.Value);
 
-            await _identityManager.EnsureManagementRoleAsync(newOwnerId, cancellationToken);
+                if (isNewOwnerInTeam)
+                {
+                    artist.UpdateTeamMemberRole(newOwnerId.Value, ArtistTeamRole.Owner, utcNow);
+                }
+                else
+                {
+                    artist.AddTeamMember(newOwnerId.Value, ArtistTeamRole.Owner, utcNow);
+                }
+
+                await _identityManager.EnsureManagementRoleAsync(newOwnerId.Value, cancellationToken);
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);

@@ -16,7 +16,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
     {
         var playlist = await _context.Playlists
                            .AsNoTracking()
-                           .Where(p => p.Id == request.Id)
+                           .Where(p => p.Id == request.Id && !p.IsDeleted)
                            .Select(p => new PlaylistDetailsDto(
                                p.Id,
                                p.Title,
@@ -24,14 +24,12 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                p.CoverUrl,
                                p.Visibility,
                                p.IsEditorial,
-                           
                                p.IsEditorial || p.User == null ? null : new PlaylistCreatorDto(
                                    p.UserId,
                                    p.User.Profile.FirstName,
                                    p.User.Email,
                                    p.User.Profile.AvatarUrl 
                                ),
-                           
                                p.PlaylistTracks.Count,
                                p.CreatedAt,
                                p.UpdatedAt
