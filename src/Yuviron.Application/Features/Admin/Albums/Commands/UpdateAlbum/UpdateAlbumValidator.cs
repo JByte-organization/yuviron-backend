@@ -26,6 +26,9 @@ public sealed class UpdateAlbumCommandValidator : AbstractValidator<UpdateAlbumC
             
         RuleFor(x => x.ReleaseDate)
             .NotEqual(default(DateTime));
+
+        RuleFor(x => x.ReleaseType)
+            .IsInEnum();
             
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();

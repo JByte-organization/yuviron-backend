@@ -23,6 +23,9 @@ public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumC
         
         RuleFor(x => x.ReleaseDate)
             .NotEqual(default(DateTime));
+
+        RuleFor(x => x.ReleaseType)
+            .IsInEnum();
         
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();

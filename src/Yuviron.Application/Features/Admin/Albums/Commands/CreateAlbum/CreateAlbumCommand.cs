@@ -9,6 +9,7 @@ public sealed record CreateAlbumCommand(
     string? Description,
     string? CoverUrl,
     DateTime ReleaseDate,
+    ReleaseType ReleaseType,
     VisibilityStatus VisibilityStatus,
     DateTime? ScheduledPublishAt,
     List<Guid> ArtistIds 

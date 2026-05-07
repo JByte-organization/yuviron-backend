@@ -194,6 +194,7 @@ public static class DependencyInjection
         services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<TempFilesCleanupJob>();
         services.AddHostedService<SyncPlayCountsJob>();
+        services.AddHostedService<SyncArtistMonthlyListenersJob>();
 
         return services;
     }

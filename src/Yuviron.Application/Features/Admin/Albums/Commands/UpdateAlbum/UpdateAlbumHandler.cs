@@ -46,6 +46,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
             request.Description,
             finalCoverUrl,
             request.ReleaseDate,
+            request.ReleaseType,
             request.VisibilityStatus,
             request.ScheduledPublishAt,
             uniqueArtistIds,
