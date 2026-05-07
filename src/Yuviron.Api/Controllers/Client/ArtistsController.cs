@@ -55,10 +55,15 @@ public class ArtistsController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(PaginatedList<ArtistAlbumDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedList<ArtistAlbumDto>>> GetArtistAlbums([FromRoute] Guid id, [FromQuery] GetArtistAlbumsQuery query, CancellationToken ct = default)
+    public async Task<IActionResult> GetArtistAlbums(
+        [FromRoute] Guid id,
+        [FromQuery] string? searchTerm,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var queryWithId = query with { ArtistId = id };
-        var result = await Mediator.Send(queryWithId, ct);
+        var query = new GetArtistAlbumsQuery(id, searchTerm, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
@@ -66,10 +71,14 @@ public class ArtistsController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(PaginatedList<ArtistAlbumDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedList<ArtistAlbumDto>>> GetArtistSingles([FromRoute] Guid id, [FromQuery] GetArtistSinglesQuery query, CancellationToken ct = default)
+    public async Task<IActionResult> GetArtistSingles(
+        [FromRoute] Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var queryWithId = query with { ArtistId = id };
-        var result = await Mediator.Send(queryWithId, ct);
+        var query = new GetArtistSinglesQuery(id, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
@@ -77,10 +86,14 @@ public class ArtistsController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(PaginatedList<ArtistPlaylistDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedList<ArtistPlaylistDto>>> GetArtistPlaylists([FromRoute] Guid id, [FromQuery] GetArtistPlaylistsQuery query, CancellationToken ct = default)
+    public async Task<IActionResult> GetArtistPlaylists(
+        [FromRoute] Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var queryWithId = query with { ArtistId = id };
-        var result = await Mediator.Send(queryWithId, ct);
+        var query = new GetArtistPlaylistsQuery(id, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 
