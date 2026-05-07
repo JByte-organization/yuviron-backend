@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 
@@ -25,8 +27,8 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
 
         var projectedQuery = _context.Playlists
             .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .OrderByDescending(p => p.CreatedAt)
+            .Where(p => p.UserId == userId && !p.IsDeleted) 
+            .OrderByDescending(p => p.UpdatedAt) 
             .Select(p => new UserPlaylistDto(
                 p.Id,
                 p.Title,
@@ -34,9 +36,31 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
                 p.Visibility,
                 p.PlaylistTracks.Count,
                 p.CreatedAt,
-                p.UpdatedAt
+                p.UpdatedAt,
+                false 
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var paginatedPlaylists = await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+
+        if (request.Page == 1)
+        {
+            var favoritesCount = await _context.UserSavedTracks
+                .CountAsync(ust => ust.UserId == userId, cancellationToken);
+
+            var favoritesPlaylist = new UserPlaylistDto(
+                Id: Guid.Empty,
+                Title: "Любимые треки", 
+                CoverUrl: null, 
+                Visibility: PlaylistVisibility.Private,
+                TracksCount: favoritesCount,
+                CreatedAt: DateTime.MinValue,
+                UpdatedAt: DateTime.UtcNow,
+                IsSystem: true
+            );
+
+            paginatedPlaylists.Items.Insert(0, favoritesPlaylist);
+        }
+
+        return paginatedPlaylists;
     }
 }

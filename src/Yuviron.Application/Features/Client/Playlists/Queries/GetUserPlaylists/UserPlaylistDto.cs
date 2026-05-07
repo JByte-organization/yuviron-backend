@@ -9,5 +9,6 @@ public sealed record UserPlaylistDto(
     PlaylistVisibility Visibility,
     int TracksCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    bool IsSystem = false
 );

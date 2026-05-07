@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 public record NewReleaseDto(
     Guid Id,
     string Title,
-    IEnumerable<SimpleArtistDto> Artists,
+    IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl,
     int TracksCount
 );

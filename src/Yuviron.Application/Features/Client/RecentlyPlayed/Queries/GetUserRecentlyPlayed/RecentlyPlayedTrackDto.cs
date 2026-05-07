@@ -6,7 +6,7 @@ namespace Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRece
 public record RecentlyPlayedTrackDto(
     Guid Id,
     string Title,
-    IEnumerable<SimpleArtistDto> Artists,
+    IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl,
     DateTime LastPlayedAt
 );

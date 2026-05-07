@@ -52,7 +52,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
             {
                 t.Id,
                 t.Title,
-                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name)),
+                Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             })
             .ToListAsync(cancellationToken);

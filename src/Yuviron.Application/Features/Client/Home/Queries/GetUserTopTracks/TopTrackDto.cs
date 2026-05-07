@@ -7,6 +7,6 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
 public record TopTrackDto(
     Guid Id,
     string Title,
-    IEnumerable<SimpleArtistDto> Artists,
+    IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl
 );

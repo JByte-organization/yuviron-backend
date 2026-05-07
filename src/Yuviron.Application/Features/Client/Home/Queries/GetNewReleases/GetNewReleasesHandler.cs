@@ -35,7 +35,7 @@ public sealed class GetNewReleasesHandler : IRequestHandler<GetNewReleasesQuery,
             .Select(a => new NewReleaseDto(
                 a.Id,
                 a.Title,
-                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.Artist.Id, aa.Artist.Name)),
+                a.AlbumArtists.Select(aa => new TrackArtistDto(aa.Artist.Id, aa.Artist.Name, aa.Role)),
                 a.CoverUrl,
                 a.Tracks.Count(t => !t.IsDeleted 
                                     && t.VisibilityStatus == VisibilityStatus.Published
