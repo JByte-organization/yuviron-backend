@@ -11,6 +11,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, yuviron]
+    environment: dev
 
     steps:
       - name: Sync backend source
@@ -126,6 +127,12 @@ jobs:
             --filter "name=yuviron-dev-migrator-run" \
             | xargs -r docker rm -f
 
+      - name: Docker disk usage before deploy
+        run: |
+          set -Eeuo pipefail
+          cd /opt/yuviron-server
+          python3 ./scripts/cli.py tools docker-clean --mode report
+
       - name: Preflight check
         run: |
           set -Eeuo pipefail
@@ -143,6 +150,20 @@ jobs:
           set -Eeuo pipefail
           cd /opt/yuviron-server
           python3 ./scripts/cli.py stack smoke dev
+
+      - name: Trim Docker build cache
+        if: success()
+        run: |
+          set -Eeuo pipefail
+          cd /opt/yuviron-server
+          python3 ./scripts/cli.py tools docker-clean --mode build-cache --reserved-space 10gb --yes
+
+      - name: Docker disk usage after cleanup
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          cd /opt/yuviron-server
+          python3 ./scripts/cli.py tools docker-clean --mode report
 
       - name: Show running services
         if: always()
