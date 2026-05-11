@@ -1,7 +1,6 @@
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
@@ -24,7 +23,7 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var playlist = Playlist.Create(
+        var playlist = Yuviron.Domain.Entities.Playlist.Create(
             userId: userId,
             title: request.Name,
             description: null, 

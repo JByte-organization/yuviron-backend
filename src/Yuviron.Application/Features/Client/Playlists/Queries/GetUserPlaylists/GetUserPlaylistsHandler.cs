@@ -5,6 +5,7 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;

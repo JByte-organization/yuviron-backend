@@ -1,6 +1,6 @@
 using Yuviron.Domain.Enums;
 
-namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
+namespace Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
 public sealed record UserPlaylistDto(
     Guid Id,

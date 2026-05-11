@@ -1,5 +1,6 @@
 using MediatR;
 using Yuviron.Application.Common;
+using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 
