@@ -4,7 +4,7 @@ public class PlaylistTrack
 {
     public Guid PlaylistId { get; private set; }
     public Guid TrackId { get; private set; }
-    public int Position { get; private set; }
+    public double Position { get; private set; } 
     public DateTime AddedAt { get; private set; }
     public Guid AddedByUserId { get; private set; }
 
@@ -13,7 +13,7 @@ public class PlaylistTrack
 
     private PlaylistTrack() { }
 
-    public PlaylistTrack(Guid playlistId, Guid trackId, int position, Guid addedBy, DateTime utcNow)
+    public PlaylistTrack(Guid playlistId, Guid trackId, double position, Guid addedBy, DateTime utcNow)
     {
         PlaylistId = playlistId;
         TrackId = trackId;
@@ -22,5 +22,5 @@ public class PlaylistTrack
         AddedAt = utcNow;
     }
 
-    public void UpdatePosition(int newPosition) => Position = newPosition;
+    public void UpdatePosition(double newPosition) => Position = newPosition;
 }

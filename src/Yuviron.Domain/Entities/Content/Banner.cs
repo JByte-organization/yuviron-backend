@@ -22,6 +22,10 @@ public class Banner : Entity
 
     public static Banner Create(string title, string bannerUrl, string targetUrl, int sortOrder, bool isActive, DateTime utcNow)
     {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required");
+        if (string.IsNullOrWhiteSpace(bannerUrl)) throw new ArgumentException("Banner image URL is required");
+        if (string.IsNullOrWhiteSpace(targetUrl)) throw new ArgumentException("Target URL is required");
+
         return new Banner
         {
             Id = Guid.NewGuid(),
@@ -37,6 +41,10 @@ public class Banner : Entity
 
     public void Update(string title, string bannerUrl, string targetUrl, int sortOrder, bool isActive, DateTime utcNow)
     {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required");
+        if (string.IsNullOrWhiteSpace(bannerUrl)) throw new ArgumentException("Banner image URL is required");
+        if (string.IsNullOrWhiteSpace(targetUrl)) throw new ArgumentException("Target URL is required");
+
         Title = title.Trim();
         BannerUrl = bannerUrl.Trim();
         TargetUrl = targetUrl.Trim();
