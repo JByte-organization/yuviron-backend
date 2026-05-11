@@ -1,13 +1,12 @@
-using Yuviron.Application.Common.Models; 
+using Yuviron.Application.Common.Models;
 
-namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks;
+namespace Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistTracks;
 
-public record PlaylistTrackItemDto(
+public record PlaylistTrackItemClientDto(
     Guid TrackId,
     string Title,
     List<SimpleArtistDto> Artists, 
     Guid AlbumId,      
-    string AlbumTitle, 
     string? CoverUrl,        
     int DurationMs,           
     double Position,

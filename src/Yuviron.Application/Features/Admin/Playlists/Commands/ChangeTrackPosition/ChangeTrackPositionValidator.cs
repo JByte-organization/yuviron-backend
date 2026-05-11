@@ -8,6 +8,6 @@ public sealed class ChangeTrackPositionValidator : AbstractValidator<ChangeTrack
     {
         RuleFor(x => x.PlaylistId).NotEmpty();
         RuleFor(x => x.TrackId).NotEmpty();
-        RuleFor(x => x.NewPosition).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.NewPosition).GreaterThanOrEqualTo(0.0);
     }
 }

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -12,12 +13,18 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
+    private readonly ICacheService _cache;
 
-    public AddTrackToPlaylistHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUser)
+    public AddTrackToPlaylistHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider, 
+        ICurrentUserService currentUser,
+        ICacheService cache)
     {
         _context = context;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
+        _cache = cache;
     }
 
     public async Task<Unit> Handle(AddTrackToPlaylistCommand request, CancellationToken cancellationToken)
@@ -35,44 +42,22 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
         if (await _context.PlaylistTracks.AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken))
             return Unit.Value;
 
-        int maxPosition = await _context.PlaylistTracks
+        var maxPosition = await _context.PlaylistTracks
             .Where(pt => pt.PlaylistId == request.PlaylistId)
-            .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
+            .MaxAsync(pt => (double?)pt.Position, cancellationToken) ?? 0.0;
 
-        int insertPosition = (request.Position <= 0 || request.Position > maxPosition + 1) 
-            ? maxPosition + 1 
-            : request.Position;
+        var newPosition = maxPosition + 65536.0; 
 
-        var strategy = ((DbContext)_context).Database.CreateExecutionStrategy();
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, newPosition, currentUserId, utcNow);
+        
+        _context.PlaylistTracks.Add(newPlaylistTrack);
+        playlist.NotifyContentChanged(utcNow);
 
-        await strategy.ExecuteAsync(async () =>
-        {
-            await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
-            try
-            {
-                if (insertPosition <= maxPosition)
-                {
-                    await _context.PlaylistTracks
-                        .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= insertPosition)
-                        .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
-                }
+        await _context.SaveChangesAsync(cancellationToken);
 
-                var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-                var newPlaylistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, insertPosition, currentUserId, utcNow);
-                
-                _context.PlaylistTracks.Add(newPlaylistTrack);
-                playlist.NotifyContentChanged(utcNow);
-
-                await _context.SaveChangesAsync(cancellationToken);
-                
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
-        });
+        var redisKey = $"playlist:{request.PlaylistId}:tracks";
+        await _cache.SortedSetAddAsync(redisKey, request.TrackId.ToString(), newPosition, cancellationToken);
 
         return Unit.Value;
     }

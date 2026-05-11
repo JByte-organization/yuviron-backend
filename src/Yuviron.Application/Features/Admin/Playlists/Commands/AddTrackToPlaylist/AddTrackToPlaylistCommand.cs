@@ -6,8 +6,7 @@ namespace Yuviron.Application.Features.Admin.Playlists.Commands.AddTrackToPlayli
 
 public sealed record AddTrackToPlaylistCommand(
     Guid PlaylistId, 
-    Guid TrackId, 
-    int Position
+    Guid TrackId
 ) : IRequest<Unit>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

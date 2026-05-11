@@ -5,24 +5,38 @@ using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Exceptions;
+using Yuviron.Application.Abstractions.Services;
 
-namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks;
+namespace Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistTracks;
 
-public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracksQuery, PaginatedList<PlaylistTrackItemDto>>
+public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracksQuery, PaginatedList<PlaylistTrackItemClientDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetPlaylistTracksHandler(IApplicationDbContext context, ICacheService cache)
+    public GetPlaylistTracksHandler(IApplicationDbContext context, ICacheService cache, ICurrentUserService currentUser)
     {
         _context = context;
         _cache = cache;
+        _currentUser = currentUser;
     }
 
-    public async Task<PaginatedList<PlaylistTrackItemDto>> Handle(GetPlaylistTracksQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<PlaylistTrackItemClientDto>> Handle(GetPlaylistTracksQuery request, CancellationToken cancellationToken)
     {
+        var playlist = await _context.Playlists
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && !p.IsDeleted, cancellationToken)
+            ?? throw new NotFoundException("Playlist", request.PlaylistId);
+
+        if (playlist.Visibility == PlaylistVisibility.Private && playlist.UserId != _currentUser.UserId)
+        {
+            throw new ForbiddenException("This playlist is private.");
+        }
+
         var redisKey = $"playlist:{request.PlaylistId}:tracks";
-        
         long startIndex = (request.Page - 1) * request.PageSize;
         long stopIndex = startIndex + request.PageSize - 1;
 
@@ -37,16 +51,12 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                 .AsNoTracking()
                 .Where(pt => pt.PlaylistId == request.PlaylistId)
                 .OrderBy(pt => pt.Position)
-                .Select(pt => new PlaylistTrackItemDto(
-                    pt.TrackId, 
-                    pt.Track.Title,
+                .Select(pt => new PlaylistTrackItemClientDto(
+                    pt.TrackId, pt.Track.Title,
                     pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
                     pt.Track.AlbumId, 
-                    pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
                     pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
-                    pt.Track.DurationMs, 
-                    pt.Position, 
-                    pt.AddedAt
+                    pt.Track.DurationMs, pt.Position, pt.AddedAt
                 ));
 
             return await fallbackQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
@@ -61,7 +71,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .Where(t => trackIds.Contains(t.Id))
             .ToListAsync(cancellationToken);
 
-        var dtos = new List<PlaylistTrackItemDto>();
+        var dtos = new List<PlaylistTrackItemClientDto>();
         foreach (var trackIdStr in tracksWithScores.Keys)
         {
             var trackId = Guid.Parse(trackIdStr);
@@ -69,22 +79,15 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             
             if (track != null)
             {
-                var position = tracksWithScores[trackIdStr];
-
-                dtos.Add(new PlaylistTrackItemDto(
-                    track.Id,
-                    track.Title,
+                dtos.Add(new PlaylistTrackItemClientDto(
+                    track.Id, track.Title,
                     track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
-                    track.AlbumId,
-                    track.Album?.Title ?? "Unknown",
-                    track.CoverUrl ?? track.Album?.CoverUrl,
-                    track.DurationMs,
-                    position,
-                    track.UpdatedAt 
+                    track.AlbumId, track.CoverUrl ?? track.Album?.CoverUrl,
+                    track.DurationMs, tracksWithScores[trackIdStr], track.CreatedAt
                 ));
             }
         }
 
-        return new PaginatedList<PlaylistTrackItemDto>(dtos, (int)totalTracksCount, request.Page, request.PageSize);
+        return new PaginatedList<PlaylistTrackItemClientDto>(dtos, (int)totalTracksCount, request.Page, request.PageSize);
     }
 }

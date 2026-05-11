@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
+using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.UpdatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.DeletePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.AddTrackToPlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.RemoveTrackFromPlaylist;
-using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
+using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
+using Yuviron.Application.Features.Client.Playlists.Commands.ChangeTrackPosition;
+using Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistTracks;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -15,6 +18,7 @@ namespace Yuviron.Api.Controllers.Client;
 [ApiExplorerSettings(GroupName = "client")]
 public class PlaylistsController : ApiControllerBase
 {
+    
     [HttpGet("playlists")]
     [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<UserPlaylistDto>>> GetUserPlaylists([FromQuery] GetUserPlaylistsQuery query, CancellationToken ct)
@@ -67,6 +71,24 @@ public class PlaylistsController : ApiControllerBase
     {
         await Mediator.Send(new RemoveTrackFromPlaylistCommand(id, trackId), ct);
         
+        return Ok();
+    }
+    
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/tracks")]
+    [ProducesResponseType(typeof(PaginatedList<PlaylistTrackItemClientDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<PlaylistTrackItemClientDto>>> GetTracks([FromRoute] Guid id, [FromQuery] GetPlaylistTracksQuery query, CancellationToken ct)
+    {
+        var command = query with { PlaylistId = id };
+        var result = await Mediator.Send(command, ct);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/tracks/{trackId:guid}/position")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangeTrackPosition([FromRoute] Guid id, [FromRoute] Guid trackId, [FromBody] ChangeTrackPositionRequest request, CancellationToken ct)
+    {
+        await Mediator.Send(new ChangeTrackPositionCommand(id, trackId, request.NewPosition), ct);
         return Ok();
     }
 }

@@ -6,13 +6,7 @@ public sealed class AddTrackToPlaylistValidator : AbstractValidator<AddTrackToPl
 {
     public AddTrackToPlaylistValidator()
     {
-        RuleFor(x => x.PlaylistId)
-            .NotEmpty().WithMessage("Playlist ID is required.");
-
-        RuleFor(x => x.TrackId)
-            .NotEmpty().WithMessage("Track ID is required.");
-
-        RuleFor(x => x.Position)
-            .GreaterThanOrEqualTo(0).WithMessage("Position must be 0 or greater.");
+        RuleFor(x => x.PlaylistId).NotEmpty().WithMessage("Playlist ID is required.");
+        RuleFor(x => x.TrackId).NotEmpty().WithMessage("Track ID is required.");
     }
 }
