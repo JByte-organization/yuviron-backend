@@ -3,15 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 
-namespace Yuviron.Application.Features.Client.Home.Queries.GetUserFavoriteArtists;
+namespace Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
 
-public sealed class GetUserFavoriteArtistsHandler : IRequestHandler<GetUserFavoriteArtistsQuery, List<FavoriteArtistDto>>
+public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtistsQuery, List<TopArtistDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
-    public GetUserFavoriteArtistsHandler(
+    public GetUserTopArtistsHandler(
         IApplicationDbContext context, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider)
@@ -21,7 +21,7 @@ public sealed class GetUserFavoriteArtistsHandler : IRequestHandler<GetUserFavor
         _timeProvider = timeProvider;
     }
 
-    public async Task<List<FavoriteArtistDto>> Handle(GetUserFavoriteArtistsQuery request, CancellationToken cancellationToken)
+    public async Task<List<TopArtistDto>> Handle(GetUserTopArtistsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
                      ?? throw new UnauthorizedAccessException("User is not authenticated.");
@@ -42,12 +42,12 @@ public sealed class GetUserFavoriteArtistsHandler : IRequestHandler<GetUserFavor
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
-        if (!topArtistIds.Any()) return new List<FavoriteArtistDto>();
+        if (!topArtistIds.Any()) return new List<TopArtistDto>();
 
         var dbArtists = await _context.Artists
             .AsNoTracking()
             .Where(a => topArtistIds.Contains(a.Id) && !a.IsDeleted)
-            .Select(a => new FavoriteArtistDto(
+            .Select(a => new TopArtistDto(
                 a.Id,
                 a.Name,
                 a.AvatarUrl,

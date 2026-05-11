@@ -1,13 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
-using Yuviron.Application.Extensions; // <-- Наш супер-фильтр
-using Yuviron.Application.Common.Models; // <-- Наш DTO
+using Yuviron.Application.Extensions;
+using Yuviron.Application.Common.Models;
 
 namespace Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 
@@ -29,6 +25,9 @@ public sealed class GetNewReleasesHandler : IRequestHandler<GetNewReleasesQuery,
         return await _context.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
+            .Where(a => a.Tracks.Any(t => !t.IsDeleted 
+                                          && t.VisibilityStatus == VisibilityStatus.Published 
+                                          && t.ProcessingStatus == TrackProcessingStatus.Ready))
             .OrderByDescending(a => a.ReleaseDate) 
             .ThenByDescending(a => a.CreatedAt)
             .Take(request.Limit)

@@ -8,6 +8,5 @@ public sealed record RelatedTrackDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    string? AudioUrl,
     IEnumerable<TrackArtistDto> Artists
 );

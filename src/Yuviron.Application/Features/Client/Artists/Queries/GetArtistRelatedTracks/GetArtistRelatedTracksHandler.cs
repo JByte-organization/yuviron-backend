@@ -13,19 +13,13 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistRelatedTr
 public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRelatedTracksQuery, List<RelatedTrackDto>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IStreamTokenService _streamTokenService;
     private readonly TimeProvider _timeProvider;
 
     public GetArtistRelatedTracksHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUser,
-        IStreamTokenService streamTokenService,
         TimeProvider timeProvider)
     {
         _context = context;
-        _currentUser = currentUser;
-        _streamTokenService = streamTokenService;
         _timeProvider = timeProvider;
     }
 
@@ -77,29 +71,16 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
-        var isAuthenticated = _currentUser.UserId.HasValue;
-        var expiration = _timeProvider.GetUtcNow().AddHours(6);
-        var expUnix = expiration.ToUnixTimeSeconds();
-
+        
         return rawTracks
             .Select(t =>
             {
-                string? audioUrl = null;
-
-                if (isAuthenticated && !string.IsNullOrWhiteSpace(t.FileKey))
-                {
-                    var signature = _streamTokenService.GenerateToken(t.Id, expiration);
-                    var fileName = Path.GetFileName(t.FileKey);
-                    audioUrl = $"/api/stream/tracks/{t.Id}/{fileName}?exp={expUnix}&sig={signature}";
-                }
-
                 return new RelatedTrackDto(
                     t.Id,
                     t.Title,
                     t.DurationMs,
                     t.Explicit,
                     t.CoverUrl,
-                    audioUrl,
                     t.Artists
                 );
             })

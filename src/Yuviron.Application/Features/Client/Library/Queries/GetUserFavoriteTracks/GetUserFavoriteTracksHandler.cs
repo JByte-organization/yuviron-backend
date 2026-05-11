@@ -8,7 +8,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
-using Yuviron.Application.Extensions; // <-- Подключаем экстеншены
+using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
 
@@ -16,12 +16,12 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly TimeProvider _timeProvider; // <-- ДОБАВИЛИ TimeProvider
+    private readonly TimeProvider _timeProvider;
 
     public GetUserFavoriteTracksHandler(
         IApplicationDbContext context, 
         ICurrentUserService currentUserService,
-        TimeProvider timeProvider) // <-- ДОБАВИЛИ В КОНСТРУКТОР
+        TimeProvider timeProvider) 
     {
         _context = context;
         _currentUserService = currentUserService;

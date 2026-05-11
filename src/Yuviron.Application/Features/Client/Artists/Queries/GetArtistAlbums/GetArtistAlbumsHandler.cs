@@ -45,6 +45,9 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
         }
 
         var projectedQuery = query
+            .Where(a => a.Tracks.Any(t => !t.IsDeleted 
+                                          && t.VisibilityStatus == VisibilityStatus.Published 
+                                          && t.ProcessingStatus == TrackProcessingStatus.Ready))
             .OrderByDescending(a => a.ReleaseDate)
             .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(

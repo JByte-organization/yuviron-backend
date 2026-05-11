@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Yuviron.Application.Features.Client.Home.Queries.GetHomeBanners;
 using Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
-using Yuviron.Application.Features.Client.Home.Queries.GetUserFavoriteArtists;
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
+using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -22,6 +23,15 @@ public class HomeController : ApiControllerBase
         var result = await Mediator.Send(new GetHomeBannersQuery(limit), ct);
         return Ok(result);
     }
+        
+    [HttpGet("top-tracks")]
+    [Authorize]
+    [ProducesResponseType(typeof(List<TopTrackDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTopTracks([FromQuery] int limit = 5, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetUserTopTracksQuery(limit), ct);
+        return Ok(result);
+    }
     
     [HttpGet("new-releases")]
     [AllowAnonymous]
@@ -32,21 +42,21 @@ public class HomeController : ApiControllerBase
         return Ok(result);
     }
     
-    [HttpGet("top-tracks")]
+    [HttpGet("top-artists")]
     [Authorize]
-    [ProducesResponseType(typeof(List<TopTrackDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTopTracks([FromQuery] int limit = 5, CancellationToken ct = default)
+    [ProducesResponseType(typeof(List<TopArtistDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTopArtists([FromQuery] int limit = 5, CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetUserTopTracksQuery(limit), ct);
+        var result = await Mediator.Send(new GetUserTopArtistsQuery(limit), ct);
+        return Ok(result);
+    }  
+    
+    [HttpGet("recently-played")]
+    [Authorize]
+    [ProducesResponseType(typeof(List<RecentlyPlayedTrackDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RecentlyPlayedTrackDto>>> GetRecentlyPlayed([FromQuery] GetUserRecentlyPlayedQuery query, CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
-    
-    [HttpGet("favorite-artists")]
-    [Authorize]
-    [ProducesResponseType(typeof(List<FavoriteArtistDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetFavoriteArtists([FromQuery] int limit = 5, CancellationToken ct = default)
-    {
-        var result = await Mediator.Send(new GetUserFavoriteArtistsQuery(limit), ct);
-        return Ok(result);
-    }    
 }

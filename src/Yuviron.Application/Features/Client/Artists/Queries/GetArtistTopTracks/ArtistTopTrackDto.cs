@@ -8,7 +8,6 @@ public record ArtistTopTrackDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    string? AudioUrl,
     long PlayCount,
     Guid AlbumId,
     string AlbumTitle,

@@ -10,6 +10,5 @@ public record RecommendedTrackDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    string? AudioUrl,
     IEnumerable<TrackArtistDto> Artists 
 );

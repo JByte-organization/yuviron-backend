@@ -1,12 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
-using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 
@@ -24,7 +22,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
     public async Task<PaginatedList<UserPlaylistDto>> Handle(GetUserPlaylistsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+                     ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
         var projectedQuery = _context.Playlists
             .AsNoTracking()
@@ -38,30 +36,9 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
                 p.PlaylistTracks.Count,
                 p.CreatedAt,
                 p.UpdatedAt,
-                false 
+                false
             ));
 
-        var paginatedPlaylists = await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
-
-        if (request.Page == 1)
-        {
-            var favoritesCount = await _context.UserSavedTracks
-                .CountAsync(ust => ust.UserId == userId, cancellationToken);
-
-            var favoritesPlaylist = new UserPlaylistDto(
-                Id: Guid.Empty,
-                Title: "Любимые треки", 
-                CoverUrl: null, 
-                Visibility: PlaylistVisibility.Private,
-                TracksCount: favoritesCount,
-                CreatedAt: DateTime.MinValue,
-                UpdatedAt: DateTime.UtcNow,
-                IsSystem: true
-            );
-
-            paginatedPlaylists.Items.Insert(0, favoritesPlaylist);
-        }
-
-        return paginatedPlaylists;
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }
