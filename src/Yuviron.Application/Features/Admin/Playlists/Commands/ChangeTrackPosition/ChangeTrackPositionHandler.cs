@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -10,11 +11,16 @@ public sealed class ChangeTrackPositionHandler : IRequestHandler<ChangeTrackPosi
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
 
-    public ChangeTrackPositionHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public ChangeTrackPositionHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        ICacheService cache)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
     }
 
     public async Task<Unit> Handle(ChangeTrackPositionCommand request, CancellationToken cancellationToken)
@@ -24,53 +30,16 @@ public sealed class ChangeTrackPositionHandler : IRequestHandler<ChangeTrackPosi
                        ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
         var trackToMove = await _context.PlaylistTracks
-            .FirstOrDefaultAsync(t => t.PlaylistId == request.PlaylistId && t.TrackId == request.TrackId, cancellationToken)
-            ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
+                              .FirstOrDefaultAsync(t => t.PlaylistId == request.PlaylistId && t.TrackId == request.TrackId, cancellationToken)
+                          ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
 
-        int maxPosition = await _context.PlaylistTracks
-            .Where(pt => pt.PlaylistId == request.PlaylistId)
-            .MaxAsync(pt => (int?)pt.Position, cancellationToken) ?? 0;
+        trackToMove.UpdatePosition(request.NewPosition);
+        playlist.NotifyContentChanged(_timeProvider.GetUtcNow().UtcDateTime);
 
-        int oldPosition = trackToMove.Position;
-        int newPosition = Math.Clamp(request.NewPosition, 1, maxPosition);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        if (oldPosition == newPosition) return Unit.Value;
-
-        // ИСПОЛЬЗУЕМ НАШУ АБСТРАКЦИЮ
-        await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            // 1. Временная позиция
-            trackToMove.UpdatePosition(-1);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // 2. Сдвиг остальных
-            if (newPosition < oldPosition)
-            {
-                await _context.PlaylistTracks
-                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position >= newPosition && pt.Position < oldPosition)
-                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position + 1), cancellationToken);
-            }
-            else
-            {
-                await _context.PlaylistTracks
-                    .Where(pt => pt.PlaylistId == request.PlaylistId && pt.Position > oldPosition && pt.Position <= newPosition)
-                    .ExecuteUpdateAsync(s => s.SetProperty(pt => pt.Position, pt => pt.Position - 1), cancellationToken);
-            }
-
-            // 3. Финальная установка
-            trackToMove.UpdatePosition(newPosition);
-            playlist.NotifyContentChanged(_timeProvider.GetUtcNow().UtcDateTime);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
+        var redisKey = $"playlist:{request.PlaylistId}:tracks";
+        await _cache.SortedSetAddAsync(redisKey, request.TrackId.ToString(), request.NewPosition, cancellationToken);
 
         return Unit.Value;
     }

@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Admin.Playlists.Commands.ChangeTrackPosit
 public sealed record ChangeTrackPositionCommand(
     Guid PlaylistId, 
     Guid TrackId, 
-    int NewPosition
+    double NewPosition
 ) : IRequest<Unit>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

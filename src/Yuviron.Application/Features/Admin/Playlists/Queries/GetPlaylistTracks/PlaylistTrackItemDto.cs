@@ -10,6 +10,6 @@ public record PlaylistTrackItemDto(
     string AlbumTitle, 
     string? CoverUrl,        
     int DurationMs,           
-    int Position,
+    double Position,
     DateTime AddedAt
 );
