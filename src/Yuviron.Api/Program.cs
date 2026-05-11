@@ -162,16 +162,7 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT"   
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            new List<string>()
-        }
-    });
+    c.OperationFilter<Yuviron.Api.Common.SecurityRequirementsOperationFilter>();
 });
 
 // 1.3 CORS (Permissions for frontend)

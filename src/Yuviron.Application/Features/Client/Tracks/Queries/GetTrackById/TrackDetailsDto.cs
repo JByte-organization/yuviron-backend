@@ -10,7 +10,6 @@ public record TrackDetailsDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    string? AudioUrl,
     long PlayCount,
     
     Guid AlbumId,

@@ -20,7 +20,6 @@ public class UsersController : ApiControllerBase
     {
         var command = query with { TargetUserId = id }; 
         var result = await Mediator.Send(command, ct);
-        
         return Ok(result);
     }
 }

@@ -7,18 +7,18 @@ using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
 
-public sealed class GetUserFavoriteArtistsHandler : IRequestHandler<GetUserFavoriteArtistsQuery, PaginatedList<UserFavoriteArtistDto>>
+public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtistsQuery, PaginatedList<FollowedArtistDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUserFavoriteArtistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetFollowedArtistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
         _currentUserService = currentUserService;
     }
 
-    public async Task<PaginatedList<UserFavoriteArtistDto>> Handle(GetUserFavoriteArtistsQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<FollowedArtistDto>> Handle(GetFollowedArtistsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated.");
@@ -27,7 +27,7 @@ public sealed class GetUserFavoriteArtistsHandler : IRequestHandler<GetUserFavor
             .AsNoTracking()
             .Where(ufa => ufa.UserId == userId && !ufa.Artist.IsDeleted)
             .OrderByDescending(ufa => ufa.FollowedAt)
-            .Select(ufa => new UserFavoriteArtistDto(
+            .Select(ufa => new FollowedArtistDto(
                 ufa.ArtistId,
                 ufa.Artist.Name,
                 ufa.Artist.AvatarUrl,

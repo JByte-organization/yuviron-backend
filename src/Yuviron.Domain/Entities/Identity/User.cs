@@ -21,7 +21,7 @@ public class User : Entity
     public virtual ICollection<Subscription> Subscriptions { get; private set; } = new List<Subscription>();
     public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
-
+    public virtual ICollection<ArtistTeamMember> ManagedArtists { get; private set; } = new List<ArtistTeamMember>();
     public virtual UserProfile Profile { get; private set; } = null!;
     public virtual UserSettings? Settings { get; private set; }
 

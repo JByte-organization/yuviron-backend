@@ -40,7 +40,10 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             title: string.IsNullOrWhiteSpace(request.Name) ? playlist.Title : request.Name,
             description: playlist.Description,
             coverUrl: request.CoverUrl ?? playlist.CoverUrl,
-            visibility: playlist.Visibility,
+            
+            
+            visibility: request.Visibility ?? playlist.Visibility, 
+            
             isEditorial: playlist.IsEditorial,
             userId: playlist.UserId,
             utcNow: utcNow

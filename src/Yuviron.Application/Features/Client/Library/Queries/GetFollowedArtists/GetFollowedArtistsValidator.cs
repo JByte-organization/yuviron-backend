@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
 
-public sealed class GetUserFavoriteArtistsValidator : AbstractValidator<GetUserFavoriteArtistsQuery>
+public sealed class GetFollowedArtistsValidator : AbstractValidator<GetFollowedArtistsQuery>
 {
-    public GetUserFavoriteArtistsValidator()
+    public GetFollowedArtistsValidator()
     {
         RuleFor(x => x.Page)
             .GreaterThan(0).WithMessage("Page must be greater than 0.");

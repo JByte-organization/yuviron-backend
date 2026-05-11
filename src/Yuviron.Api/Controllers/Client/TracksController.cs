@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackById;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackRecommendations;
+using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackStreamUrl;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -33,6 +34,17 @@ public class TracksController : ApiControllerBase
         CancellationToken ct = default)
     {
         var result = await Mediator.Send(new GetTrackRecommendationsQuery(id, limit), ct);
+        return Ok(result);
+    }
+    
+    [HttpGet("{id:guid}/play")]
+    [Authorize] 
+    [ProducesResponseType(typeof(TrackStreamUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTrackStreamUrl([FromRoute] Guid id, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetTrackStreamUrlQuery(id), ct);
         return Ok(result);
     }
 }

@@ -1,6 +1,6 @@
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
 
-public sealed record UserFavoriteArtistDto(
+public sealed record FollowedArtistDto(
     Guid Id,
     string Name,
     string? AvatarUrl,
