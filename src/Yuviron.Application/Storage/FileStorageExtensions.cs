@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Yuviron.Application.Abstractions.Services;
 
 namespace Yuviron.Application.Extensions;
@@ -17,7 +18,7 @@ public static class FileStorageExtensions
 
         return await storage.MoveAsync(path!, destinationFolder, ct);
     }
-
+    [return: NotNullIfNotNull(nameof(path))]
     public static string? PredictDestinationPath(string? path, string destinationFolder)
     {
         if (string.IsNullOrWhiteSpace(path) || !path.StartsWith("temp/"))

@@ -25,8 +25,8 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
     {
         var playlist = await _context.Playlists
             .AsNoTracking()
-            .Include(p => p.User).ThenInclude(u => u.Profile)
-            .Include(p => p.PlaylistTracks).ThenInclude(pt => pt.Track) // Инклудим треки, чтобы посчитать их длительность
+            .Include(p => p.User).ThenInclude(u => u!.Profile)
+            .Include(p => p.PlaylistTracks).ThenInclude(pt => pt.Track) 
             .FirstOrDefaultAsync(p => p.Id == request.Id && !p.IsDeleted, cancellationToken);
 
         if (playlist == null)
