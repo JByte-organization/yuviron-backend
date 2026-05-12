@@ -29,7 +29,7 @@ public class UserPlaylistsController : ApiControllerBase
     [ProducesResponseType(typeof(CreatePlaylistResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreatePlaylist([FromBody] CreatePlaylistRequest request, CancellationToken ct)
     {
-        var command = new CreatePlaylistCommand(request.Name, request.CoverUrl);
+        var command = new CreatePlaylistCommand(request.Name, request.CoverUrl, request.Visibility);
         var result = await Mediator.Send(command, ct);
         return Ok(new CreatePlaylistResponse(result));
     }
