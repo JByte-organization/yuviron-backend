@@ -28,7 +28,7 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
             title: request.Name,
             description: null, 
             coverUrl: request.CoverUrl,
-            visibility: PlaylistVisibility.Private,
+            visibility: request.Visibility,
             isEditorial: false,
             utcNow: utcNow
         );

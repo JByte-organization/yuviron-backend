@@ -22,8 +22,13 @@ public class ArtistTeamMemberConfiguration : IEntityTypeConfiguration<ArtistTeam
         builder.HasIndex("ArtistId", "OwnerUniqueConstraint").IsUnique();
 
         builder.HasOne(x => x.User)
-            .WithMany() 
+            .WithMany(u => u.ManagedArtists) 
             .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        builder.HasOne(x => x.Artist)
+            .WithMany(a => a.TeamMembers)
+            .HasForeignKey(x => x.ArtistId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

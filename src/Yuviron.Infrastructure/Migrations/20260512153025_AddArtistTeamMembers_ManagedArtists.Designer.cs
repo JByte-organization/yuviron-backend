@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Yuviron.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Yuviron.Infrastructure.Persistence;
 namespace Yuviron.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260512153025_AddArtistTeamMembers_ManagedArtists")]
+    partial class AddArtistTeamMembers_ManagedArtists
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -350,9 +353,14 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.HasIndex("ArtistId", "OwnerUniqueConstraint")
                         .IsUnique();
@@ -1988,10 +1996,14 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
-                        .WithMany("ManagedArtists")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", null)
+                        .WithMany("ManagedArtists")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("Artist");
 

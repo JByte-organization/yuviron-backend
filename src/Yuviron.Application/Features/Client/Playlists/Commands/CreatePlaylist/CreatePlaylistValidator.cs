@@ -13,5 +13,8 @@ public sealed class CreatePlaylistValidator : AbstractValidator<CreatePlaylistCo
         RuleFor(x => x.CoverUrl)
             .MaximumLength(500).WithMessage("Cover URL is too long.")
             .When(x => !string.IsNullOrEmpty(x.CoverUrl));
+        
+        RuleFor(x => x.Visibility)
+            .IsInEnum().WithMessage("Invalid visibility status.");
     }
 }
