@@ -14,7 +14,7 @@ public class User : Entity
     public DateTime? LastLoginAt { get; private set; }
     public bool AcceptMarketing { get; private set; }
     public bool AcceptTerms { get; private set; }
-
+    public bool IsEmailConfirmed { get; private set; }
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
@@ -64,6 +64,22 @@ public class User : Entity
         }
     }
 
+    public void ConfirmEmail(string firstName, DateTime utcNow)
+    {
+        if (IsEmailConfirmed) return;
+        
+        IsEmailConfirmed = true;
+        UpdatedAt = utcNow;
+
+        AddDomainEvent(new UserEmailConfirmedEvent(this.Id, this.Email, firstName));
+    }
+    
+    public void RequestPasswordReset(string token, string firstName, DateTime utcNow)
+    {
+        UpdatedAt = utcNow; 
+        AddDomainEvent(new ForgotPasswordRequestedEvent(this.Id, this.Email, firstName, token));
+    }
+    
 
     public void UpdateLastLogin(DateTime utcNow)
     {
