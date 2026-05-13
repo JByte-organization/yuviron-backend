@@ -56,6 +56,7 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
             request.FirstName.Trim(),
             null,
             null,
+            null,
             null, 
             request.DateOfBirth,
             request.Gender,

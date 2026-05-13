@@ -64,7 +64,15 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
             normalizedEmail, passwordHash, firstName, request.AcceptMarketing, request.AcceptTerms, utcNow);
 
         var profile = UserProfile.Create(
-            user.Id, firstName, null, null, null, request.DateOfBirth, request.Gender, utcNow);
+            userId: user.Id, 
+            firstName: firstName, 
+            avatarUrl: null, 
+            country: request.Country, 
+            city: request.City,       
+            bio: null, 
+            dateOfBirth: request.DateOfBirth, 
+            gender: request.Gender, 
+            utcNow: utcNow);
 
         user.SetProfile(profile);
         
@@ -74,20 +82,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         }
 
         _context.Users.Add(user);
-
-        if (request.IsArtist && !string.IsNullOrWhiteSpace(request.ArtistName))
-        {
-            var artist = Artist.Create(
-                initialOwnerUserId: user.Id, 
-                name: request.ArtistName, 
-                bio: null, 
-                avatarUrl: null, 
-                bannerUrl: null, 
-                verificationStatus: VerificationStatus.None, 
-                utcNow: utcNow);
-
-            _context.Artists.Add(artist);
-        }
 
         try
         {

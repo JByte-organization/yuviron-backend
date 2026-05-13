@@ -56,6 +56,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             request.FirstName.Trim(),
             finalAvatarUrl, 
             user.Profile.Country,
+            user.Profile.City,
             user.Profile.Bio,
             request.DateOfBirth,
             request.Gender,
