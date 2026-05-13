@@ -298,7 +298,7 @@ foreach (var folder in publicFolders)
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(folderPath),
-        RequestPath = $"/storage/{folder}",
+        RequestPath = $"/{folder}",
         OnPrepareResponse = ctx =>
         {
             ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
