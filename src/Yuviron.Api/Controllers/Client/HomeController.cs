@@ -7,7 +7,6 @@ using Yuviron.Application.Features.Client.Home.Queries.GetHomeBanners;
 using Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
-using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -51,12 +50,4 @@ public class HomeController : ApiControllerBase
         return Ok(result);
     }  
     
-    [HttpGet("recently-played")]
-    [Authorize]
-    [ProducesResponseType(typeof(List<RecentlyPlayedTrackDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<RecentlyPlayedTrackDto>>> GetRecentlyPlayed([FromQuery] GetUserRecentlyPlayedQuery query, CancellationToken ct)
-    {
-        var result = await Mediator.Send(query, ct);
-        return Ok(result);
-    }
 }
