@@ -109,7 +109,14 @@ public class AppDbContextInitializer
         var roleConfig = new Dictionary<string, string[]>
         {
             { "Admin", allPerms },
-            { "ManagementUser", new[] { nameof(AppPermission.TracksUpload), nameof(AppPermission.TracksEdit), nameof(AppPermission.TracksDelete), nameof(AppPermission.TracksBlock), nameof(AppPermission.AnalyticsView) } },
+            { "ManagementUser", new[] { 
+                nameof(AppPermission.TracksUpload), 
+                nameof(AppPermission.TracksEdit), 
+                nameof(AppPermission.TracksDelete), 
+                nameof(AppPermission.TracksBlock), 
+                nameof(AppPermission.AnalyticsView),
+                nameof(AppPermission.StudioArtistProfile) 
+            } },
             { "User", new[] { nameof(AppPermission.CreatePlaylist) } }
         };
 
@@ -163,7 +170,7 @@ public class AppDbContextInitializer
             var user = User.Create(email, _passwordHasher.Hash(password), firstName, false, true, utcNow);
             await _context.Users.AddAsync(user);
             await _context.UserRoles.AddAsync(new UserRole(user.Id, role.Id));
-            user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
+            user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
 
             if (isPremium)
             {
