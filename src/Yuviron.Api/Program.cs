@@ -235,7 +235,7 @@ var app = builder.Build();
 // =========================================================================
 
 app.UseForwardedHeaders();
-
+app.UseCors("YuvironCorsPolicy");
 // 2.1 Initializing the Database (Migrations and Seed)
 using (var scope = app.Services.CreateScope())
 {
@@ -276,7 +276,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 // 2.4 Basic protections and rules (CORS and limits before authorization processing)
-app.UseCors("YuvironCorsPolicy");
+
 app.UseRateLimiter();
 
 // 2.5 Distribution of static files (ТОЛЬКО публичные папки)
