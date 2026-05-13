@@ -15,10 +15,12 @@ using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Admin.Tracks.Consumers;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
+using Yuviron.Infrastructure.Configuration;
 using Yuviron.Infrastructure.Consumers;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
@@ -111,6 +113,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddSingleton<ITemplateService, FluidTemplateService>();
         services.AddScoped<IOtpService, OtpService>();
+        services.Configure<ArtistLimitsOptions>(configuration.GetSection(ArtistLimitsOptions.SectionName));
 
         // 6. HEALTH CHECKS
         services.AddHealthChecks()
@@ -163,6 +166,8 @@ public static class DependencyInjection
             x.AddConsumer<UserPermissionsChangedConsumer>();
             x.AddConsumer<RevokeTokensOnPasswordChangedConsumer>();
             x.AddConsumer<SendWelcomeEmailConsumer>();
+            x.AddConsumer<SendEmailConfirmationConsumer>();
+            x.AddConsumer<SendPasswordResetEmailConsumer>();
             x.AddConsumer<TrackSuccessfullyPlayedConsumer>();
             
             

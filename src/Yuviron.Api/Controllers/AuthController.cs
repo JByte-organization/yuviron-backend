@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Features.Auth.Commands.ChangePassword;
+using Yuviron.Application.Features.Auth.Commands.ConfirmEmail;
+using Yuviron.Application.Features.Auth.Commands.ForgotPassword;
 using Yuviron.Application.Features.Auth.Commands.Login;
 using Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 using Yuviron.Application.Features.Auth.Commands.Logout;
 using Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
 using Yuviron.Application.Features.Auth.Commands.Register;
+using Yuviron.Application.Features.Auth.Commands.ResetPassword;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 using Yuviron.Application.Features.Auth.Queries.CheckEmail;
 using Yuviron.Domain.Enums;
@@ -162,5 +165,37 @@ public class AuthController : ApiControllerBase
         };
 
         Response.Cookies.Append("refreshToken", token, cookieOptions);
+    }
+    
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return Ok();
+    }
+    
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthPolicy")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return Ok();
+    }
+    
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return Ok();
     }
 }

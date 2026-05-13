@@ -19,6 +19,7 @@ public enum AppPermission
 
     PlayerHighQuality,
     PlayerNoAds,
+    StudioArtistProfile,
 
     AnalyticsView
 }

@@ -27,6 +27,14 @@ public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
             .NotEmpty().WithMessage("First name is required.")
             .MaximumLength(50).WithMessage("First name cannot exceed 50 characters.");
 
+        RuleFor(x => x.Country)
+            .NotEmpty().WithMessage("Country is required.")
+            .MaximumLength(100).WithMessage("Country name is too long.");
+
+        RuleFor(x => x.City)
+            .NotEmpty().WithMessage("City is required.")
+            .MaximumLength(100).WithMessage("City name is too long.");
+
         RuleFor(x => x.DateOfBirth)
             .Must(BeAtLeast16YearsOld)
             .WithMessage("You must be at least 16 years old to register.");
@@ -36,11 +44,6 @@ public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.AcceptTerms)
             .Equal(true).WithMessage("You must agree to the Privacy Policy.");
-        
-        RuleFor(x => x.ArtistName)
-            .NotEmpty().WithMessage("Artist name is required when registering as an artist.")
-            .MaximumLength(200).WithMessage("Artist name cannot exceed 200 characters.")
-            .When(x => x.IsArtist == true); 
     }
 
     private bool BeAtLeast16YearsOld(DateTime dateOfBirth)

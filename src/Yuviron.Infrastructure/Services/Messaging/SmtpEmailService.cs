@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Infrastructure.Configuration;
 
 namespace Yuviron.Infrastructure.Services;
 

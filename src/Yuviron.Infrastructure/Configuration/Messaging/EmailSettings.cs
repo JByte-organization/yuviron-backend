@@ -1,4 +1,4 @@
-namespace Yuviron.Infrastructure.Services;
+namespace Yuviron.Infrastructure.Configuration;
 
 public class EmailSettings
 {
