@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Client.Library.Commands.AddTrackToFavorites;
 using Yuviron.Application.Features.Client.Library.Commands.RemoveTrackFromFavorites;
-using Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
+using Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
 using Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
 using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;

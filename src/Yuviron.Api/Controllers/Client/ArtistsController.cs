@@ -58,11 +58,13 @@ public class ArtistsController : ApiControllerBase
     public async Task<IActionResult> GetArtistAlbums(
         [FromRoute] Guid id,
         [FromQuery] string? searchTerm,
+        [FromQuery] string? sortBy,     
+        [FromQuery] string? sortOrder,   
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetArtistAlbumsQuery(id, searchTerm, page, pageSize);
+        var query = new GetArtistAlbumsQuery(id, searchTerm, sortBy, sortOrder, page, pageSize);
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
@@ -73,11 +75,13 @@ public class ArtistsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetArtistSingles(
         [FromRoute] Guid id,
+        [FromQuery] string? sortBy,     
+        [FromQuery] string? sortOrder, 
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetArtistSinglesQuery(id, page, pageSize);
+        var query = new GetArtistSinglesQuery(id, sortBy, sortOrder, page, pageSize);
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
@@ -88,11 +92,13 @@ public class ArtistsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetArtistPlaylists(
         [FromRoute] Guid id,
+        [FromQuery] string? sortBy,     
+        [FromQuery] string? sortOrder,   
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetArtistPlaylistsQuery(id, page, pageSize);
+        var query = new GetArtistPlaylistsQuery(id, sortBy, sortOrder, page, pageSize);
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
