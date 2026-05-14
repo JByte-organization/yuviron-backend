@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Client.Playlists.Commands.UpdatePlaylist;
 
@@ -35,19 +37,29 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             throw new ForbiddenException("You can only edit your own playlists.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-
+        var oldCoverUrl = playlist.CoverUrl; 
+        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        
         playlist.Update(
             title: string.IsNullOrWhiteSpace(request.Name) ? playlist.Title : request.Name,
             description: playlist.Description,
-            coverUrl: request.CoverUrl ?? playlist.CoverUrl,
-            
-            
+            finalCoverUrl,
             visibility: request.Visibility ?? playlist.Visibility, 
-            
             isEditorial: playlist.IsEditorial,
             userId: playlist.UserId,
             utcNow: utcNow
         );
+        
+        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+        {
+            playlist.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+        }
+
+        if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
+            && !string.IsNullOrWhiteSpace(oldCoverUrl))
+        {
+            playlist.AddDomainEvent(new FileNeedsDeletionEvent(oldCoverUrl));
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
     }

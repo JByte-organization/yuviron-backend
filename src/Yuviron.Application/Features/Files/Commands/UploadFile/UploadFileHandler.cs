@@ -20,9 +20,7 @@ public sealed class UploadFileHandler : IRequestHandler<UploadFileCommand, Uploa
     {
         var targetFolder = "temp"; 
         
-        var extension = Path.GetExtension(request.FileName).ToLowerInvariant();
-        
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+        var uniqueFileName = Guid.NewGuid().ToString("N");
 
         var filePath = await _fileStorageService.UploadAsync(
             request.FileStream,

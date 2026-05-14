@@ -26,7 +26,7 @@ public static class FileStorageExtensions
             return path;
         }
 
-        var fileName = Path.GetFileName(path);
+        var fileName = Path.GetFileNameWithoutExtension(path);
         return Path.Combine(destinationFolder, fileName).Replace("\\", "/");
     }
 }
