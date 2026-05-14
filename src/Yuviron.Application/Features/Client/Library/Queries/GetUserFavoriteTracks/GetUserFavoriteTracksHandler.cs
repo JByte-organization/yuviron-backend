@@ -40,17 +40,6 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             .Where(ust => ust.UserId == userId && 
                           _context.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
 
-        var sortBy = request.SortBy?.ToLowerInvariant() ?? "savedat";
-        var sortOrder = request.SortOrder?.ToLowerInvariant() ?? "desc";
-
-        query = sortBy switch
-        {
-            "title" when sortOrder == "asc" => query.OrderBy(ust => ust.Track.Title),
-            "title" => query.OrderByDescending(ust => ust.Track.Title),
-            _ when sortOrder == "asc" => query.OrderBy(ust => ust.SavedAt),
-            _ => query.OrderByDescending(ust => ust.SavedAt)
-        };
-
         var projectedQuery = query.Select(ust => new UserFavoriteTrackDto(
             ust.TrackId,
             ust.Track.Title,
@@ -62,6 +51,12 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             ust.SavedAt
         ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(UserFavoriteTrackDto.SavedAt),
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

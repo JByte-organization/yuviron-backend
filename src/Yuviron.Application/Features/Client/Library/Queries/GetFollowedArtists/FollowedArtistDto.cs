@@ -1,8 +1,9 @@
-namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
+namespace Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
 
 public sealed record FollowedArtistDto(
-    Guid Id,
+    Guid ArtistId,
     string Name,
     string? AvatarUrl,
-    int FollowersCount
+    int FollowersCount,
+    DateTime FollowedAt
 );

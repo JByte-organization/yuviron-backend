@@ -1,5 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
@@ -34,7 +37,6 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
             .Where(p => p.UserId == request.TargetUserId 
                      && !p.IsDeleted 
                      && p.Visibility == PlaylistVisibility.Public)
-            .OrderByDescending(p => p.CreatedAt) 
             .Select(p => new UserPlaylistDto(
                 p.Id,
                 p.Title,
@@ -46,6 +48,12 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
                 false 
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: nameof(UserPlaylistDto.CreatedAt), 
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

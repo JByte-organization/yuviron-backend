@@ -9,9 +9,11 @@ namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;
 public sealed record GetAlbumsQuery(
     string? SearchTerm, 
     VisibilityStatus? Status,
+    string? SortBy = null,    
+    string? SortOrder = null,
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, Page, PageSize),
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize),
     IRequest<PaginatedList<AlbumListItemDto>>, 
     ISecuredRequest
 {

@@ -1,12 +1,13 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Common;
+using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
-using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMembers;
 
-public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamMembersQuery, List<ArtistTeamMemberDto>>
+public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamMembersQuery, PaginatedList<ArtistTeamMemberDto>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -15,13 +16,20 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
         _context = context;
     }
 
-    public async Task<List<ArtistTeamMemberDto>> Handle(GetArtistTeamMembersQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<ArtistTeamMemberDto>> Handle(GetArtistTeamMembersQuery request, CancellationToken cancellationToken)
     {
-        var teamMembers = await _context.ArtistTeamMembers
+        var query = _context.ArtistTeamMembers
             .AsNoTracking()
-            .Where(tm => tm.ArtistId == request.ArtistId)
-            .OrderByDescending(tm => tm.Role == ArtistTeamRole.Owner)
-            .ThenBy(tm => tm.CreatedAt)
+            .Where(tm => tm.ArtistId == request.ArtistId);
+
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            query = query.Where(tm => 
+                tm.User.Email.Contains(request.SearchTerm) || 
+                tm.User.Profile.FirstName.Contains(request.SearchTerm));
+        }
+
+        var projectedQuery = query
             .Select(tm => new ArtistTeamMemberDto(
                 tm.UserId,
                 tm.User.Email,
@@ -30,9 +38,14 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
                 tm.User.AccountState,
                 tm.Role,
                 tm.CreatedAt      
-            ))
-            .ToListAsync(cancellationToken);
+            ));
 
-        return teamMembers;
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder, 
+            defaultSortBy: nameof(ArtistTeamMemberDto.JoinedAt), 
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

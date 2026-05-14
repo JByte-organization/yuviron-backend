@@ -5,7 +5,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 
-namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteArtists;
+namespace Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
 
 public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtistsQuery, PaginatedList<FollowedArtistDto>>
 {
@@ -26,14 +26,21 @@ public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtis
         var projectedQuery = _context.UserFollowArtists
             .AsNoTracking()
             .Where(ufa => ufa.UserId == userId && !ufa.Artist.IsDeleted)
-            .OrderByDescending(ufa => ufa.FollowedAt)
             .Select(ufa => new FollowedArtistDto(
                 ufa.ArtistId,
                 ufa.Artist.Name,
                 ufa.Artist.AvatarUrl,
-                _context.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId)
+                _context.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId),
+                ufa.FollowedAt 
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: nameof(FollowedArtistDto.FollowedAt), 
+            defaultDesc: true);
+
+        // 3. Отдаем с пагинацией
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

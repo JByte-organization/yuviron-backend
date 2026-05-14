@@ -1,4 +1,5 @@
 using FluentValidation;
+using System;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistSingles;
 
@@ -17,5 +18,11 @@ public sealed class GetArtistSinglesValidator : AbstractValidator<GetArtistSingl
         RuleFor(x => x.PageSize)
             .InclusiveBetween(1, 50)
             .WithMessage("PageSize must be between 1 and 50.");
+
+        RuleFor(x => x.SortOrder)
+            .Must(x => string.Equals(x, "asc", StringComparison.OrdinalIgnoreCase) || 
+                       string.Equals(x, "desc", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("SortOrder must be 'asc' or 'desc'.")
+            .When(x => !string.IsNullOrWhiteSpace(x.SortOrder));
     }
 }

@@ -21,8 +21,6 @@ public sealed class GetBannersHandler : IRequestHandler<GetBannersQuery, Paginat
             query = query.Where(b => b.Title.StartsWith(request.SearchTerm));
 
         var projectedQuery = query
-            .OrderBy(b => b.SortOrder) 
-            .ThenByDescending(b => b.CreatedAt) 
             .Select(b => new BannerListItemDto(
                 b.Id,
                 b.Title,
@@ -34,6 +32,13 @@ public sealed class GetBannersHandler : IRequestHandler<GetBannersQuery, Paginat
                 b.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(BannerListItemDto.SortOrder), 
+            defaultDesc: false);                               
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

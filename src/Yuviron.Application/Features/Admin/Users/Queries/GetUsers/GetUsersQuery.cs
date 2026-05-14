@@ -9,9 +9,11 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 public sealed record GetUsersQuery(
     string? SearchTerm,
     AccountState? AccountState,
+    string? SortBy = null,    
+    string? SortOrder = null, 
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
     IRequest<PaginatedList<UserListItemDto>>, 
     ISecuredRequest
 {

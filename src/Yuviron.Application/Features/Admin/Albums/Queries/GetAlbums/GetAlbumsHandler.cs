@@ -30,7 +30,6 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
             query = query.Where(a => a.VisibilityStatus == request.Status.Value);
 
         var projectedQuery = query
-            .OrderByDescending(a => a.CreatedAt) 
             .Select(a => new AlbumListItemDto(
                 a.Id,
                 a.Title,
@@ -45,6 +44,12 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
                 a.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder, 
+            defaultSortBy: nameof(AlbumListItemDto.CreatedAt), 
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

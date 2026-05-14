@@ -24,7 +24,6 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
         }
 
         var projectedQuery = query
-            .OrderBy(m => m.Name) 
             .Select(m => new MoodDto(
                 m.Id, 
                 m.Name,
@@ -34,6 +33,8 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
                 m.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

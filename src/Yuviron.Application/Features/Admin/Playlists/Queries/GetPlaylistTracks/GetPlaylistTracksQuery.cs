@@ -7,9 +7,14 @@ namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks
 
 public sealed record GetPlaylistTracksQuery(
     Guid PlaylistId,
+    string? SearchTerm = null,
+    string? SortBy = null,
+    string? SortOrder = null,
     int Page = 1,
     int PageSize = 50
-) : IRequest<PaginatedList<PlaylistTrackItemDto>>, ISecuredRequest
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
+    IRequest<PaginatedList<PlaylistTrackItemDto>>, 
+    ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

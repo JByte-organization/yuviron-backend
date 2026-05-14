@@ -1,21 +1,18 @@
 using FluentValidation;
-using System;
 
-namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
+namespace Yuviron.Application.Features.Admin.Moods.Queries.GetMoods;
 
-public sealed class GetArtistAlbumsValidator : AbstractValidator<GetArtistAlbumsQuery>
+public sealed class GetMoodsValidator : AbstractValidator<GetMoodsQuery>
 {
-    public GetArtistAlbumsValidator()
+    public GetMoodsValidator()
     {
-        RuleFor(x => x.ArtistId)
-            .NotEmpty().WithMessage("Artist ID is required.");
-        
         RuleFor(x => x.Page)
             .GreaterThan(0).WithMessage("Page must be greater than 0.");
-            
+
         RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 50).WithMessage("PageSize must be between 1 and 50.");
-            
+            .GreaterThan(0).WithMessage("PageSize must be greater than 0.")
+            .LessThanOrEqualTo(100).WithMessage("PageSize cannot exceed 100.");
+
         RuleFor(x => x.SearchTerm)
             .MaximumLength(100).WithMessage("Search term is too long.")
             .When(x => !string.IsNullOrWhiteSpace(x.SearchTerm));

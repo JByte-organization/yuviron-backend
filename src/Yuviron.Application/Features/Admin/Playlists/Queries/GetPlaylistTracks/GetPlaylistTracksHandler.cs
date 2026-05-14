@@ -21,8 +21,41 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
 
     public async Task<PaginatedList<PlaylistTrackItemDto>> Handle(GetPlaylistTracksQuery request, CancellationToken cancellationToken)
     {
+        bool isCustomSorting = !string.IsNullOrWhiteSpace(request.SortBy) && 
+                               !request.SortBy.Equals(nameof(PlaylistTrackItemDto.Position), StringComparison.OrdinalIgnoreCase);
+        bool hasSearchTerm = !string.IsNullOrWhiteSpace(request.SearchTerm);
+
+        if (isCustomSorting || hasSearchTerm)
+        {
+            var query = _context.PlaylistTracks
+                .AsNoTracking()
+                .Where(pt => pt.PlaylistId == request.PlaylistId);
+
+            if (hasSearchTerm)
+                query = query.Where(pt => pt.Track.Title.Contains(request.SearchTerm!));
+
+            var projectedQuery = query.Select(pt => new PlaylistTrackItemDto(
+                pt.TrackId, 
+                pt.Track.Title,
+                pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
+                pt.Track.AlbumId, 
+                pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
+                pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
+                pt.Track.DurationMs, 
+                pt.Position, 
+                pt.AddedAt
+            ));
+
+            var sortedQuery = projectedQuery.ApplySorting(
+                request.SortBy, 
+                request.SortOrder, 
+                defaultSortBy: nameof(PlaylistTrackItemDto.Position), 
+                defaultDesc: false);
+
+            return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        }
+
         var redisKey = $"playlist:{request.PlaylistId}:tracks";
-        
         long startIndex = (request.Page - 1) * request.PageSize;
         long stopIndex = startIndex + request.PageSize - 1;
 
@@ -33,10 +66,9 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         {
             await _cache.SetAddAsync("missing_cache:playlists", request.PlaylistId.ToString(), cancellationToken);
 
-            var fallbackQuery = _context.PlaylistTracks
+            var fallbackProjected = _context.PlaylistTracks
                 .AsNoTracking()
                 .Where(pt => pt.PlaylistId == request.PlaylistId)
-                .OrderBy(pt => pt.Position)
                 .Select(pt => new PlaylistTrackItemDto(
                     pt.TrackId, 
                     pt.Track.Title,
@@ -48,12 +80,12 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                     pt.Position, 
                     pt.AddedAt
                 ));
-
-            return await fallbackQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+                
+            var sortedFallback = fallbackProjected.ApplySorting(null, null, nameof(PlaylistTrackItemDto.Position), false);
+            return await sortedFallback.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
         }
 
         var trackIds = tracksWithScores.Keys.Select(id => Guid.Parse(id)).ToList();
-
         var tracks = await _context.Tracks
             .AsNoTracking()
             .Include(t => t.Album)
@@ -70,17 +102,11 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             if (track != null)
             {
                 var position = tracksWithScores[trackIdStr];
-
                 dtos.Add(new PlaylistTrackItemDto(
-                    track.Id,
-                    track.Title,
+                    track.Id, track.Title,
                     track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
-                    track.AlbumId,
-                    track.Album?.Title ?? "Unknown",
-                    track.CoverUrl ?? track.Album?.CoverUrl,
-                    track.DurationMs,
-                    position,
-                    track.UpdatedAt 
+                    track.AlbumId, track.Album?.Title ?? "Unknown", track.CoverUrl ?? track.Album?.CoverUrl,
+                    track.DurationMs, position, track.UpdatedAt 
                 ));
             }
         }

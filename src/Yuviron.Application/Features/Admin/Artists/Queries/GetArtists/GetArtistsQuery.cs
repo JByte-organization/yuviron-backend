@@ -9,9 +9,11 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtists;
 public sealed record GetArtistsQuery(
     string? SearchTerm, 
     VerificationStatus? VerificationStatus, 
+    string? SortBy = null,    
+    string? SortOrder = null,  
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, Page, PageSize),
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
     IRequest<PaginatedList<ArtistListItemDto>>, 
     ISecuredRequest
 {
