@@ -77,7 +77,9 @@ public class JamendoApiService : IJamendoApiService
             
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             
-            var tempKey = await _fileStorageService.UploadAsync(stream, "temp", $"file{extension}", contentType, cancellationToken);
+            var uniqueFileName = Guid.NewGuid().ToString("N");
+            
+            var tempKey = await _fileStorageService.UploadAsync(stream, "temp", uniqueFileName, contentType, cancellationToken);
             
             return tempKey; 
         }

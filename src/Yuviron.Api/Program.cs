@@ -279,41 +279,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 
-// 2.5 Distribution of static files (ТОЛЬКО публичные папки)
-var storageRoot = builder.Configuration["FILE_STORAGE_ROOT"] 
-                  ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
-                  ?? "/var/yuviron/storage";
-
-var publicFolders = new[] { "avatars", "covers", "banners" };
-
-foreach (var folder in publicFolders)
-{
-    var folderPath = Path.Combine(storageRoot, folder);
-    
-    if (!Directory.Exists(folderPath))
-    {
-        Directory.CreateDirectory(folderPath);
-    }
-
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(folderPath),
-        RequestPath = $"/{folder}",
-        OnPrepareResponse = ctx =>
-        {
-            ctx.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-            
-            var origin = ctx.Context.Request.Headers["Origin"].ToString();
-            var isAllowed = allowedOrigins.Contains(origin) || allowedOrigins.Contains("*");
-
-            if (isAllowed && !string.IsNullOrEmpty(origin))
-            {
-                ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
-            }
-        }
-    });
-}
-
 // 2.6 Authentication and Authorization (Strictly in that order!)
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using FluentValidation;
+using Yuviron.Application.Common.Utilities;
 
 namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
@@ -49,51 +50,13 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
 
     private bool HaveValidSignature(Stream stream, string fileName)
     {
-        if (stream == null || !stream.CanRead || !stream.CanSeek) return false;
-
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        var expectedExt = Path.GetExtension(fileName).ToLowerInvariant();
         
-        byte[] headerBytes = new byte[12];
         
-        stream.Position = 0;
+        if (expectedExt == ".jpeg") expectedExt = ".jpg";
 
-        try
-        {
-            stream.ReadExactly(headerBytes, 0, 12);
-        }
-        catch (System.IO.EndOfStreamException)
-        {
-            // If the file is smaller than 12 bytes, it can't be a valid media file
-            // for our supported formats anyway.
-            return false;
-        }
-        finally
-        {
-            // Always reset the position, even if reading fails
-            stream.Position = 0;
-        }
+        var (detectedExt, _) = FileSignatureDetector.Detect(stream);
 
-        return extension switch
-        {
-            ".jpg" or ".jpeg" => 
-                headerBytes.Take(3).SequenceEqual(new byte[] { 0xFF, 0xD8, 0xFF }),
-                
-            ".png" => 
-                headerBytes.Take(8).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
-                
-            ".mp3" => 
-                headerBytes.Take(3).SequenceEqual(new byte[] { 0x49, 0x44, 0x33 }) || 
-                (headerBytes[0] == 0xFF && (headerBytes[1] == 0xFB || headerBytes[1] == 0xF3 || headerBytes[1] == 0xF2)),
-                
-            ".webp" => 
-                headerBytes.Take(4).SequenceEqual(new byte[] { 0x52, 0x49, 0x46, 0x46 }) && // RIFF
-                headerBytes.Skip(8).Take(4).SequenceEqual(new byte[] { 0x57, 0x45, 0x42, 0x50 }), // WEBP
-                
-            ".wav" => 
-                headerBytes.Take(4).SequenceEqual(new byte[] { 0x52, 0x49, 0x46, 0x46 }) && // RIFF
-                headerBytes.Skip(8).Take(4).SequenceEqual(new byte[] { 0x57, 0x41, 0x56, 0x45 }), // WAVE
-                
-            _ => false
-        };
+        return detectedExt == expectedExt;
     }
 }

@@ -24,8 +24,7 @@ public class LocalFileStorageService : IFileStorageService
     public async Task<string> UploadAsync(Stream stream, string folder, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
         var targetDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, folder);
-        var extension = Path.GetExtension(fileName);
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+        var uniqueFileName = fileName;
         
         if (!Directory.Exists(targetDirectory)) Directory.CreateDirectory(targetDirectory);
 
@@ -99,7 +98,7 @@ public class LocalFileStorageService : IFileStorageService
         return Task.FromResult(finalRelativePath);
     }
     
-    public Task<Stream> GetFileStreamAsync(string fileKey, CancellationToken cancellationToken = default)
+    public Task<Stream?> GetFileStreamAsync(string fileKey, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(fileKey))
         {
@@ -108,14 +107,15 @@ public class LocalFileStorageService : IFileStorageService
 
         var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
 
+        
         if (!File.Exists(fullPath))
         {
-            throw new FileNotFoundException($"File not found: {fullPath}");
+            return Task.FromResult<Stream?>(null); 
         }
 
         Stream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
 
-        return Task.FromResult(stream);
+        return Task.FromResult<Stream?>(stream);
     }
     
     public Task DeleteDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)

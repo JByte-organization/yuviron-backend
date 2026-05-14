@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Services;
+using System.IO;
+using System.Linq;
+using Yuviron.Application.Common.Utilities;
 
 namespace Yuviron.Infrastructure.Services.Audio;
 
@@ -21,13 +24,20 @@ public sealed class AudioMetadataService : IAudioMetadataService
         await using var stream = await _fileStorageService.GetFileStreamAsync(storageKey, cancellationToken);
         
         if (stream == null || stream.Length == 0)
-        {
             throw new InvalidOperationException($"Audio file not found or empty at key: {storageKey}");
-        }
 
         try
         {
-            var fileAbstraction = new StreamFileAbstraction(storageKey, stream);
+            var (extension, _) = FileSignatureDetector.Detect(stream);
+
+            
+            if (extension != ".mp3" && extension != ".wav")
+            {
+                throw new InvalidOperationException("The uploaded file is not a valid or supported audio format.");
+            }
+
+            var fakeFileName = $"{storageKey}{extension}"; 
+            var fileAbstraction = new StreamFileAbstraction(fakeFileName, stream);
             
             using var tfile = TagLib.File.Create(fileAbstraction);
 
@@ -60,4 +70,6 @@ public sealed class AudioMetadataService : IAudioMetadataService
             throw new InvalidOperationException("The audio file is corrupted.");
         }
     }
+
+    
 }
