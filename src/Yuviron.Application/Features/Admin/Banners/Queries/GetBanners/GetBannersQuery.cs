@@ -8,9 +8,11 @@ namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
 
 public sealed record GetBannersQuery(
     string? SearchTerm,
+    string? SortBy = null,    
+    string? SortOrder = null,  
     int Page = 1,
     int PageSize = 50 
-) : PaginatedQuery(SearchTerm, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
     IRequest<PaginatedList<BannerListItemDto>>, 
     ISecuredRequest
 {

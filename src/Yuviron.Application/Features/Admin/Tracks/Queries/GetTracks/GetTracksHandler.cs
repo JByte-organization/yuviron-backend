@@ -32,9 +32,6 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
             query = query.Where(t => t.VisibilityStatus == request.Status.Value);
 
         var projectedQuery = query
-            .OrderBy(t => t.AlbumId)
-            .ThenBy(t => t.AlbumPosition)
-            .ThenByDescending(t => t.CreatedAt)
             .Select(t => new TrackListItemDto(
                 t.Id,
                 t.AlbumId,
@@ -51,6 +48,8 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
                 t.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

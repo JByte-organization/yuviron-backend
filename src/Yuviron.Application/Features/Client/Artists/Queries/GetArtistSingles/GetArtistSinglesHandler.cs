@@ -1,5 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
@@ -39,8 +42,6 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
             .Where(a => a.ReleaseType == ReleaseType.Single)
-            .OrderByDescending(a => a.ReleaseDate)
-            .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(
                 a.Id,
                 a.Title,
@@ -48,6 +49,12 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
                 a.ReleaseDate.Year
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: nameof(ArtistAlbumDto.ReleaseYear),
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

@@ -7,9 +7,11 @@ namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylists;
 
 public sealed record GetPlaylistsQuery(
     string? SearchTerm,
+    string? SortBy = null,  
+    string? SortOrder = null, 
     int Page = 1,
     int PageSize = 20
-) : PaginatedQuery(SearchTerm, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
     IRequest<PaginatedList<PlaylistDto>>, 
     ISecuredRequest
 {

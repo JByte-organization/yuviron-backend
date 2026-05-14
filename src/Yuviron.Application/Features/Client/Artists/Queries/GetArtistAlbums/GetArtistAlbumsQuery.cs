@@ -7,7 +7,9 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 public sealed record GetArtistAlbumsQuery(
     Guid ArtistId, 
     string? SearchTerm = null,
+    string? SortBy = null,   
+    string? SortOrder = null,  
     int Page = 1, 
     int PageSize = 10
-) : PaginatedQuery(SearchTerm, Page, PageSize), 
+) : PaginatedQuery(SearchTerm, SortBy, SortOrder, Page, PageSize), 
     IRequest<PaginatedList<ArtistAlbumDto>>;

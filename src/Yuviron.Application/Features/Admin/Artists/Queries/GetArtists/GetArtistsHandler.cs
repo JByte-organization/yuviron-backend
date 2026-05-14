@@ -30,7 +30,6 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
             query = query.Where(a => a.VerificationStatus == request.VerificationStatus.Value);
 
         var projectedQuery = query
-            .OrderByDescending(a => a.CreatedAt)
             .Select(a => new ArtistListItemDto(
                 a.Id,
                 a.Name,
@@ -45,6 +44,12 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
                 a.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(ArtistListItemDto.CreatedAt),
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

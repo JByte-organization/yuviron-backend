@@ -48,8 +48,6 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
             .Where(a => a.Tracks.Any(t => !t.IsDeleted 
                                           && t.VisibilityStatus == VisibilityStatus.Published 
                                           && t.ProcessingStatus == TrackProcessingStatus.Ready))
-            .OrderByDescending(a => a.ReleaseDate)
-            .ThenByDescending(a => a.CreatedAt)
             .Select(a => new ArtistAlbumDto(
                 a.Id,
                 a.Title,
@@ -57,6 +55,12 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
                 a.ReleaseDate.Year
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: nameof(ArtistAlbumDto.ReleaseYear), 
+            defaultDesc: true);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

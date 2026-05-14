@@ -40,7 +40,6 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var projectedQuery = query
-            .OrderByDescending(u => u.CreatedAt)
             .Select(u => new UserListItemDto(
                 u.Id,
                 u.Email,
@@ -54,6 +53,8 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
                 u.UserRoles.Select(ur => ur.Role.Name).ToList()
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

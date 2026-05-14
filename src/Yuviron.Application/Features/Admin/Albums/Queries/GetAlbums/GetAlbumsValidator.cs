@@ -20,5 +20,11 @@ public sealed class GetAlbumsValidator : AbstractValidator<GetAlbumsQuery>
         RuleFor(x => x.Status)
             .IsInEnum().WithMessage("Invalid visibility status.")
             .When(x => x.Status.HasValue);
+
+        RuleFor(x => x.SortOrder)
+            .Must(x => string.Equals(x, "asc", StringComparison.OrdinalIgnoreCase) || 
+                       string.Equals(x, "desc", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("SortOrder must be 'asc' or 'desc'.")
+            .When(x => !string.IsNullOrWhiteSpace(x.SortOrder));
     }
 }

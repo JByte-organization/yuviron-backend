@@ -24,7 +24,6 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
         }
 
         var projectedQuery = query
-            .OrderByDescending(p => p.CreatedAt)
             .Select(p => new PlaylistDto(
                 p.Id,
                 p.Title,
@@ -38,6 +37,8 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
                 p.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

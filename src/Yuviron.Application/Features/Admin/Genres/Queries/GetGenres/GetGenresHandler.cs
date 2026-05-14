@@ -23,7 +23,6 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));
 
         var projectedQuery = query
-            .OrderBy(g => g.Name) 
             .Select(g => new GenreListItemDto(
                 g.Id, 
                 g.CoverUrl,
@@ -33,6 +32,9 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
                 g.UpdatedAt
             ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        
+        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+
+        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }
