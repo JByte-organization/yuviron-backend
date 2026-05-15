@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
@@ -26,34 +27,39 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
     {
         var userExists = await _context.Users
             .AnyAsync(u => u.Id == request.TargetUserId && !u.IsDeleted, cancellationToken);
-            
+        
         if (!userExists)
         {
             throw new NotFoundException(nameof(User), request.TargetUserId);
         }
 
-        var projectedQuery = _context.Playlists
+        var query = _context.Playlists
             .AsNoTracking()
             .Where(p => p.UserId == request.TargetUserId 
-                     && !p.IsDeleted 
-                     && p.Visibility == PlaylistVisibility.Public)
-            .Select(p => new UserPlaylistDto(
-                p.Id,
-                p.Title,
-                p.CoverUrl,
-                p.Visibility,
-                p.PlaylistTracks.Count,
-                p.CreatedAt,
-                p.UpdatedAt,
-                false 
-            ));
+                        && !p.IsDeleted 
+                        && p.Visibility == PlaylistVisibility.Public);
 
-        var sortedQuery = projectedQuery.ApplySorting(
+        var sortedQuery = query.ApplySorting(
             request.SortBy, 
             request.SortOrder,
-            defaultSortBy: nameof(UserPlaylistDto.CreatedAt), 
-            defaultDesc: true);
+            defaultSortBy: nameof(Yuviron.Domain.Entities.Playlist.CreatedAt), 
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Domain.Entities.Playlist, object>>>
+            {
+                [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count
+            });
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(p => new UserPlaylistDto(
+            p.Id,
+            p.Title,
+            p.CoverUrl,
+            p.Visibility,
+            p.PlaylistTracks.Count,
+            p.CreatedAt,
+            p.UpdatedAt,
+            false 
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylists;
 
@@ -23,22 +25,32 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             query = query.Where(p => p.Title.Contains(request.SearchTerm));
         }
 
-        var projectedQuery = query
-            .Select(p => new PlaylistDto(
-                p.Id,
-                p.Title,
-                p.CoverUrl, 
-                p.Visibility,
-                p.IsEditorial,
-                p.IsEditorial ? "YUVIRON" : 
-                    (p.User != null ? p.User.Profile.FirstName : "Unknown"),
-                p.PlaylistTracks.Count,
-                p.CreatedAt,
-                p.UpdatedAt
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(Playlist.CreatedAt),
+            mapping: new Dictionary<string, Expression<Func<Playlist, object>>>
+            {
+                ["CreatorName"] = p => p.IsEditorial 
+                    ? "YUVIRON" 
+                    : (p.User != null ? p.User.Profile.FirstName : "Unknown"),
+            
+                ["TracksCount"] = p => p.PlaylistTracks.Count
+            });
 
-        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+        var projectedQuery = sortedQuery.Select(p => new PlaylistDto(
+            p.Id,
+            p.Title,
+            p.CoverUrl, 
+            p.Visibility,
+            p.IsEditorial,
+            p.IsEditorial ? "YUVIRON" : 
+                (p.User != null ? p.User.Profile.FirstName : "Unknown"),
+            p.PlaylistTracks.Count,
+            p.CreatedAt,
+            p.UpdatedAt
+        ));
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

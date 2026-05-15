@@ -20,25 +20,23 @@ public sealed class GetBannersHandler : IRequestHandler<GetBannersQuery, Paginat
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(b => b.Title.StartsWith(request.SearchTerm));
 
-        var projectedQuery = query
-            .Select(b => new BannerListItemDto(
-                b.Id,
-                b.Title,
-                b.BannerUrl,
-                b.TargetUrl,
-                b.SortOrder,
-                b.IsActive,
-                b.CreatedAt,
-                b.UpdatedAt
-            ));
-
-        
-        var sortedQuery = projectedQuery.ApplySorting(
+        var sortedQuery = query.ApplySorting(
             request.SortBy,
             request.SortOrder,
-            defaultSortBy: nameof(BannerListItemDto.SortOrder), 
-            defaultDesc: false);                               
+            defaultSortBy: "SortOrder", 
+            defaultDesc: false);
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(b => new BannerListItemDto(
+            b.Id,
+            b.Title,
+            b.BannerUrl,
+            b.TargetUrl,
+            b.SortOrder,
+            b.IsActive,
+            b.CreatedAt,
+            b.UpdatedAt
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

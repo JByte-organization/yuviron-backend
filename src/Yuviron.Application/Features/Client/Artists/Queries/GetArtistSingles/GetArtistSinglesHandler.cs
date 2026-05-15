@@ -1,8 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
@@ -37,24 +35,29 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var projectedQuery = _context.Albums
+        var query = _context.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .Where(a => a.ReleaseType == ReleaseType.Single)
-            .Select(a => new ArtistAlbumDto(
-                a.Id,
-                a.Title,
-                a.CoverUrl,
-                a.ReleaseDate.Year
-            ));
+            .Where(a => a.ReleaseType == ReleaseType.Single);
 
-        var sortedQuery = projectedQuery.ApplySorting(
+        var sortedQuery = query.ApplySorting(
             request.SortBy, 
             request.SortOrder,
-            defaultSortBy: nameof(ArtistAlbumDto.ReleaseYear),
-            defaultDesc: true);
+            defaultSortBy: nameof(Album.ReleaseDate),
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Album, object>>>
+            {
+                ["ReleaseYear"] = a => a.ReleaseDate
+            });
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(a => new ArtistAlbumDto(
+            a.Id,
+            a.Title,
+            a.CoverUrl,
+            a.ReleaseDate.Year
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

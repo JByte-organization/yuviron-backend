@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -26,10 +27,7 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
 
-        if (!artistExists)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+        if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -37,30 +35,31 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .Where(a => a.ReleaseType == ReleaseType.Album);
-
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            query = query.Where(a => a.Title.Contains(request.SearchTerm));
-        }
-
-        var projectedQuery = query
+            .Where(a => a.ReleaseType == ReleaseType.Album)
             .Where(a => a.Tracks.Any(t => !t.IsDeleted 
                                           && t.VisibilityStatus == VisibilityStatus.Published 
-                                          && t.ProcessingStatus == TrackProcessingStatus.Ready))
-            .Select(a => new ArtistAlbumDto(
-                a.Id,
-                a.Title,
-                a.CoverUrl,
-                a.ReleaseDate.Year
-            ));
+                                          && t.ProcessingStatus == TrackProcessingStatus.Ready));
 
-        var sortedQuery = projectedQuery.ApplySorting(
-            request.SortBy, 
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            query = query.Where(a => a.Title.Contains(request.SearchTerm));
+
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
             request.SortOrder,
-            defaultSortBy: nameof(ArtistAlbumDto.ReleaseYear), 
-            defaultDesc: true);
+            defaultSortBy: nameof(Album.ReleaseDate),
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Album, object>>>
+            {
+                ["ReleaseYear"] = a => a.ReleaseDate
+            });
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(a => new ArtistAlbumDto(
+            a.Id,
+            a.Title,
+            a.CoverUrl,
+            a.ReleaseDate.Year
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

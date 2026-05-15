@@ -5,6 +5,9 @@ namespace Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistTrack
 
 public sealed record GetPlaylistTracksQuery(
     Guid PlaylistId,
+    string? SortBy = null,
+    string? SortOrder = null,
     int Page = 1,
     int PageSize = 50
-) : IRequest<PaginatedList<PlaylistTrackItemClientDto>>;
+) : PaginatedQuery(null, SortBy, SortOrder, Page, PageSize), 
+    IRequest<PaginatedList<PlaylistTrackItemClientDto>>;

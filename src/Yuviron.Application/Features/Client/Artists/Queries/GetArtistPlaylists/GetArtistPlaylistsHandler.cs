@@ -25,60 +25,56 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
     }
 
     public async Task<PaginatedList<ArtistPlaylistDto>> Handle(GetArtistPlaylistsQuery request, CancellationToken cancellationToken)
-    {
-        var artistExists = await _context.Artists
-            .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+{
+    var artistExists = await _context.Artists
+        .AsNoTracking()
+        .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
 
-        if (!artistExists)
+    if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
+
+    var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+    var publicTracks = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow);
+    var publicArtistTrackIds = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow)
+        .ForArtist(request.ArtistId).Select(t => t.Id);
+
+    // 1. Формируем базу (анонимный тип)
+    var baseQuery = _context.Playlists
+        .AsNoTracking()
+        .Where(p => p.Visibility == PlaylistVisibility.Public)
+        .Where(p => p.PlaylistTracks.Any(pt => publicArtistTrackIds.Contains(pt.TrackId)))
+        .Select(p => new
         {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+            p.Id,
+            p.Title,
+            p.CoverUrl,
+            p.IsEditorial,
+            p.UpdatedAt,
+            p.CreatedAt,
+            CreatorName = p.IsEditorial ? "Yuviron" : (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "User"),
+            TracksCount = p.PlaylistTracks.Count(pt => publicTracks.Any(t => t.Id == pt.TrackId)),
+            ArtistTracksCount = p.PlaylistTracks.Count(pt => publicArtistTrackIds.Contains(pt.TrackId))
+        });
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var publicTracks = _context.Tracks
-            .AsNoTracking()
-            .AvailableForPublic(utcNow);
-        var publicArtistTrackIds = _context.Tracks
-            .AsNoTracking()
-            .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
-            .Select(t => t.Id);
-
-        var projectedQuery = _context.Playlists
-            .AsNoTracking()
-            .Where(p => p.Visibility == PlaylistVisibility.Public)
-            .Where(p => p.PlaylistTracks.Any(pt => publicArtistTrackIds.Contains(pt.TrackId)))
-            .Select(p => new
-            {
-                p.Id,
-                p.Title,
-                p.CoverUrl,
-                p.IsEditorial,
-                p.UpdatedAt,
-                CreatorName = p.IsEditorial
-                    ? "Yuviron"
-                    : (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "User"),
-                TracksCount = p.PlaylistTracks.Count(pt => publicTracks.Any(t => t.Id == pt.TrackId)),
-                ArtistTracksCount = p.PlaylistTracks.Count(pt => publicArtistTrackIds.Contains(pt.TrackId))
-            })
+    // 2. СОРТИРОВКА БЕЗ DYNAMIC
+    // Используем тернарник, чтобы переменная sortedQuery унаследовала анонимный тип от baseQuery
+    var sortedQuery = string.IsNullOrWhiteSpace(request.SortBy)
+        ? baseQuery
             .OrderByDescending(p => p.ArtistTracksCount)
             .ThenByDescending(p => p.UpdatedAt)
             .ThenBy(p => p.Title)
-            .Select(p => new ArtistPlaylistDto(
-                p.Id,
-                p.Title,
-                p.CreatorName,
-                p.CoverUrl,
-                p.TracksCount,
-                p.IsEditorial
-            ));
+        : baseQuery.ApplySorting(request.SortBy, request.SortOrder, defaultSortBy: "UpdatedAt");
 
-        var sortedQuery = projectedQuery.ApplySorting(
-            request.SortBy, 
-            request.SortOrder,
-            defaultSortBy: string.Empty);
+    // 3. ФИНАЛЬНАЯ ПРОЕКЦИЯ
+    // Теперь 'p' — это не dynamic, а четко типизированный анонимный объект. Компилятор счастлив.
+    var finalQuery = sortedQuery.Select(p => new ArtistPlaylistDto(
+        p.Id,
+        p.Title,
+        p.CreatorName,
+        p.CoverUrl,
+        p.TracksCount,
+        p.IsEditorial
+    ));
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
-    }
+    return await finalQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+}
 }

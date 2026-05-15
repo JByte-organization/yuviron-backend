@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Albums.Queries.DTOs;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;
 
@@ -12,10 +14,7 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
 {
     private readonly IApplicationDbContext _context;
 
-    public GetAlbumsHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetAlbumsHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<PaginatedList<AlbumListItemDto>> Handle(GetAlbumsQuery request, CancellationToken cancellationToken)
     {
@@ -29,27 +28,30 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
         if (request.Status.HasValue)
             query = query.Where(a => a.VisibilityStatus == request.Status.Value);
 
-        var projectedQuery = query
-            .Select(a => new AlbumListItemDto(
-                a.Id,
-                a.Title,
-                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)), 
-                a.CoverUrl,
-                a.Tracks.Count,                 
-                a.Tracks.Sum(t => t.PlayCount),   
-                a.ReleaseDate,
-                a.ReleaseType,
-                a.VisibilityStatus,
-                a.CreatedAt,
-                a.UpdatedAt
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(Album.CreatedAt),
+            mapping: new Dictionary<string, Expression<Func<Album, object>>>
+            {
+                [nameof(AlbumListItemDto.TracksCount)] = a => a.Tracks.Count,
+                [nameof(AlbumListItemDto.TotalPlays)] = a => a.Tracks.Sum(t => t.PlayCount)
+            });
 
-        var sortedQuery = projectedQuery.ApplySorting(
-            request.SortBy, 
-            request.SortOrder, 
-            defaultSortBy: nameof(AlbumListItemDto.CreatedAt), 
-            defaultDesc: true);
+        var projectedQuery = sortedQuery.Select(a => new AlbumListItemDto(
+            a.Id,
+            a.Title,
+            a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)), 
+            a.CoverUrl,
+            a.Tracks.Count,                 
+            a.Tracks.Sum(t => t.PlayCount),   
+            a.ReleaseDate,
+            a.ReleaseType,
+            a.VisibilityStatus,
+            a.CreatedAt,
+            a.UpdatedAt
+        ));
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
@@ -9,6 +10,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
 
@@ -31,7 +33,7 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
     public async Task<PaginatedList<UserFavoriteTrackDto>> Handle(GetUserFavoriteTracksQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+                     ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -40,7 +42,20 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             .Where(ust => ust.UserId == userId && 
                           _context.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
 
-        var projectedQuery = query.Select(ust => new UserFavoriteTrackDto(
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(UserSavedTrack.SavedAt),
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<UserSavedTrack, object>>>
+            {
+                ["Title"] = ust => ust.Track.Title,
+                ["AlbumTitle"] = ust => ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",
+                ["DurationMs"] = ust => ust.Track.DurationMs,
+                ["SavedAt"] = ust => ust.SavedAt
+            });
+
+        var projectedQuery = sortedQuery.Select(ust => new UserFavoriteTrackDto(
             ust.TrackId,
             ust.Track.Title,
             ust.Track.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
@@ -51,12 +66,6 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             ust.SavedAt
         ));
 
-        var sortedQuery = projectedQuery.ApplySorting(
-            request.SortBy,
-            request.SortOrder,
-            defaultSortBy: nameof(UserFavoriteTrackDto.SavedAt),
-            defaultDesc: true);
-
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }
