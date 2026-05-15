@@ -30,7 +30,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                    p.User.Email,
                                    p.User.Profile.AvatarUrl 
                                ),
-                               p.PlaylistTracks.Count,
+                               p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
                                p.CreatedAt,
                                p.UpdatedAt
                            ))

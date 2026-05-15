@@ -23,5 +23,7 @@ public class TrackArtistConfiguration : IEntityTypeConfiguration<TrackArtist>
                .WithMany(a => a.TrackArtists)
                .HasForeignKey(x => x.ArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted && !x.Artist.IsDeleted);
     }
 }

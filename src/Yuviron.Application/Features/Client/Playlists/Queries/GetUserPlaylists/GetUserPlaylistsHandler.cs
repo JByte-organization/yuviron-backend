@@ -39,7 +39,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
             defaultDesc: true,
             mapping: new Dictionary<string, Expression<Func<Domain.Entities.Playlist, object>>>
             {
-                [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count
+                [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted)
             });
 
         var projectedQuery = sortedQuery.Select(p => new UserPlaylistDto(
@@ -47,7 +47,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
             p.Title,
             p.CoverUrl,
             p.Visibility,
-            p.PlaylistTracks.Count,
+            p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
             p.CreatedAt,
             p.UpdatedAt,
             false 

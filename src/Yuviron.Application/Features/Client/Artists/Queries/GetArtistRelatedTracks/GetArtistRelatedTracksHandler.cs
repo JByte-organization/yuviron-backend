@@ -39,7 +39,9 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
+            .SelectMany(t => t.TrackGenres
+                .Where(tg => !tg.Genre.IsDeleted)
+                .Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -52,7 +54,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => !t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId) &&
-                        t.TrackGenres.Any(tg => artistGenreIds.Contains(tg.GenreId)))
+                        t.TrackGenres.Any(tg => !tg.Genre.IsDeleted && artistGenreIds.Contains(tg.GenreId)))
             .Select(t => new
             {
                 t.Id,
@@ -61,9 +63,11 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
                 t.Explicit,
                 CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
                 FileKey = !string.IsNullOrWhiteSpace(t.HlsPlaylistUrl) ? t.HlsPlaylistUrl : t.AudioStorageKey,
-                SharedGenresCount = t.TrackGenres.Count(tg => artistGenreIds.Contains(tg.GenreId)),
+                SharedGenresCount = t.TrackGenres.Count(tg => !tg.Genre.IsDeleted && artistGenreIds.Contains(tg.GenreId)),
                 t.PlayCount,
-                Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role))
+                Artists = t.TrackArtists
+                    .Where(ta => !ta.Artist.IsDeleted)
+                    .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role))
             })
             .OrderByDescending(t => t.SharedGenresCount)
             .ThenByDescending(t => t.PlayCount)

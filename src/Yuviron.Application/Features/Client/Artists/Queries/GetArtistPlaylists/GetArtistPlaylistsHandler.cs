@@ -40,7 +40,7 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
     // 1. Формируем базу (анонимный тип)
     var baseQuery = _context.Playlists
         .AsNoTracking()
-        .Where(p => p.Visibility == PlaylistVisibility.Public)
+        .Where(p => p.Visibility == PlaylistVisibility.Public && !p.IsDeleted)
         .Where(p => p.PlaylistTracks.Any(pt => publicArtistTrackIds.Contains(pt.TrackId)))
         .Select(p => new
         {

@@ -35,7 +35,7 @@ public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAu
                 a.Name,
                 a.AvatarUrl,
                 a.TeamMembers
-                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                    .Where(tm => tm.Role == ArtistTeamRole.Owner && !tm.User.IsDeleted)
                     .Select(tm => tm.User.Email)
                     .FirstOrDefault()
             ))

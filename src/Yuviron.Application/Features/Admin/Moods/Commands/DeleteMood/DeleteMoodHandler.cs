@@ -24,7 +24,7 @@ public sealed class DeleteMoodHandler : IRequestHandler<DeleteMoodCommand, Unit>
                    ?? throw new NotFoundException(nameof(Mood), request.Id);
 
         var hasAssociatedTracks = await _context.TrackMoods
-            .AnyAsync(tm => tm.MoodId == request.Id, cancellationToken);
+            .AnyAsync(tm => tm.MoodId == request.Id && !tm.Track.IsDeleted, cancellationToken);
 
         if (hasAssociatedTracks)
         {

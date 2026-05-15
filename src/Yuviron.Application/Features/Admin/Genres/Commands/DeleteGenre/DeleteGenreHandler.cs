@@ -24,7 +24,7 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
                     ?? throw new NotFoundException(nameof(Genre), request.GenreId);
 
         var hasAssociatedTracks = await _context.TrackGenres
-            .AnyAsync(tg => tg.GenreId == request.GenreId, cancellationToken);
+            .AnyAsync(tg => tg.GenreId == request.GenreId && !tg.Track.IsDeleted, cancellationToken);
 
         if (hasAssociatedTracks)
         {

@@ -29,9 +29,9 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => new {
-                ArtistIds = t.TrackArtists.Select(a => a.ArtistId),
-                GenreIds = t.TrackGenres.Select(g => g.GenreId),
-                MoodIds = t.TrackMoods.Select(m => m.MoodId)
+                ArtistIds = t.TrackArtists.Where(a => !a.Artist.IsDeleted).Select(a => a.ArtistId),
+                GenreIds = t.TrackGenres.Where(g => !g.Genre.IsDeleted).Select(g => g.GenreId),
+                MoodIds = t.TrackMoods.Where(m => !m.Mood.IsDeleted).Select(m => m.MoodId)
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -45,9 +45,9 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => t.Id != request.TrackId 
-                     && (t.TrackArtists.Any(a => artistIds.Contains(a.ArtistId)) ||
-                         t.TrackGenres.Any(g => genreIds.Contains(g.GenreId)) ||
-                         t.TrackMoods.Any(m => moodIds.Contains(m.MoodId))))
+                     && (t.TrackArtists.Any(a => !a.Artist.IsDeleted && artistIds.Contains(a.ArtistId)) ||
+                         t.TrackGenres.Any(g => !g.Genre.IsDeleted && genreIds.Contains(g.GenreId)) ||
+                         t.TrackMoods.Any(m => !m.Mood.IsDeleted && moodIds.Contains(m.MoodId))))
             .Select(t => new {
                 Track = new {
                     t.Id,
@@ -55,12 +55,14 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
                     t.DurationMs,
                     t.Explicit,
                     CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
-                    Artists = t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
+                    Artists = t.TrackArtists
+                        .Where(ta => !ta.Artist.IsDeleted)
+                        .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
                     t.PlayCount
                 },
-                MatchScore = (t.TrackArtists.Any(a => artistIds.Contains(a.ArtistId)) ? 3 : 0) +
-                             (t.TrackGenres.Any(g => genreIds.Contains(g.GenreId)) ? 2 : 0) +
-                             (t.TrackMoods.Any(m => moodIds.Contains(m.MoodId)) ? 1 : 0)
+                MatchScore = (t.TrackArtists.Any(a => !a.Artist.IsDeleted && artistIds.Contains(a.ArtistId)) ? 3 : 0) +
+                             (t.TrackGenres.Any(g => !g.Genre.IsDeleted && genreIds.Contains(g.GenreId)) ? 2 : 0) +
+                             (t.TrackMoods.Any(m => !m.Mood.IsDeleted && moodIds.Contains(m.MoodId)) ? 1 : 0)
             })
             .OrderByDescending(x => x.MatchScore)
             .ThenByDescending(x => x.Track.PlayCount)

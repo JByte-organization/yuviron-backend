@@ -23,5 +23,7 @@ public class TrackGenreConfiguration : IEntityTypeConfiguration<TrackGenre>
                .WithMany(g => g.TrackGenres)
                .HasForeignKey(x => x.GenreId)
                .OnDelete(DeleteBehavior.Restrict); // Жанр удалить нельзя, если есть треки
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted && !x.Genre.IsDeleted);
     }
 }
