@@ -1,9 +1,11 @@
+using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
+using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtists;
@@ -29,27 +31,35 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
         if (request.VerificationStatus.HasValue)
             query = query.Where(a => a.VerificationStatus == request.VerificationStatus.Value);
 
-        var projectedQuery = query
-            .Select(a => new ArtistListItemDto(
-                a.Id,
-                a.Name,
-                a.AvatarUrl,
-                a.TeamMembers
-                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
-                    .Select(tm => tm.User.Email)
-                    .FirstOrDefault(),
-                a.VerificationStatus,
-                a.AlbumArtists.Count, 
-                a.CreatedAt,
-                a.UpdatedAt
-            ));
-
-        var sortedQuery = projectedQuery.ApplySorting(
+        var sortedQuery = query.ApplySorting(
             request.SortBy,
             request.SortOrder,
-            defaultSortBy: nameof(ArtistListItemDto.CreatedAt),
-            defaultDesc: true);
+            defaultSortBy: nameof(Artist.CreatedAt),
+            mapping: new Dictionary<string, Expression<Func<Artist, object>>>
+            {
+                ["OwnerEmail"] = a => a.TeamMembers
+                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                    .Select(tm => tm.User.Email)
+                    .FirstOrDefault()!,
+            
+                // Мапим "AlbumsCount"
+                ["AlbumsCount"] = a => a.AlbumArtists.Count
+            });
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(a => new ArtistListItemDto(
+            a.Id,
+            a.Name,
+            a.AvatarUrl,
+            a.TeamMembers
+                .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                .Select(tm => tm.User.Email)
+                .FirstOrDefault(),
+            a.VerificationStatus,
+            a.AlbumArtists.Count, 
+            a.CreatedAt,
+            a.UpdatedAt
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

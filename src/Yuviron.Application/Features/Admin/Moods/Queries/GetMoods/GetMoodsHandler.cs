@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Moods.Queries.GetMoods;
 
@@ -23,18 +25,25 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
             query = query.Where(m => m.Name.StartsWith(request.SearchTerm));
         }
 
-        var projectedQuery = query
-            .Select(m => new MoodDto(
-                m.Id, 
-                m.Name,
-                m.CoverUrl,
-                m.TrackMoods.Count, 
-                m.CreatedAt,
-                m.UpdatedAt
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: "CreatedAt",
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Mood, object>>>
+            {
+                [nameof(MoodDto.TracksCount)] = m => m.TrackMoods.Count
+            });
 
-        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+        var projectedQuery = sortedQuery.Select(m => new MoodDto(
+            m.Id, 
+            m.Name,
+            m.CoverUrl,
+            m.TrackMoods.Count, 
+            m.CreatedAt,
+            m.UpdatedAt
+        ));
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

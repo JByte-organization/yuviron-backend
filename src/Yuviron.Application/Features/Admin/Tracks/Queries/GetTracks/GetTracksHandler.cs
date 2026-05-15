@@ -1,9 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
 
@@ -31,25 +34,41 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
         if (request.Status.HasValue)
             query = query.Where(t => t.VisibilityStatus == request.Status.Value);
 
-        var projectedQuery = query
-            .Select(t => new TrackListItemDto(
-                t.Id,
-                t.AlbumId,
-                t.Album != null ? t.Album.Title : "Unknown Album",
-                t.AlbumPosition,
-                t.Title,
-                t.TrackArtists.Select(ta => ta.Artist.Name).ToList(), 
-                t.DurationMs,
-                t.Explicit,
-                t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
-                t.PlayCount,
-                t.VisibilityStatus,
-                t.CreatedAt,
-                t.UpdatedAt
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(Track.CreatedAt),
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Track, object>>>
+            {
+                ["AlbumTitle"] = t => t.Album != null ? t.Album.Title : "Unknown Album",
 
-        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+                ["ArtistNames"] = t => t.TrackArtists
+                    .OrderBy(ta => ta.Role == ArtistRole.Main ? 0 : 1)
+                    .Select(ta => ta.Artist.Name)
+                    .FirstOrDefault()!
+            });
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var projectedQuery = sortedQuery.Select(t => new TrackListItemDto(
+            t.Id,
+            t.AlbumId,
+            t.Album != null ? t.Album.Title : "Unknown Album",
+            t.AlbumPosition,
+            t.Title,
+            t.TrackArtists
+                .OrderBy(ta => ta.Role == ArtistRole.Main ? 0 : 1)
+                .Select(ta => ta.Artist.Name)
+                .ToList(), 
+            t.DurationMs,
+            t.Explicit,
+            t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
+            t.PlayCount,
+            t.VisibilityStatus,
+            t.CreatedAt,
+            t.UpdatedAt
+        ));
+
+        // 5. ПАГИНАЦИЯ
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

@@ -1,17 +1,19 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Admin.Users.Queries.DTOs;
-using Yuviron.Domain.Enums; 
+using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 
 public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedList<UserListItemDto>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly TimeProvider _timeProvider; 
+    private readonly TimeProvider _timeProvider;
 
     public GetUsersHandler(IApplicationDbContext context, TimeProvider timeProvider)
     {
@@ -39,22 +41,34 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
         
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var projectedQuery = query
-            .Select(u => new UserListItemDto(
-                u.Id,
-                u.Email,
-                u.Profile.FirstName, 
-                u.Profile.AvatarUrl, 
-                u.AccountState,
-                u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
-                u.CreatedAt,
-                u.UpdatedAt,
-                u.LastLoginAt,
-                u.UserRoles.Select(ur => ur.Role.Name).ToList()
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy,
+            request.SortOrder,
+            defaultSortBy: nameof(User.CreatedAt),
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<User, object>>>
+            {
+                ["FirstName"] = u => u.Profile.FirstName,
 
-        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+                ["IsPremium"] = u => u.Subscriptions.Any(s => 
+                    s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+                ["Roles"] = u => u.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault()!
+            });
+
+        var projectedQuery = sortedQuery.Select(u => new UserListItemDto(
+            u.Id,
+            u.Email,
+            u.Profile.FirstName, 
+            u.Profile.AvatarUrl, 
+            u.AccountState,
+            u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
+            u.CreatedAt,
+            u.UpdatedAt,
+            u.LastLoginAt,
+            u.UserRoles.Select(ur => ur.Role.Name).ToList()
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

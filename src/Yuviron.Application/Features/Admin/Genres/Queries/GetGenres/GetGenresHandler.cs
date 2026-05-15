@@ -1,9 +1,11 @@
+using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions; 
 using Yuviron.Application.Features.Admin.Genres.Queries.DTOs;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Genres.Queries.GetGenres;
 
@@ -22,19 +24,25 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));
 
-        var projectedQuery = query
-            .Select(g => new GenreListItemDto(
-                g.Id, 
-                g.CoverUrl,
-                g.Name, 
-                g.TrackGenres.Count,
-                g.CreatedAt,
-                g.UpdatedAt
-            ));
+        var sortedQuery = query.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: "CreatedAt",
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Genre, object>>>
+            {
+                [nameof(GenreListItemDto.TracksCount)] = g => g.TrackGenres.Count
+            });
 
-        
-        var sortedQuery = projectedQuery.ApplySorting(request.SortBy, request.SortOrder);
+        var projectedQuery = sortedQuery.Select(g => new GenreListItemDto(
+            g.Id, 
+            g.CoverUrl,
+            g.Name, 
+            g.TrackGenres.Count,
+            g.CreatedAt,
+            g.UpdatedAt
+        ));
 
-        return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

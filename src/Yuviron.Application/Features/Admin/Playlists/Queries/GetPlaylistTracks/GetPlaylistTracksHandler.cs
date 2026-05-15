@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks;
 
@@ -34,7 +36,20 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             if (hasSearchTerm)
                 query = query.Where(pt => pt.Track.Title.Contains(request.SearchTerm!));
 
-            var projectedQuery = query.Select(pt => new PlaylistTrackItemDto(
+            var sortedQuery = query.ApplySorting(
+                request.SortBy, 
+                request.SortOrder, 
+                defaultSortBy: nameof(PlaylistTrack.Position), 
+                defaultDesc: false,
+                mapping: new Dictionary<string, Expression<Func<PlaylistTrack, object>>>
+                {
+                    ["Title"] = pt => pt.Track.Title,
+                    ["AlbumTitle"] = pt => pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
+                    ["DurationMs"] = pt => pt.Track.DurationMs,
+                    ["AddedAt"] = pt => pt.AddedAt
+                });
+
+            var projectedQuery = sortedQuery.Select(pt => new PlaylistTrackItemDto(
                 pt.TrackId, 
                 pt.Track.Title,
                 pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
@@ -46,13 +61,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                 pt.AddedAt
             ));
 
-            var sortedQuery = projectedQuery.ApplySorting(
-                request.SortBy, 
-                request.SortOrder, 
-                defaultSortBy: nameof(PlaylistTrackItemDto.Position), 
-                defaultDesc: false);
-
-            return await sortedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+            return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
         }
 
         var redisKey = $"playlist:{request.PlaylistId}:tracks";
@@ -66,23 +75,25 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         {
             await _cache.SetAddAsync("missing_cache:playlists", request.PlaylistId.ToString(), cancellationToken);
 
-            var fallbackProjected = _context.PlaylistTracks
+            var fallbackQuery = _context.PlaylistTracks
                 .AsNoTracking()
-                .Where(pt => pt.PlaylistId == request.PlaylistId)
-                .Select(pt => new PlaylistTrackItemDto(
-                    pt.TrackId, 
-                    pt.Track.Title,
-                    pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
-                    pt.Track.AlbumId, 
-                    pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
-                    pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
-                    pt.Track.DurationMs, 
-                    pt.Position, 
-                    pt.AddedAt
-                ));
+                .Where(pt => pt.PlaylistId == request.PlaylistId);
+
+            var sortedFallback = fallbackQuery.ApplySorting(null, null, nameof(PlaylistTrack.Position), false);
+
+            var fallbackProjected = sortedFallback.Select(pt => new PlaylistTrackItemDto(
+                pt.TrackId, 
+                pt.Track.Title,
+                pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
+                pt.Track.AlbumId, 
+                pt.Track.Album != null ? pt.Track.Album.Title : "Unknown",
+                pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
+                pt.Track.DurationMs, 
+                pt.Position, 
+                pt.AddedAt
+            ));
                 
-            var sortedFallback = fallbackProjected.ApplySorting(null, null, nameof(PlaylistTrackItemDto.Position), false);
-            return await sortedFallback.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+            return await fallbackProjected.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
         }
 
         var trackIds = tracksWithScores.Keys.Select(id => Guid.Parse(id)).ToList();
@@ -101,12 +112,17 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             
             if (track != null)
             {
-                var position = tracksWithScores[trackIdStr];
+                var position = (int)tracksWithScores[trackIdStr];
                 dtos.Add(new PlaylistTrackItemDto(
-                    track.Id, track.Title,
+                    track.Id, 
+                    track.Title,
                     track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
-                    track.AlbumId, track.Album?.Title ?? "Unknown", track.CoverUrl ?? track.Album?.CoverUrl,
-                    track.DurationMs, position, track.UpdatedAt 
+                    track.AlbumId, 
+                    track.Album?.Title ?? "Unknown", 
+                    track.CoverUrl ?? track.Album?.CoverUrl,
+                    track.DurationMs, 
+                    position, 
+                    track.UpdatedAt 
                 ));
             }
         }
