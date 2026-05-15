@@ -36,15 +36,19 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
         var dayAgo = utcNow.AddDays(-1);
 
         // 1. Summary
-        var totalUsers = await _context.Users.CountAsync(cancellationToken);
-        var newUsers24h = await _context.Users.CountAsync(u => u.CreatedAt >= dayAgo, cancellationToken);
-        var premiumUsers = await _context.Users.CountAsync(u => u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow), cancellationToken);
+        var totalUsers = await _context.Users.CountAsync(u => !u.IsDeleted, cancellationToken);
+        var newUsers24h = await _context.Users.CountAsync(u => !u.IsDeleted && u.CreatedAt >= dayAgo, cancellationToken);
+        var premiumUsers = await _context.Users.CountAsync(
+            u => !u.IsDeleted && u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
+            cancellationToken);
         
-        var totalTracks = await _context.Tracks.CountAsync(cancellationToken);
-        var totalAlbums = await _context.Albums.CountAsync(cancellationToken);
-        var totalArtists = await _context.Artists.CountAsync(cancellationToken);
+        var totalTracks = await _context.Tracks.CountAsync(t => !t.IsDeleted, cancellationToken);
+        var totalAlbums = await _context.Albums.CountAsync(a => !a.IsDeleted, cancellationToken);
+        var totalArtists = await _context.Artists.CountAsync(a => !a.IsDeleted, cancellationToken);
         
-        var totalPlays = await _context.Tracks.SumAsync(t => (long)t.PlayCount, cancellationToken);
+        var totalPlays = await _context.Tracks
+            .Where(t => !t.IsDeleted)
+            .SumAsync(t => (long)t.PlayCount, cancellationToken);
 
         var summary = new DashboardSummaryDto(
             totalTracks, totalArtists, totalAlbums, 
@@ -69,7 +73,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .AsNoTracking()
             .Select(g => new {
                 Genre = g,
-                TotalPlays = g.TrackGenres.Sum(tg => tg.Track.PlayCount) 
+                TotalPlays = g.TrackGenres.Where(tg => !tg.Track.IsDeleted).Sum(tg => tg.Track.PlayCount) 
             })
             .OrderByDescending(x => x.TotalPlays)
             .Take(5)
@@ -83,7 +87,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .AsNoTracking()
             .Select(m => new {
                 Mood = m,
-                TotalPlays = m.TrackMoods.Sum(tm => tm.Track.PlayCount) 
+                TotalPlays = m.TrackMoods.Where(tm => !tm.Track.IsDeleted).Sum(tm => tm.Track.PlayCount) 
             })
             .OrderByDescending(x => x.TotalPlays)
             .Take(5)
@@ -97,7 +101,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .AsNoTracking()
             .Select(a => new {
                 Album = a,
-                TotalPlays = a.Tracks.Sum(t => t.PlayCount) 
+                TotalPlays = a.Tracks.Where(t => !t.IsDeleted).Sum(t => t.PlayCount) 
             })
             .OrderByDescending(x => x.TotalPlays)
             .Take(5)
@@ -111,7 +115,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .AsNoTracking()
             .Select(a => new {
                 Artist = a,
-                TotalPlays = a.TrackArtists.Sum(ta => ta.Track.PlayCount)
+                TotalPlays = a.TrackArtists.Where(ta => !ta.Track.IsDeleted).Sum(ta => ta.Track.PlayCount)
             })
             .OrderByDescending(x => x.TotalPlays)
             .Take(5)

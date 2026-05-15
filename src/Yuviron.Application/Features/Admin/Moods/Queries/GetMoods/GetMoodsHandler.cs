@@ -32,14 +32,14 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
             defaultDesc: true,
             mapping: new Dictionary<string, Expression<Func<Mood, object>>>
             {
-                [nameof(MoodDto.TracksCount)] = m => m.TrackMoods.Count
+                [nameof(MoodDto.TracksCount)] = m => m.TrackMoods.Count(tm => !tm.Track.IsDeleted)
             });
 
         var projectedQuery = sortedQuery.Select(m => new MoodDto(
             m.Id, 
             m.Name,
             m.CoverUrl,
-            m.TrackMoods.Count, 
+            m.TrackMoods.Count(tm => !tm.Track.IsDeleted), 
             m.CreatedAt,
             m.UpdatedAt
         ));

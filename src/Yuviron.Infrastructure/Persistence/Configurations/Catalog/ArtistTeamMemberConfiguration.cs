@@ -30,5 +30,7 @@ public class ArtistTeamMemberConfiguration : IEntityTypeConfiguration<ArtistTeam
             .WithMany(a => a.TeamMembers)
             .HasForeignKey(x => x.ArtistId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted && !x.User.IsDeleted);
     }
 }

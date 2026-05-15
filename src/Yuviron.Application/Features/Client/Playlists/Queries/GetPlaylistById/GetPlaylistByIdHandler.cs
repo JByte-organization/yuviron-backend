@@ -38,7 +38,9 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
             throw new ForbiddenException("This playlist is private.");
         }
 
-        int totalDurationMs = playlist.PlaylistTracks.Sum(pt => pt.Track?.DurationMs ?? 0);
+        int totalDurationMs = playlist.PlaylistTracks
+            .Where(pt => pt.Track != null && !pt.Track.IsDeleted)
+            .Sum(pt => pt.Track!.DurationMs);
         
         string creatorName = playlist.IsEditorial 
             ? "Yuviron" 
@@ -53,7 +55,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
             playlist.IsEditorial ? null : playlist.UserId,
             creatorName,
             playlist.IsEditorial,
-            playlist.PlaylistTracks.Count,
+            playlist.PlaylistTracks.Count(pt => pt.Track != null && !pt.Track.IsDeleted),
             totalDurationMs,
             playlist.CreatedAt,
             playlist.UpdatedAt

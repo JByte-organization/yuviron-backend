@@ -22,7 +22,9 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
     {
         var query = _context.ArtistTeamMembers
             .AsNoTracking()
-            .Where(tm => tm.ArtistId == request.ArtistId);
+            .Where(tm => tm.ArtistId == request.ArtistId
+                         && !tm.Artist.IsDeleted
+                         && !tm.User.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

@@ -64,7 +64,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .AsNoTracking()
             .Include(t => t.Album)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
-            .Where(t => trackIds.Contains(t.Id))
+            .Where(t => trackIds.Contains(t.Id) && !t.IsDeleted)
             .ToListAsync(cancellationToken);
 
         var dtos = tracksWithScores.Keys
@@ -84,7 +84,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
     {
         var query = _context.PlaylistTracks
             .AsNoTracking()
-            .Where(pt => pt.PlaylistId == request.PlaylistId);
+            .Where(pt => pt.PlaylistId == request.PlaylistId && !pt.Track.IsDeleted);
 
         var sortedQuery = query.ApplySorting(
             request.SortBy,
@@ -102,7 +102,10 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         var projectedQuery = sortedQuery.Select(pt => new PlaylistTrackItemClientDto(
             pt.TrackId, 
             pt.Track.Title,
-            pt.Track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
+            pt.Track.TrackArtists
+                .Where(ta => !ta.Artist.IsDeleted)
+                .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
+                .ToList(),
             pt.Track.AlbumId, 
             pt.Track.CoverUrl ?? (pt.Track.Album != null ? pt.Track.Album.CoverUrl : null),
             pt.Track.DurationMs, 
@@ -118,7 +121,10 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         return new PlaylistTrackItemClientDto(
             track.Id, 
             track.Title,
-            track.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)).ToList(),
+            track.TrackArtists
+                .Where(ta => !ta.Artist.IsDeleted)
+                .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
+                .ToList(),
             track.AlbumId, 
             track.CoverUrl ?? track.Album?.CoverUrl,
             track.DurationMs, 

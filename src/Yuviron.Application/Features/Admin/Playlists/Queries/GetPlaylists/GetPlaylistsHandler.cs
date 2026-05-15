@@ -35,7 +35,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
                     ? "YUVIRON" 
                     : (p.User != null ? p.User.Profile.FirstName : "Unknown"),
             
-                ["TracksCount"] = p => p.PlaylistTracks.Count
+                ["TracksCount"] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted)
             });
 
         var projectedQuery = sortedQuery.Select(p => new PlaylistDto(
@@ -46,7 +46,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             p.IsEditorial,
             p.IsEditorial ? "YUVIRON" : 
                 (p.User != null ? p.User.Profile.FirstName : "Unknown"),
-            p.PlaylistTracks.Count,
+            p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
             p.CreatedAt,
             p.UpdatedAt
         ));

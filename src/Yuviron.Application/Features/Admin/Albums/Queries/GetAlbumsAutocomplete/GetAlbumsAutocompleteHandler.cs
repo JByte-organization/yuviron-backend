@@ -33,7 +33,9 @@ public sealed class GetAlbumsAutocompleteHandler : IRequestHandler<GetAlbumsAuto
             .Select(a => new AlbumAutocompleteDto(
                 a.Id,
                 a.Title,
-                a.AlbumArtists.Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)),
+                a.AlbumArtists
+                    .Where(aa => !aa.Artist.IsDeleted)
+                    .Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)),
                 a.CoverUrl
             ))
             .ToListAsync(cancellationToken);

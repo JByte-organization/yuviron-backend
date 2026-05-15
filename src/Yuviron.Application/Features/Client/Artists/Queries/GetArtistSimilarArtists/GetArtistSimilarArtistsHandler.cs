@@ -35,7 +35,9 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
+            .SelectMany(t => t.TrackGenres
+                .Where(tg => !tg.Genre.IsDeleted)
+                .Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -46,7 +48,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
 
         return await _context.Artists
             .AsNoTracking()
-            .Where(a => a.Id != request.ArtistId)
+            .Where(a => a.Id != request.ArtistId && !a.IsDeleted)
             .Where(a => a.TrackArtists.Any(ta =>
                 !ta.Track.IsDeleted &&
                 ta.Track.VisibilityStatus == VisibilityStatus.Published &&
@@ -55,7 +57,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
                 !ta.Track.Album.IsDeleted &&
                 ta.Track.Album.VisibilityStatus == VisibilityStatus.Published &&
                 ta.Track.Album.ReleaseDate <= utcNow &&
-                ta.Track.TrackGenres.Any(tg => artistGenreIds.Contains(tg.GenreId))))
+                ta.Track.TrackGenres.Any(tg => !tg.Genre.IsDeleted && artistGenreIds.Contains(tg.GenreId))))
             .Select(a => new
             {
                 a.Id,
@@ -73,7 +75,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
                         ta.Track.Album.VisibilityStatus == VisibilityStatus.Published &&
                         ta.Track.Album.ReleaseDate <= utcNow)
                     .SelectMany(ta => ta.Track.TrackGenres
-                        .Where(tg => artistGenreIds.Contains(tg.GenreId))
+                        .Where(tg => !tg.Genre.IsDeleted && artistGenreIds.Contains(tg.GenreId))
                         .Select(tg => tg.GenreId))
                     .Distinct()
                     .Count(),

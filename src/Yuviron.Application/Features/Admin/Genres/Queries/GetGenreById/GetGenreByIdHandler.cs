@@ -22,7 +22,7 @@ public sealed class GetGenreByIdHandler : IRequestHandler<GetGenreByIdQuery, Gen
                 g.Id,
                 g.Name,
                 g.CoverUrl,
-                g.TrackGenres.Count,
+                g.TrackGenres.Count(tg => !tg.Track.IsDeleted),
                 g.CreatedAt,
                 g.UpdatedAt
             ))

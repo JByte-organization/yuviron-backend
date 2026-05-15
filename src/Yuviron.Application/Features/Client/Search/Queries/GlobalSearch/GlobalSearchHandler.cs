@@ -36,14 +36,16 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => t.Title.Contains(searchTerm) || 
-                        t.TrackArtists.Any(ta => ta.Artist.Name.Contains(searchTerm)))
+                        t.TrackArtists.Any(ta => !ta.Artist.IsDeleted && ta.Artist.Name.Contains(searchTerm)))
             .OrderByDescending(t => t.PlayCount)
             .ThenBy(t => t.Title)
             .Take(limit)
             .Select(t => new SearchTrackDto(
                 t.Id,
                 t.Title,
-                t.TrackArtists.Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)), 
+                t.TrackArtists
+                    .Where(ta => !ta.Artist.IsDeleted)
+                    .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)), 
                 t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))
             .ToListAsync(ct);

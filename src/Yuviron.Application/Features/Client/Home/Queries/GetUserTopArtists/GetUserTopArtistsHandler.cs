@@ -32,7 +32,7 @@ public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtists
             .Where(le => le.UserId == userId && 
                          le.PlayedAt >= minDate && 
                          le.MsPlayed >= 30000) 
-            .Join(_context.TrackArtists,
+            .Join(_context.TrackArtists.Where(ta => !ta.Track.IsDeleted && !ta.Artist.IsDeleted),
                 le => le.TrackId,
                 ta => ta.TrackId,
                 (le, ta) => ta.ArtistId)

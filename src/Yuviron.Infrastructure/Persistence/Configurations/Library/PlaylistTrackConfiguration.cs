@@ -24,6 +24,6 @@ public class PlaylistTrackConfiguration : IEntityTypeConfiguration<PlaylistTrack
             .HasForeignKey(x => x.TrackId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasQueryFilter(pt => !pt.Playlist.IsDeleted);
+        builder.HasQueryFilter(pt => !pt.Playlist.IsDeleted && !pt.Track.IsDeleted);
     }
 }

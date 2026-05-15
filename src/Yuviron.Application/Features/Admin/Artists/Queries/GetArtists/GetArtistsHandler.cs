@@ -38,12 +38,12 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
             mapping: new Dictionary<string, Expression<Func<Artist, object>>>
             {
                 ["OwnerEmail"] = a => a.TeamMembers
-                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                    .Where(tm => tm.Role == ArtistTeamRole.Owner && !tm.User.IsDeleted)
                     .Select(tm => tm.User.Email)
                     .FirstOrDefault()!,
             
                 // Мапим "AlbumsCount"
-                ["AlbumsCount"] = a => a.AlbumArtists.Count
+                ["AlbumsCount"] = a => a.AlbumArtists.Count(aa => !aa.Album.IsDeleted)
             });
 
         var projectedQuery = sortedQuery.Select(a => new ArtistListItemDto(
@@ -51,11 +51,11 @@ public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, Paginat
             a.Name,
             a.AvatarUrl,
             a.TeamMembers
-                .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                .Where(tm => tm.Role == ArtistTeamRole.Owner && !tm.User.IsDeleted)
                 .Select(tm => tm.User.Email)
                 .FirstOrDefault(),
             a.VerificationStatus,
-            a.AlbumArtists.Count, 
+            a.AlbumArtists.Count(aa => !aa.Album.IsDeleted), 
             a.CreatedAt,
             a.UpdatedAt
         ));

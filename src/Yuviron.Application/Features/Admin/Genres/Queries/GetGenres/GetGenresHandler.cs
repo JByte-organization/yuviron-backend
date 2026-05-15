@@ -31,14 +31,14 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
             defaultDesc: true,
             mapping: new Dictionary<string, Expression<Func<Genre, object>>>
             {
-                [nameof(GenreListItemDto.TracksCount)] = g => g.TrackGenres.Count
+                [nameof(GenreListItemDto.TracksCount)] = g => g.TrackGenres.Count(tg => !tg.Track.IsDeleted)
             });
 
         var projectedQuery = sortedQuery.Select(g => new GenreListItemDto(
             g.Id, 
             g.CoverUrl,
             g.Name, 
-            g.TrackGenres.Count,
+            g.TrackGenres.Count(tg => !tg.Track.IsDeleted),
             g.CreatedAt,
             g.UpdatedAt
         ));

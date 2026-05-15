@@ -23,7 +23,7 @@ public sealed class GetRolesHandler : IRequestHandler<GetRolesQuery, List<RoleDt
             {
                 r.Id, 
                 r.Name, 
-                UserCount = r.UserRoles.Count,
+                UserCount = r.UserRoles.Count(ur => !ur.User.IsDeleted),
                 PermissionNames = r.RolePermissions.Select(rp => rp.Permission.Name).ToList() 
             })
             .ToListAsync(cancellationToken);

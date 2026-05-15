@@ -53,7 +53,9 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                 t.PlayCount,
                 t.AlbumId,
                 AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
-                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
+                Artists = t.TrackArtists
+                    .Where(ta => !ta.Artist.IsDeleted)
+                    .Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
             })
             .ToListAsync(cancellationToken);
         

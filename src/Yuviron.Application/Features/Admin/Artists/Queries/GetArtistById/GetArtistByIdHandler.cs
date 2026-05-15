@@ -24,7 +24,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
             .Select(a => new ArtistDetailsDto(
                 a.Id,
                 a.TeamMembers
-                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
+                    .Where(tm => tm.Role == ArtistTeamRole.Owner && !tm.User.IsDeleted)
                     .Select(tm => new ArtistOwnerDto(
                         tm.UserId,
                         tm.User.Email,
@@ -36,8 +36,8 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                 a.AvatarUrl,
                 a.BannerUrl,
                 a.VerificationStatus,
-                a.AlbumArtists.Count, 
-                a.TrackArtists.Count, 
+                a.AlbumArtists.Count(aa => !aa.Album.IsDeleted), 
+                a.TrackArtists.Count(ta => !ta.Track.IsDeleted), 
                 a.CreatedAt,
                 a.UpdatedAt
             ))

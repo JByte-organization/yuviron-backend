@@ -20,5 +20,7 @@ public sealed class TrackMoodConfiguration : IEntityTypeConfiguration<TrackMood>
             .WithMany(m => m.TrackMoods)
             .HasForeignKey(tm => tm.MoodId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(tm => !tm.Track.IsDeleted && !tm.Mood.IsDeleted);
     }
 }

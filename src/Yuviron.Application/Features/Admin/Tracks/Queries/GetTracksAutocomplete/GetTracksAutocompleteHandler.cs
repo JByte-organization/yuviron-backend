@@ -33,7 +33,9 @@ public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAuto
             .Select(t => new TrackAutocompleteDto(
                 t.Id,
                 t.Title,
-                t.TrackArtists.Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)), 
+                t.TrackArtists
+                    .Where(ta => !ta.Artist.IsDeleted)
+                    .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)), 
                 t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))
             .ToListAsync(cancellationToken);

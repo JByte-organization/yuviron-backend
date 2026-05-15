@@ -22,7 +22,7 @@ public sealed class GetMoodByIdHandler : IRequestHandler<GetMoodByIdQuery, GetMo
                 m.Id,
                 m.Name,
                 m.CoverUrl,
-                m.TrackMoods.Count,
+                m.TrackMoods.Count(tm => !tm.Track.IsDeleted),
                 m.CreatedAt,
                 m.UpdatedAt
             ))
