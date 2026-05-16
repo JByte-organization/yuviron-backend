@@ -79,11 +79,18 @@ public class AdminPlaylistsController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpPut("{id:guid}/tracks/{trackId:guid}/position")]
+    [HttpPatch("{id:guid}/tracks/{trackId:guid}/position")] 
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ChangeTrackPosition(Guid id, Guid trackId, [FromBody] ChangeTrackPositionCommand command, CancellationToken ct)
+    public async Task<IActionResult> ChangeTrackPosition(
+        Guid id, 
+        Guid trackId, 
+        [FromBody] ChangeTrackPositionRequest request, 
+        CancellationToken ct)
     {
-        await Mediator.Send(command with { PlaylistId = id, TrackId = trackId }, ct);
+        var command = new ChangeTrackPositionCommand(id, trackId, request.NewPosition);
+        
+        await Mediator.Send(command, ct);
+        
         return NoContent();
     }
 }

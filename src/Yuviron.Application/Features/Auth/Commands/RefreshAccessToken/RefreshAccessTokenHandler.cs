@@ -59,7 +59,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         {
             if (existingToken.IsInGracePeriod(utcNow))
             {
-                _logger.LogInformation("Сетевой ретрай! Grace period для токена юзера {UserId}.", existingToken.UserId);
+                _logger.LogInformation("Network retrace! Grace period for user token {UserId}.", existingToken.UserId);
 
                 if (existingToken.RevokedAt.HasValue)
                 {
@@ -100,6 +100,13 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
             existingToken.Revoke(utcNow);
         }
 
+        
+        bool isAdmin = existingToken.User.UserRoles.Any(ur => 
+            ur.Role.RolePermissions.Any(rp => rp.Permission.Name == nameof(AppPermission.AccessAdminPanel)));
+
+        var tokenTtl = isAdmin ? TimeSpan.FromHours(12) : TimeSpan.FromDays(30);
+
+
         var newAccessToken = _jwtTokenGenerator.GenerateToken(existingToken.User);
         var newRawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var newHashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(newRawRefreshToken);
@@ -107,7 +114,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         var newRefreshTokenEntity = RefreshToken.Create(
             existingToken.UserId,
             newHashedRefreshToken, 
-            utcNow.AddDays(30), 
+            utcNow.Add(tokenTtl),
             utcNow             
         );
 
