@@ -9,6 +9,8 @@ using Yuviron.Domain.Common;
 
 namespace Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 
+public record LoginCodeModel(string Code);
+
 public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
@@ -16,19 +18,22 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<SendLoginCodeHandler> _logger;
     private readonly IOtpService _otpService;
+    private readonly ITemplateService _templateService;
 
     public SendLoginCodeHandler(
         IApplicationDbContext context,
         IEmailService emailService,
         IPasswordHasher passwordHasher,
         ILogger<SendLoginCodeHandler> logger,
-        IOtpService otpService) 
+        IOtpService otpService,
+        ITemplateService templateService)
     {
         _context = context;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _logger = logger;
         _otpService = otpService; 
+        _templateService = templateService;
     }
 
     public async Task<Unit> Handle(SendLoginCodeCommand request, CancellationToken cancellationToken)
@@ -55,10 +60,12 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
 
         try
         {
+            var htmlBody = await _templateService.RenderTemplateAsync("LoginCode", new LoginCodeModel(code));
+
             await _emailService.SendEmailAsync(
                 normalizedEmail,
                 "Yuviron Login Code",
-                $"<h1>{code}</h1>",
+                htmlBody,
                 cancellationToken);
         }
         catch (Exception ex)
