@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
-using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.UpdatePlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.DeletePlaylist;
@@ -13,9 +12,9 @@ using Yuviron.Application.Features.Client.Playlists.Commands.ChangeTrackPosition
 namespace Yuviron.Api.Controllers.Client;
 
 [Authorize]
-[Route("api/user/playlists")]
+[Route("api/me/playlists")]
 [ApiExplorerSettings(GroupName = "client")]
-public class UserPlaylistsController : ApiControllerBase
+public class MePlaylistsController : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]

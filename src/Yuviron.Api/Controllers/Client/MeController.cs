@@ -5,18 +5,16 @@ using Yuviron.Application.Features.Client.Library.Commands.AddTrackToFavorites;
 using Yuviron.Application.Features.Client.Library.Commands.RemoveTrackFromFavorites;
 using Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
 using Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
-using Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
 
 namespace Yuviron.Api.Controllers.Client;
 
-[Route("api/user")]
+[Route("api/me")] 
 [ApiExplorerSettings(GroupName = "client")]
-[Authorize]
-public class LibraryController : ApiControllerBase
+[Authorize] 
+public class MeController : ApiControllerBase
 {
-    
-    [HttpGet("favorites")]
+    [HttpGet("favorites/tracks")]
     [ProducesResponseType(typeof(PaginatedList<UserFavoriteTrackDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<UserFavoriteTrackDto>>> GetFavoriteTracks([FromQuery] GetUserFavoriteTracksQuery query, CancellationToken ct)
     {
@@ -24,16 +22,15 @@ public class LibraryController : ApiControllerBase
         return Ok(result);
     }
     
-    [HttpPost("favorites")]
+    [HttpPost("favorites/tracks")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddTrackToFavorites([FromBody] AddTrackToFavoritesCommand command, CancellationToken ct)
     {
         await Mediator.Send(command, ct);
         return NoContent();
     }
     
-    [HttpDelete("favorites/{trackId:guid}")]
+    [HttpDelete("favorites/tracks/{trackId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveTrackFromFavorites(Guid trackId, CancellationToken ct)
     {
@@ -41,9 +38,17 @@ public class LibraryController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpGet("followed-artists")]
+    [HttpGet("following/artists")]
     [ProducesResponseType(typeof(PaginatedList<FollowedArtistDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<FollowedArtistDto>>> GetFavoriteArtists([FromQuery] GetFollowedArtistsQuery query, CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("recently-played")]
+    [ProducesResponseType(typeof(List<RecentlyPlayedTrackDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RecentlyPlayedTrackDto>>> GetRecentlyPlayed([FromQuery] GetUserRecentlyPlayedQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
