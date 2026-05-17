@@ -1,7 +1,7 @@
 using FluentValidation;
 using System;
 
-namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
+namespace Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
 public sealed class GetUserPlaylistsValidator : AbstractValidator<GetUserPlaylistsQuery>
 {

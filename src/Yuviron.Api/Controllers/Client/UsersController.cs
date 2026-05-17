@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
-using Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylists;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
-using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
+using Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylists;
 
 namespace Yuviron.Api.Controllers.Client;
 
-[Route("api/users")]
+[Route("api/users")] 
 [ApiExplorerSettings(GroupName = "client")]
 public class UsersController : ApiControllerBase
 {
@@ -21,15 +20,6 @@ public class UsersController : ApiControllerBase
     {
         var command = query with { TargetUserId = id }; 
         var result = await Mediator.Send(command, ct);
-        return Ok(result);
-    }
-    
-    [HttpGet("recently-played")]
-    [Authorize]
-    [ProducesResponseType(typeof(List<RecentlyPlayedTrackDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<RecentlyPlayedTrackDto>>> GetRecentlyPlayed([FromQuery] GetUserRecentlyPlayedQuery query, CancellationToken ct)
-    {
-        var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
 }

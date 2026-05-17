@@ -10,7 +10,7 @@ using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
-namespace Yuviron.Application.Features.Client.Library.Queries.GetUserPlaylists;
+namespace Yuviron.Application.Features.Client.PLaylist.Queries.GetUserPlaylists;
 
 public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
