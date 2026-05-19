@@ -44,6 +44,10 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
         var relativeFilePath = $"tracks/{request.TrackId}/{actualFileName}";
         
         var stream = await _fileStorage.GetFileStreamAsync(relativeFilePath, cancellationToken);
+        if (stream is null)
+        {
+            throw new FileNotFoundException("Stream file not found.", relativeFilePath);
+        }
 
         string contentType = GetContentType(actualFileName);
 
