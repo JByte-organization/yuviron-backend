@@ -14,7 +14,7 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
     private readonly IFileStorageService _fileStorage;
     private readonly IStreamTokenService _tokenService;
 
-    private static readonly string[] AllowedExtensions = { ".m3u8", ".ts", ".key" };
+    private static readonly string[] AllowedExtensions = { ".m3u8", ".ts", ".key", ".mp3", ".wav", ".flac", "" };
 
     public GetAudioStreamHandler(IFileStorageService fileStorage, IStreamTokenService tokenService)
     {
@@ -24,27 +24,22 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
 
     public async Task<GetAudioStreamResponse> Handle(GetAudioStreamQuery request, CancellationToken cancellationToken)
     {
-        if (!_tokenService.ValidateToken(request.TrackId, request.Exp, request.Sig))
+        if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Sig))
         {
             throw new UnauthorizedAccessException("Invalid or expired stream token.");
         }
 
         var sanitizedFileName = Path.GetFileName(request.FileName);
-
         var actualFileName = sanitizedFileName.Equals("key", StringComparison.OrdinalIgnoreCase) 
-            ? "encryption.key" 
-            : sanitizedFileName;
+            ? "encryption.key" : sanitizedFileName;
 
         var extension = Path.GetExtension(actualFileName).ToLowerInvariant();
         if (Array.IndexOf(AllowedExtensions, extension) < 0)
-        {
             throw new UnauthorizedAccessException("Forbidden file extension requested.");
-        }
 
-        var relativeFilePath = $"tracks/{request.TrackId}/{actualFileName}";
+        var relativeFilePath = $"tracks/{request.TrackId}/{request.Quality}/{actualFileName}";
         
         var stream = await _fileStorage.GetFileStreamAsync(relativeFilePath, cancellationToken);
-
         string contentType = GetContentType(actualFileName);
 
         if (extension == ".m3u8")
@@ -72,6 +67,7 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
             ".m3u8" => "application/vnd.apple.mpegurl",
             ".ts" => "video/MP2T",
             ".key" => "application/octet-stream",
+            "" => "application/octet-stream",
             _ => "application/octet-stream"
         };
     }

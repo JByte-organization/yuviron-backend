@@ -13,6 +13,7 @@ using Yuviron.Application.Features.Auth.Commands.Register;
 using Yuviron.Application.Features.Auth.Commands.ResetPassword;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 using Yuviron.Application.Features.Auth.Queries.CheckEmail;
+using Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Api.Controllers;
@@ -74,25 +75,13 @@ public class AuthController : ApiControllerBase
         return Ok(new { result.UserId, result.Token, result.Email, result.Permissions });
     }
 
-    [HttpGet("me/permissions")]
-    [Authorize]
-    [ProducesResponseType(typeof(List<AppPermission>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMyPermissions(
-        [FromServices] IUserContext userContext,
-        [FromServices] IPermissionService permissionService)
+    [HttpGet("me")]
+    [Authorize] 
+    [ProducesResponseType(typeof(CurrentUserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<CurrentUserDto>> GetCurrentUser(CancellationToken ct)
     {
-        var permissionStrings = await permissionService.GetPermissionsAsync(userContext.UserId);
-
-        var result = new List<AppPermission>();
-
-        foreach (var permStr in permissionStrings)
-        {
-            if (Enum.TryParse<AppPermission>(permStr, out var parsedEnum))
-            {
-                result.Add(parsedEnum);
-            }
-        }
-
+        var result = await Mediator.Send(new GetCurrentUserQuery(), ct);
         return Ok(result);
     }
 

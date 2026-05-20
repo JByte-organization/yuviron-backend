@@ -4,6 +4,7 @@ using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
 namespace Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylists;
 
+//Повертає список плейлістів конкретного користувача.
 public sealed record GetUserPublicPlaylistsQuery(
     Guid TargetUserId,
     string? SortBy = null,  

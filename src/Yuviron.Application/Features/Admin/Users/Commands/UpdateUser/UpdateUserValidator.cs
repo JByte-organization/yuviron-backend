@@ -33,6 +33,12 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .Must(url => url == null || !url.Contains(".."))
             .WithMessage("Invalid file path.")
             .When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl));
+        
+        RuleFor(x => x.BannerUrl)
+            .MaximumLength(2048)
+            .Must(url => url == null || !url.Contains(".."))
+            .WithMessage("Invalid file path.")
+            .When(x => !string.IsNullOrWhiteSpace(x.BannerUrl));
 
         RuleFor(x => x.RoleIds)
             .Must(HaveDistinctRoles)

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Common;
+using Yuviron.Application.Features.Client.Artists.Commands.FollowArtist;
+using Yuviron.Application.Features.Client.Artists.Commands.UnfollowArtist;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistById;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistPlaylists;
@@ -121,5 +123,23 @@ public class ArtistsController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetArtistSimilarArtistsQuery(id, limit), ct);
         return Ok(result);
+    }
+    
+    [HttpPost("{id:guid}/follow")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> FollowArtist([FromRoute] Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new FollowArtistCommand(id), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/follow")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UnfollowArtist([FromRoute] Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new UnfollowArtistCommand(id), ct);
+        return NoContent();
     }
 }

@@ -8,6 +8,7 @@ public sealed record UpdateUserCommand(
     Guid UserId,
     string Email,
     string? AvatarUrl,
+    string? BannerUrl,
     AccountState AccountState,
     bool AcceptMarketing,
     string FirstName,

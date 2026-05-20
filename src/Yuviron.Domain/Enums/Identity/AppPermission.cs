@@ -19,7 +19,10 @@ public enum AppPermission
 
     PlayerHighQuality,
     PlayerNoAds,
-    StudioArtistProfile,
+    PrivateSession,    
+    CustomTheme,     
+    AnimatedMedia,     
 
+    StudioArtistProfile,
     AnalyticsView
 }

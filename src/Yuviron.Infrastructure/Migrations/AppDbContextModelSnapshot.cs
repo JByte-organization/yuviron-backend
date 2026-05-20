@@ -527,6 +527,10 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(7)")
                         .IsFixedLength();
 
+                    b.Property<string>("BackgroundImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1742,12 +1746,34 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("user_follow_artists", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserFollowUser", b =>
+                {
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("FolloweeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("FollowedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("FollowerId", "FolloweeId");
+
+                    b.HasIndex("FolloweeId");
+
+                    b.ToTable("user_follow_user", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("AvatarUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
+                    b.Property<string>("BannerUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("varchar(2048)");
 
@@ -1850,13 +1876,20 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid?>("CustomThemeId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("LanguageCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<bool>("PipEnabled")
+                    b.Property<bool>("MakePlaylistsPublicByDefault")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("PrivateSession")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("ShowActivity")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("ShowFollowers")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid?>("ThemeId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("ThemeMode")
                         .IsRequired()
@@ -1869,6 +1902,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomThemeId");
+
+                    b.HasIndex("ThemeId");
 
                     b.ToTable("user_settings", (string)null);
                 });
@@ -2497,6 +2532,25 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserFollowUser", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.User", "Followee")
+                        .WithMany()
+                        .HasForeignKey("FolloweeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", "Follower")
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Followee");
+
+                    b.Navigation("Follower");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserProfile", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
@@ -2578,7 +2632,14 @@ namespace Yuviron.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Yuviron.Domain.Entities.Theme", "Theme")
+                        .WithMany()
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("CustomTheme");
+
+                    b.Navigation("Theme");
 
                     b.Navigation("User");
                 });

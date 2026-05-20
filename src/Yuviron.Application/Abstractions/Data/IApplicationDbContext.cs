@@ -46,6 +46,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<UserSavedTrack> UserSavedTracks { get; }
     DbSet<UserSavedAlbum> UserSavedAlbums { get; }
     DbSet<UserFollowArtist> UserFollowArtists { get; }
+    DbSet<UserFollowUser> UserFollowUsers { get; }
 
     // --- Monetization ---
     DbSet<Plan> Plans { get; }

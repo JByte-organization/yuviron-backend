@@ -17,6 +17,7 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Admin.Tracks.Consumers;
+using Yuviron.Application.Policies;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
@@ -106,6 +107,7 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddHttpClient<IJamendoApiService, JamendoApiService>();
         services.AddSingleton<IStreamTokenService, StreamTokenService>();
+        services.AddSingleton<UserSettingsPolicy>();
 
         // 5. UTILITIES
         services.AddSingleton(TimeProvider.System);

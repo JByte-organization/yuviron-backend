@@ -5,7 +5,9 @@ using Yuviron.Application.Features.Client.Library.Commands.AddTrackToFavorites;
 using Yuviron.Application.Features.Client.Library.Commands.RemoveTrackFromFavorites;
 using Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
 using Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTracks;
+using Yuviron.Application.Features.Client.Library.Queries.GetUserFollowed;
 using Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRecentlyPlayed;
+using Yuviron.Application.Features.Client.Users.Queries.GetUserFollowers;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -49,6 +51,26 @@ public class MeController : ApiControllerBase
     [HttpGet("recently-played")]
     [ProducesResponseType(typeof(List<RecentlyPlayedTrackDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<RecentlyPlayedTrackDto>>> GetRecentlyPlayed([FromQuery] GetUserRecentlyPlayedQuery query, CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+    
+    [HttpGet("following")]
+    [ProducesResponseType(typeof(PaginatedList<FollowedProfileDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<FollowedProfileDto>>> GetMyFollowing(
+        [FromQuery] GetFollowedProfilesQuery query, 
+        CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+    
+    [HttpGet("followers")]
+    [ProducesResponseType(typeof(PaginatedList<FollowerDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<FollowerDto>>> GetMyFollowers(
+        [FromQuery] GetUserFollowersQuery query, 
+        CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);

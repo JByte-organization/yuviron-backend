@@ -52,9 +52,13 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         var oldAvatarUrl = user.Profile!.AvatarUrl;
         var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
 
+        var oldBannerUrl = user.Profile!.BannerUrl;
+        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "banners");
+
         user.Profile!.UpdateDetails(
             request.FirstName.Trim(),
             finalAvatarUrl, 
+            finalBannerUrl,
             user.Profile.Country,
             user.Profile.City,
             user.Profile.Bio,
@@ -86,6 +90,11 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
         {
             user.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
+        {
+            user.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "banners"));
         }
 
         if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) 
