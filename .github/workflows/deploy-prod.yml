@@ -1,17 +1,17 @@
-name: Deploy backend and media worker dev
+name: Deploy backend and media worker prod
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
 
 concurrency:
-  group: yuviron-dev-deploy
+  group: yuviron-prod-deploy
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: [self-hosted, yuviron]
-    environment: dev
+    environment: prod
 
     steps:
       - name: Capture deployed backend revision
@@ -21,14 +21,14 @@ jobs:
           cd /opt/yuviron-server/src/yuviron-backend
 
           previous_sha="$(git rev-parse --verify HEAD)"
-          rollback_dir="/tmp/yuviron-rollback/backend-dev-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rollback_dir="/tmp/yuviron-rollback/backend-prod-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
           umask 077
           mkdir -p "$rollback_dir"
 
           for path in \
-            src/Yuviron.Api/appsettings.Development.json \
-            src/Yuviron.MediaWorker/appsettings.Development.json
+            src/Yuviron.Api/appsettings.Production.json \
+            src/Yuviron.MediaWorker/appsettings.Production.json
           do
             if [ -f "$path" ]; then
               mkdir -p "$rollback_dir/$(dirname "$path")"
@@ -44,11 +44,11 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server/src/yuviron-backend
-          git fetch origin dev
-          git reset --hard origin/dev
+          git fetch origin prod
+          git reset --hard origin/prod
           git clean -fd
 
-      - name: Generate Development appsettings
+      - name: Generate Production appsettings
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
@@ -66,7 +66,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          ENV_FILE="Development"
+          ENV_FILE="Production"
           API_CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ENV_FILE}.json"
           WORKER_CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.MediaWorker/appsettings.${ENV_FILE}.json"
 
@@ -96,10 +96,8 @@ jobs:
                       "https://yuviron.com",
                       "https://backoffice.yuviron.com",
                       "https://admin.yuviron.com",
-                      "https://dev.yuviron.com",
-                      "https://dev-backoffice.yuviron.com",
-                      "https://dev-admin.yuviron.com",
-                      "http://localhost:3000"
+                      "https://backoffice.yuviron.com",
+                      "https://admin.yuviron.com"
                   ]
               },
               "JwtSettings": {
@@ -170,7 +168,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           docker ps -aq \
-            --filter "name=yuviron-dev-migrator-run" \
+            --filter "name=yuviron-prod-migrator-run" \
             | xargs -r docker rm -f
 
       - name: Docker disk usage before deploy
@@ -183,42 +181,50 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
-          python3 ./scripts/cli.py stack preflight dev
+          python3 ./scripts/cli.py stack preflight prod
 
-      - name: Start full dev stack
+      - name: Start full prod stack
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
-          timeout 1200 python3 ./scripts/cli.py stack up dev
+          timeout 1200 python3 ./scripts/cli.py stack up prod
 
       - name: Scan deployed images for vulnerabilities
         run: |
           set -Eeuo pipefail
-          for container in yuviron-dev-backend yuviron-dev-media-worker yuviron-dev-nginx; do
+          FAILED=0
+          for container in yuviron-prod-backend yuviron-prod-media-worker yuviron-prod-nginx; do
             IMAGE=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null || true)
             if [ -z "$IMAGE" ]; then
               echo "Container not found, skipping scan: $container"
               continue
             fi
             echo "=== Trivy: $container ==="
-            docker run --rm \
+            if ! docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v /tmp/trivy-cache:/root/.cache/trivy \
               aquasec/trivy:latest image \
               --severity CRITICAL,HIGH \
               --ignore-unfixed \
               --no-progress \
-              --exit-code 0 \
+              --exit-code 1 \
               "$IMAGE"
+            then
+              FAILED=$((FAILED + 1))
+            fi
           done
+          if [ "$FAILED" -gt 0 ]; then
+            echo "Trivy found fixable CRITICAL/HIGH CVEs in ${FAILED} image(s). Blocking production deployment."
+            exit 1
+          fi
 
-      - name: Smoke test dev stack
+      - name: Smoke test prod stack
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
-          python3 ./scripts/cli.py stack smoke dev
+          python3 ./scripts/cli.py stack smoke prod
 
-      - name: Rollback backend dev stack
+      - name: Rollback backend prod stack
         if: failure() && steps.deployed-revision.outputs.previous_sha != ''
         env:
           PREVIOUS_SHA: ${{ steps.deployed-revision.outputs.previous_sha }}
@@ -233,8 +239,8 @@ jobs:
           git clean -fd
 
           for path in \
-            src/Yuviron.Api/appsettings.Development.json \
-            src/Yuviron.MediaWorker/appsettings.Development.json
+            src/Yuviron.Api/appsettings.Production.json \
+            src/Yuviron.MediaWorker/appsettings.Production.json
           do
             if [ -f "${ROLLBACK_DIR}/${path}" ]; then
               mkdir -p "$(dirname "$path")"
@@ -245,8 +251,8 @@ jobs:
           done
 
           cd /opt/yuviron-server
-          timeout 1200 python3 ./scripts/cli.py stack up dev --no-rollback --skip-migrate --no-build
-          python3 ./scripts/cli.py stack smoke dev
+          timeout 1200 python3 ./scripts/cli.py stack up prod --no-rollback --skip-migrate --no-build
+          python3 ./scripts/cli.py stack smoke prod
 
       - name: Cleanup backend rollback snapshot
         if: always()
@@ -278,34 +284,34 @@ jobs:
           set -Eeuo pipefail
           cd /opt/yuviron-server
           docker compose \
-            --env-file ./generated/dev/deploy.env \
+            --env-file ./generated/prod/deploy.env \
             -f ./infra/compose.yml \
-            -f ./generated/dev/compose.frontends.yml \
-            -p yuviron-dev \
+            -f ./generated/prod/compose.frontends.yml \
+            -p yuviron-prod \
             ps
 
       - name: Show backend logs
         if: always()
         run: |
           set -Eeuo pipefail
-          docker logs --tail=160 yuviron-dev-backend || true
+          docker logs --tail=160 yuviron-prod-backend || true
 
       - name: Show media worker logs
         if: always()
         run: |
           set -Eeuo pipefail
-          docker logs --tail=160 yuviron-dev-media-worker || true
+          docker logs --tail=160 yuviron-prod-media-worker || true
 
       - name: Show nginx logs
         if: always()
         run: |
           set -Eeuo pipefail
-          docker logs --tail=160 yuviron-dev-nginx || true
+          docker logs --tail=160 yuviron-prod-nginx || true
 
       - name: Cleanup stale migrator run containers after deploy
         if: always()
         run: |
           set -Eeuo pipefail
           docker ps -aq \
-            --filter "name=yuviron-dev-migrator-run" \
+            --filter "name=yuviron-prod-migrator-run" \
             | xargs -r docker rm -f
