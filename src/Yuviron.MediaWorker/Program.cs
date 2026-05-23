@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using MassTransit;
+﻿using MassTransit;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Yuviron.Application;
 using Yuviron.Infrastructure;
@@ -14,53 +13,51 @@ try
 {
     Log.Information("Starting Yuviron.MediaWorker...");
 
-    var builder = WebApplication.CreateBuilder(args);
+    var builder = Host.CreateDefaultBuilder(args);
 
-    builder.Host.UseSerilog((context, services, configuration) => configuration
+    builder.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
         .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341"));
 
-    builder.Services.AddApplication();
-    builder.Services.AddInfrastructure(builder.Configuration);
-
-    builder.Services.AddMassTransit(x =>
+    builder.ConfigureServices((hostContext, services) =>
     {
-        x.AddConsumer<AudioTranscodingConsumer>();
+        services.AddApplication();
+        services.AddInfrastructure(hostContext.Configuration);
 
-        x.UsingRabbitMq((context, cfg) =>
+        services.AddMassTransit(x =>
         {
-            var rabbitConfig = builder.Configuration.GetSection("RabbitMQ");
-            var host = rabbitConfig["Host"] ?? "127.0.0.1";
-            var user = rabbitConfig["Username"] ?? "guest";
-            var pass = rabbitConfig["Password"] ?? "guest";
-            var vhost = rabbitConfig["VirtualHost"] ?? "/";
+            x.AddConsumer<AudioTranscodingConsumer>();
 
-            cfg.Host(host, vhost, h =>
+            x.UsingRabbitMq((context, cfg) =>
             {
-                h.Username(user);
-                h.Password(pass);
-            });
+                var rabbitConfig = hostContext.Configuration.GetSection("RabbitMQ");
+                var host = rabbitConfig["Host"] ?? "127.0.0.1";
+                var user = rabbitConfig["Username"] ?? "guest";
+                var pass = rabbitConfig["Password"] ?? "guest";
 
-            cfg.ReceiveEndpoint("media_tasks_queue", e =>
-            {
-                e.ConfigureConsumer<AudioTranscodingConsumer>(context);
-                e.PrefetchCount = 1;
+                var vhost = rabbitConfig["VirtualHost"] ?? "/";
+
+                cfg.Host(host, vhost, h => {
+                    h.Username(user);
+                    h.Password(pass);
+                });
+
+                cfg.ReceiveEndpoint("media_tasks_queue", e =>
+                {
+                    e.ConfigureConsumer<AudioTranscodingConsumer>(context);
+                    e.PrefetchCount = 1; 
+                });
             });
         });
     });
 
-    builder.Services.AddHealthChecks();
-
-    var app = builder.Build();
-
-    app.MapHealthChecks("/health/ready");
-    app.MapHealthChecks("/health/live");
-
+    var host = builder.Build();
+    
     Log.Information("MediaWorker is ready and listening to RabbitMQ.");
-
-    app.Run();
+    
+    host.Run(); 
 }
 catch (Exception ex)
 {

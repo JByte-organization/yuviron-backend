@@ -4,7 +4,7 @@ namespace Yuviron.Application.Abstractions.Security;
 
 public interface IStreamTokenService
 {
-    string GenerateToken(Guid trackId, DateTimeOffset expiration);
+    string GenerateToken(Guid trackId, int quality, DateTimeOffset expiration);
 
-    bool ValidateToken(Guid trackId, long expirationUnix, string token);
+    bool ValidateToken(Guid trackId, int quality, long expirationUnix, string token);
 }

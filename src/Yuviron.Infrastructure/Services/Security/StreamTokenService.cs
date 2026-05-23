@@ -21,10 +21,11 @@ public sealed class StreamTokenService : IStreamTokenService
         _secretKey = Encoding.UTF8.GetBytes(keyString);
     }
 
-    public string GenerateToken(Guid trackId, DateTimeOffset expiration)
+    public string GenerateToken(Guid trackId, int quality, DateTimeOffset expiration)
     {
         var expirationUnix = expiration.ToUnixTimeSeconds();
-        var payload = $"{trackId:N}:{expirationUnix}";
+
+        var payload = $"{trackId:N}:{quality}:{expirationUnix}";
         
         using var hmac = new HMACSHA256(_secretKey);
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
@@ -32,14 +33,14 @@ public sealed class StreamTokenService : IStreamTokenService
         return Convert.ToBase64String(hash).Replace("+", "-").Replace("/", "_").TrimEnd('=');
     }
 
-    public bool ValidateToken(Guid trackId, long expirationUnix, string token)
+    public bool ValidateToken(Guid trackId, int quality, long expirationUnix, string token)
     {
         if (string.IsNullOrWhiteSpace(token)) return false;
 
         var expirationTime = DateTimeOffset.FromUnixTimeSeconds(expirationUnix);
         if (DateTimeOffset.UtcNow > expirationTime) return false;
 
-        var payload = $"{trackId:N}:{expirationUnix}";
+        var payload = $"{trackId:N}:{quality}:{expirationUnix}";
         using var hmac = new HMACSHA256(_secretKey);
         var expectedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         var expectedToken = Convert.ToBase64String(expectedHash).Replace("+", "-").Replace("/", "_").TrimEnd('=');
