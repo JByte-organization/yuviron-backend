@@ -1,6 +1,7 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Common.Utilities;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Files.Queries.GetTempPreview;
@@ -8,28 +9,31 @@ namespace Yuviron.Application.Features.Files.Queries.GetTempPreview;
 public sealed class GetTempPreviewHandler : IRequestHandler<GetTempPreviewQuery, GetTempPreviewResponse>
 {
     private readonly IFileStorageService _fileStorage;
+    private readonly IApplicationDbContext _context;
 
-    public GetTempPreviewHandler(IFileStorageService fileStorage)
+    public GetTempPreviewHandler(IFileStorageService fileStorage, IApplicationDbContext context)
     {
         _fileStorage = fileStorage;
+        _context = context;
     }
 
     public async Task<GetTempPreviewResponse> Handle(GetTempPreviewQuery request, CancellationToken cancellationToken)
     {
-        var safeFileName = Path.GetFileName(request.FileName);
+        if (!Guid.TryParse(request.FileName, out var fileId))
+            throw new NotFoundException("TempFile", request.FileName);
 
-        if (string.IsNullOrWhiteSpace(safeFileName))
-            throw new System.ArgumentException("Invalid file name."); 
+        var fileMeta = await _context.FileMetadata
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == fileId && f.IsTemporary, cancellationToken);
 
-        var relativePath = $"temp/{safeFileName}";
-        var stream = await _fileStorage.GetFileStreamAsync(relativePath, cancellationToken);
+        if (fileMeta == null)
+            throw new NotFoundException("TempFile", request.FileName);
+
+        var stream = await _fileStorage.GetFileStreamAsync(fileMeta.CurrentStorageKey, cancellationToken);
 
         if (stream == null)
-            throw new NotFoundException("TempFile", safeFileName);
+            throw new NotFoundException("TempFile", request.FileName);
 
-        var (_, contentType) = FileSignatureDetector.Detect(stream);
-
-        return new GetTempPreviewResponse(stream, contentType);
+        return new GetTempPreviewResponse(stream, fileMeta.ContentType);
     }
-    
 }
