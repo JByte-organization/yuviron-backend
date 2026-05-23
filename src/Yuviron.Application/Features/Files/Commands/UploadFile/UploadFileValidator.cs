@@ -7,8 +7,9 @@ namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
 public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
 {
-    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".mp3", ".wav" };
-    private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "audio/mpeg", "audio/wav", "audio/x-wav" };
+    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp3", ".wav" };
+    
+    private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif", "audio/mpeg", "audio/wav", "audio/x-wav" };
 
     public UploadFileValidator()
     {

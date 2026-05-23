@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Configuration;
 using Yuviron.Infrastructure.Utilities;
 
 namespace Yuviron.Infrastructure.Services;
@@ -11,13 +13,11 @@ public class LocalFileStorageService : IFileStorageService
     private readonly ILogger<LocalFileStorageService> _logger;
 
     public LocalFileStorageService(
-        IConfiguration configuration, 
+        IOptions<StorageOptions> options, 
         ILogger<LocalFileStorageService> logger)
     {
-        _storageRoot = configuration["FILE_STORAGE_ROOT"] 
-                       ?? Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") 
-                       ?? "/var/yuviron/storage";
-        _storageRoot = Path.GetFullPath(_storageRoot);
+        var configuredRoot = Environment.GetEnvironmentVariable("FILE_STORAGE_ROOT") ?? options.Value.RootPath;
+        _storageRoot = Path.GetFullPath(configuredRoot);
         _logger = logger;
     }
 
@@ -44,20 +44,17 @@ public class LocalFileStorageService : IFileStorageService
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
+            
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
             }
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "File {FileKey} is locked and cannot be deleted right now.", fileKey);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while deleting file {FileKey}.", fileKey);
+            _logger.LogWarning(ex, "Failed to delete file {FileKey}.", fileKey);
             throw;
         }
 
@@ -71,51 +68,48 @@ public class LocalFileStorageService : IFileStorageService
             return Task.FromResult(sourceFileKey); 
         }
 
-        var sourcePath = StoragePathValidator.GetValidatedFullPath(_storageRoot, sourceFileKey);
-        var targetDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, destinationFolder);
-        
-        var fileName = Path.GetFileName(sourceFileKey);
-        var targetFilePath = Path.Combine(targetDirectory, fileName);
-        var finalRelativePath = Path.Combine(destinationFolder, fileName).Replace("\\", "/");
-
-        if (!File.Exists(sourcePath))
+        try
         {
-            if (File.Exists(targetFilePath))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sourcePath = StoragePathValidator.GetValidatedFullPath(_storageRoot, sourceFileKey);
+            var targetDirectory = StoragePathValidator.GetValidatedFullPath(_storageRoot, destinationFolder);
+            
+            var fileName = Path.GetFileName(sourceFileKey);
+            var targetFilePath = Path.Combine(targetDirectory, fileName);
+            var finalRelativePath = Path.Combine(destinationFolder, fileName).Replace("\\", "/");
+
+            if (!File.Exists(sourcePath))
             {
-                return Task.FromResult(finalRelativePath);
+                if (File.Exists(targetFilePath))
+                {
+                    return Task.FromResult(finalRelativePath);
+                }
+                throw new FileNotFoundException($"Source temp file not found for moving: {sourcePath}");
             }
 
-            throw new FileNotFoundException($"Source temp file not found for moving: {sourcePath}");
-        }
+            if (!Directory.Exists(targetDirectory)) Directory.CreateDirectory(targetDirectory);
 
-        if (!Directory.Exists(targetDirectory))
+            File.Move(sourcePath, targetFilePath, overwrite: true);
+
+            return Task.FromResult(finalRelativePath);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Directory.CreateDirectory(targetDirectory);
+            _logger.LogError(ex, "Failed to move file {SourceFileKey} to {DestinationFolder}.", sourceFileKey, destinationFolder);
+            throw;
         }
-
-        File.Move(sourcePath, targetFilePath, overwrite: true);
-
-        return Task.FromResult(finalRelativePath);
     }
     
-    public Task<Stream?> GetFileStreamAsync(string fileKey, CancellationToken cancellationToken = default)
+    public async Task<Stream?> GetFileStreamAsync(string fileKey, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fileKey))
-        {
-            throw new ArgumentException("File key cannot be null or empty.", nameof(fileKey));
-        }
+        if (string.IsNullOrWhiteSpace(fileKey)) throw new ArgumentException("File key cannot be null or empty.", nameof(fileKey));
 
         var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
 
-        
-        if (!File.Exists(fullPath))
-        {
-            return Task.FromResult<Stream?>(null); 
-        }
+        if (!await ExistsAsync(fileKey, cancellationToken)) return null; 
 
-        Stream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
-
-        return Task.FromResult<Stream?>(stream);
+        return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
     }
     
     public Task DeleteDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)
@@ -124,6 +118,7 @@ public class LocalFileStorageService : IFileStorageService
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, directoryPath); 
             
             if (Directory.Exists(fullPath))
@@ -131,22 +126,21 @@ public class LocalFileStorageService : IFileStorageService
                 Directory.Delete(fullPath, recursive: true);
                 _logger.LogInformation("The directory and all its files have been successfully deleted: {Path}", fullPath);
             }
-            else
-            {
-                _logger.LogWarning("Directory {Path} not found, deletion skipped.", fullPath);
-            }
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "The directory {DirectoryPath} is locked and cannot be deleted right now.", directoryPath);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An unexpected error occurred while deleting the directory. {DirectoryPath}.", directoryPath);
+            _logger.LogWarning(ex, "Failed to delete directory {DirectoryPath}.", directoryPath);
             throw;
         }
 
         return Task.CompletedTask;
+    }
+
+    public Task<bool> ExistsAsync(string fileKey, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(fileKey)) return Task.FromResult(false);
+        
+        var fullPath = StoragePathValidator.GetValidatedFullPath(_storageRoot, fileKey);
+        return Task.FromResult(File.Exists(fullPath));
     }
 }
