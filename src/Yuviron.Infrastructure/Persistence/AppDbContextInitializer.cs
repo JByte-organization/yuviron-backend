@@ -35,8 +35,6 @@ public class AppDbContextInitializer
 
             if (_context.Database.IsRelational())
             {
-                // Накатываем миграции кодом ТОЛЬКО при локальной разработке
-                // На сервере (Production/Dev) это делает GitHub Actions пайплайн
                 if (env == "Development")
                 {
                     await _context.Database.MigrateAsync();
@@ -170,7 +168,7 @@ public class AppDbContextInitializer
             var user = User.Create(email, _passwordHasher.Hash(password), firstName, false, true, utcNow);
             await _context.Users.AddAsync(user);
             await _context.UserRoles.AddAsync(new UserRole(user.Id, role.Id));
-            user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
+            user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
 
             if (isPremium)
             {
