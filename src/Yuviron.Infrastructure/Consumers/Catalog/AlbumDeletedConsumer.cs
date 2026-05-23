@@ -19,7 +19,7 @@ public class AlbumDeletedConsumer : IConsumer<AlbumDeletedEvent>
     public async Task Consume(ConsumeContext<AlbumDeletedEvent> context)
     {
         var tracks = await _context.Tracks
-            .Where(t => t.AlbumId == context.Message.AlbumId && !t.IsDeleted) 
+            .Where(t => t.AlbumId == context.Message.AlbumId ) 
             .ToListAsync(context.CancellationToken);
 
         if (!tracks.Any()) return;

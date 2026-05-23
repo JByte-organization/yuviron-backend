@@ -9,7 +9,7 @@ public sealed record UpdatePlaylistCommand(
     Guid? OwnerUserId,
     string Title,
     string? Description,
-    string? CoverUrl,
+    Guid? CoverFileId,
     PlaylistVisibility Visibility,
     bool IsEditorial  
 ) : IRequest<Unit>, ISecuredRequest

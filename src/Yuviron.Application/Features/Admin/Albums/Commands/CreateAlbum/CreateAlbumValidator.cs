@@ -15,12 +15,6 @@ public sealed class CreateAlbumCommandValidator : AbstractValidator<CreateAlbumC
             .MaximumLength(2000) 
             .When(x => x.Description is not null);
         
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(2048)
-            .Must(url => url == null || !url.Contains(".."))
-            .WithMessage("Invalid file path.")
-            .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
-        
         RuleFor(x => x.ReleaseDate)
             .NotEqual(default(DateTime));
 

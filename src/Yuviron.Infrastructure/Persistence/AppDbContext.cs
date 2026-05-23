@@ -86,7 +86,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<UserSavedTrack> UserSavedTracks => Set<UserSavedTrack>();
     public DbSet<UserSavedAlbum> UserSavedAlbums => Set<UserSavedAlbum>();
     public DbSet<UserFollowArtist> UserFollowArtists => Set<UserFollowArtist>();
-    //public DbSet<UserFollowUser> UserFollowUsers => Set<UserFollowUser>();
+    public DbSet<UserFollowUser> UserFollowUsers => Set<UserFollowUser>();
     public DbSet<Plan> Plans => Set<Plan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Ad> Ads => Set<Ad>();

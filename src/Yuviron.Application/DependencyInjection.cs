@@ -1,9 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Yuviron.Application.Abstractions.Services.Jamendo;
 using Yuviron.Application.Behaviors;
+using Yuviron.Application.Features.Admin.Jamendo.Services;
 using Yuviron.Application.Policies;
-
 
 namespace Yuviron.Application;
 
@@ -25,7 +26,9 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
         
-        services.AddTransient<UserSettingsPolicy>();
+        services.AddScoped<IJamendoMetadataResolver, JamendoMetadataResolver>();
+        services.AddScoped<IJamendoEntityResolver, JamendoEntityResolver>();
+        services.AddSingleton<UserSettingsPolicy>();
 
         return services;
     }

@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 public sealed record CreateAlbumCommand(
     string Title,
     string? Description,
-    string? CoverUrl,
+    Guid? CoverFileId, // <-- GUID
     DateTime ReleaseDate,
     ReleaseType ReleaseType,
     VisibilityStatus VisibilityStatus,

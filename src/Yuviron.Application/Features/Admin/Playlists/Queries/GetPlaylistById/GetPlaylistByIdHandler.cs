@@ -16,7 +16,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
     {
         var playlist = await _context.Playlists
                            .AsNoTracking()
-                           .Where(p => p.Id == request.Id && !p.IsDeleted)
+                           .Where(p => p.Id == request.Id)
                            .Select(p => new PlaylistDetailsDto(
                                p.Id,
                                p.Title,
@@ -30,7 +30,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                    p.User.Email,
                                    p.User.Profile.AvatarUrl 
                                ),
-                               p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
+                               p.PlaylistTracks.Count(),
                                p.CreatedAt,
                                p.UpdatedAt
                            ))

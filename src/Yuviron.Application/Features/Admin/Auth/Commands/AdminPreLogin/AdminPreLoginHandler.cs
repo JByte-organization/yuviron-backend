@@ -10,7 +10,6 @@ using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Auth.Commands.AdminPreLogin;
 
-// Создаем локальную модель для передачи кода в шаблон
 public record AdminLoginCodeModel(string Code);
 
 public sealed class AdminPreLoginHandler : IRequestHandler<AdminPreLoginCommand, Unit>

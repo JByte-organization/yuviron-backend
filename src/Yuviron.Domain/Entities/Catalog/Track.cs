@@ -36,7 +36,7 @@ public class Track : Entity
     private Track() { }
 
     public static Track Create(
-        Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl,
+        Guid id, Guid albumId, int albumPosition, string title, int durationMs, bool isExplicit, string? coverUrl,
         string audioKey, VisibilityStatus status,
         string? isrc,
         IEnumerable<(Guid ArtistId, ArtistRole Role)> artists,
@@ -51,7 +51,7 @@ public class Track : Entity
 
         var track = new Track
         {
-            Id = Guid.NewGuid(),
+            Id = id,
             AlbumId = albumId,
             AlbumPosition = albumPosition, 
             Title = title.Trim(),
@@ -119,7 +119,7 @@ public class Track : Entity
 
         if (audioChanged)
         {
-            ProcessingStatus = TrackProcessingStatus.Ready;
+            ProcessingStatus = TrackProcessingStatus.Processing;
             HlsPlaylistUrl = null;
         }
 

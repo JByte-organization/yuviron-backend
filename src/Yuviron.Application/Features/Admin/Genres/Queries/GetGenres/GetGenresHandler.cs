@@ -17,9 +17,7 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
 
     public async Task<PaginatedList<GenreListItemDto>> Handle(GetGenresQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Genres
-            .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+        var query = _context.Genres.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));
@@ -31,14 +29,14 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, Paginated
             defaultDesc: true,
             mapping: new Dictionary<string, Expression<Func<Genre, object>>>
             {
-                [nameof(GenreListItemDto.TracksCount)] = g => g.TrackGenres.Count(tg => !tg.Track.IsDeleted)
+                [nameof(GenreListItemDto.TracksCount)] = g => g.TrackGenres.Count()
             });
 
         var projectedQuery = sortedQuery.Select(g => new GenreListItemDto(
             g.Id, 
             g.CoverUrl,
             g.Name, 
-            g.TrackGenres.Count(tg => !tg.Track.IsDeleted),
+            g.TrackGenres.Count(),
             g.CreatedAt,
             g.UpdatedAt
         ));

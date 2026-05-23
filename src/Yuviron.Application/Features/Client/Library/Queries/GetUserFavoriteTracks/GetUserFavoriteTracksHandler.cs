@@ -59,7 +59,7 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             ust.TrackId,
             ust.Track.Title,
             ust.Track.TrackArtists
-                .Where(ta => !ta.Artist.IsDeleted)
+                
                 .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
             ust.Track.AlbumId,
             ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",

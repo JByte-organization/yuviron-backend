@@ -17,7 +17,7 @@ public sealed class GetMoodByIdHandler : IRequestHandler<GetMoodByIdQuery, GetMo
     {
         var mood = await _context.Moods
             .AsNoTracking()
-            .Where(m => m.Id == request.Id && !m.IsDeleted)
+            .Where(m => m.Id == request.Id )
             .Select(m => new GetMoodByIdDto(
                 m.Id,
                 m.Name,

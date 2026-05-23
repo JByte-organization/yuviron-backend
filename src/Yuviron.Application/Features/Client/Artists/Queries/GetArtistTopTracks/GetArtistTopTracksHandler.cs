@@ -27,7 +27,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists)
         {
@@ -54,7 +54,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                 t.AlbumId,
                 AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
                 Artists = t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
             })
             .ToListAsync(cancellationToken);

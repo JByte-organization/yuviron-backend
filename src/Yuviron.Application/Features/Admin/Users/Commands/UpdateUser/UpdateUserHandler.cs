@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
@@ -13,22 +14,21 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICurrentUserService _currentUser;
 
     public UpdateUserHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider) 
+        TimeProvider timeProvider,
+        ICurrentUserService currentUser) 
     {
         _context = context;
         _timeProvider = timeProvider;
+        _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users
-            .Include(u => u.Profile)
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException(nameof(User), request.UserId);
+        var currentAdminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
@@ -40,21 +40,45 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         {
             throw new UserAlreadyExistsException(normalizedEmail);
         }
+
+        var user = await _context.Users
+            .Include(u => u.Profile)
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+
+        if (user == null)
+        {
+            throw new NotFoundException(nameof(User), request.UserId);
+        }
         
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        user.UpdateAdminDetails(
-            normalizedEmail,
-            request.AcceptMarketing,
-            request.AccountState,
-            utcNow);
+        string? finalAvatarUrl = user.Profile!.AvatarUrl;
+        if (request.AvatarFileId.HasValue)
+        {
+            var avatarClaim = await _context.ClaimFileAsync(
+                request.AvatarFileId.Value, currentAdminId, "image/", "avatars", cancellationToken);
 
-        var oldAvatarUrl = user.Profile!.AvatarUrl;
-        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
+            user.RegisterFileSwapEvents(avatarClaim, user.Profile.AvatarUrl);
+            finalAvatarUrl = avatarClaim.FinalPath;
+        }
+
+        string? finalBannerUrl = user.Profile!.BannerUrl;
+        if (request.BannerFileId.HasValue)
+        {
+            var bannerClaim = await _context.ClaimFileAsync(
+                request.BannerFileId.Value, currentAdminId, "image/", "banners", cancellationToken);
+
+            user.RegisterFileSwapEvents(bannerClaim, user.Profile.BannerUrl);
+            finalBannerUrl = bannerClaim.FinalPath;
+        }
+
+        user.UpdateAdminDetails(normalizedEmail, request.AcceptMarketing, request.AccountState, utcNow);
 
         user.Profile!.UpdateDetails(
             request.FirstName.Trim(),
             finalAvatarUrl, 
+            finalBannerUrl,
             user.Profile.Country,
             user.Profile.City,
             user.Profile.Bio,
@@ -64,10 +88,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 
         if (request.RoleIds is not null)
         {
-            var requestedRoleIds = request.RoleIds
-                .Where(id => id != Guid.Empty)
-                .Distinct()
-                .ToHashSet();
+            var requestedRoleIds = request.RoleIds.Where(id => id != Guid.Empty).Distinct().ToHashSet();
 
             var existingRoleIds = await _context.Roles
                 .AsNoTracking()
@@ -83,21 +104,9 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             user.SyncRoles(existingRoleIds);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
-        {
-            user.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
-        }
-
-        if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) 
-            && !string.IsNullOrWhiteSpace(oldAvatarUrl))
-        {
-            user.AddDomainEvent(new FileNeedsDeletionEvent(oldAvatarUrl));
-        }
-
         try
         {
             user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id)); 
-            
             await _context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
@@ -110,10 +119,12 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 
     private static bool IsDuplicateEmailViolation(DbUpdateException exception)
     {
-        var message = exception.InnerException?.Message ?? exception.Message;
+        if (exception.InnerException is MySqlConnector.MySqlException mySqlEx)
+        {
+            return mySqlEx.Number == 1062 && 
+                   mySqlEx.Message.Contains("email", StringComparison.OrdinalIgnoreCase);
+        }
 
-        return message.Contains("Duplicate entry", StringComparison.OrdinalIgnoreCase)
-               && message.Contains("users", StringComparison.OrdinalIgnoreCase)
-               && message.Contains("email", StringComparison.OrdinalIgnoreCase);
+        return false;
     }
 }

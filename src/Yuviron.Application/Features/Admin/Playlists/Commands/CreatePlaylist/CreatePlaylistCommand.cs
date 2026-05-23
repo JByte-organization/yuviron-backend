@@ -8,7 +8,7 @@ public sealed record CreatePlaylistCommand(
     Guid? OwnerUserId,
     string Title,
     string? Description,
-    string? CoverUrl,
+    Guid? CoverFileId,
     PlaylistVisibility Visibility,
     bool IsEditorial
 ) : IRequest<Guid>, ISecuredRequest

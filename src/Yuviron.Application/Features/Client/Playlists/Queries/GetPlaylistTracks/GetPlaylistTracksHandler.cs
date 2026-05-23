@@ -30,7 +30,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
     {
         var playlist = await _context.Playlists
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && !p.IsDeleted, cancellationToken)
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken)
             ?? throw new NotFoundException("Playlist", request.PlaylistId);
 
         if (playlist.Visibility == PlaylistVisibility.Private && playlist.UserId != _currentUser.UserId)
@@ -64,7 +64,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .AsNoTracking()
             .Include(t => t.Album)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
-            .Where(t => trackIds.Contains(t.Id) && !t.IsDeleted)
+            .Where(t => trackIds.Contains(t.Id) )
             .ToListAsync(cancellationToken);
 
         var dtos = tracksWithScores.Keys
@@ -103,7 +103,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             pt.TrackId, 
             pt.Track.Title,
             pt.Track.TrackArtists
-                .Where(ta => !ta.Artist.IsDeleted)
+                
                 .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
                 .ToList(),
             pt.Track.AlbumId, 
@@ -122,7 +122,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             track.Id, 
             track.Title,
             track.TrackArtists
-                .Where(ta => !ta.Artist.IsDeleted)
+                
                 .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
                 .ToList(),
             track.AlbumId, 

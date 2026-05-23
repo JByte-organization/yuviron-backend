@@ -6,7 +6,7 @@ namespace Yuviron.Application.Features.Admin.Moods.Commands.CreateMood;
 
 public sealed record CreateMoodCommand(
     string Name,
-    string? CoverUrl
+    Guid? CoverFileId
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

@@ -47,8 +47,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
         if (existingToken.User == null) throw new UnauthorizedAccessException("User not found.");
 
         if (existingToken.User.AccountState == AccountState.Banned || 
-            existingToken.User.AccountState == AccountState.Deleted || 
-            existingToken.User.IsDeleted)
+            existingToken.User.AccountState == AccountState.Deleted)
         {
             throw new UnauthorizedAccessException("This account has been banned or deleted.");
         }

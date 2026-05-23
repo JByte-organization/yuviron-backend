@@ -28,7 +28,7 @@ public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrack
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var isOwner = await _context.Playlists
-            .AnyAsync(p => p.Id == request.PlaylistId && p.UserId == userId && !p.IsDeleted, cancellationToken);
+            .AnyAsync(p => p.Id == request.PlaylistId && p.UserId == userId , cancellationToken);
 
         if (!isOwner) throw new ForbiddenException("Playlist not found or access denied.");
 

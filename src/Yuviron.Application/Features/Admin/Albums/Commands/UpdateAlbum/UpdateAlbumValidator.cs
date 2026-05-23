@@ -17,12 +17,10 @@ public sealed class UpdateAlbumCommandValidator : AbstractValidator<UpdateAlbumC
         RuleFor(x => x.Description)
             .MaximumLength(2000) 
             .When(x => x.Description is not null);
-            
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(2048)
-            .Must(url => url == null || !url.Contains(".."))
-            .WithMessage("Invalid file path.")
-            .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
+
+        RuleFor(x => x.CoverFileId)
+            .NotEqual(Guid.Empty)
+            .When(x => x.CoverFileId.HasValue);
             
         RuleFor(x => x.ReleaseDate)
             .NotEqual(default(DateTime));

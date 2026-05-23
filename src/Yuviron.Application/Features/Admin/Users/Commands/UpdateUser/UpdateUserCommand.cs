@@ -7,7 +7,8 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 public sealed record UpdateUserCommand(
     Guid UserId,
     string Email,
-    string? AvatarUrl,
+    Guid? AvatarFileId, // <-- GUID
+    Guid? BannerFileId, // <-- GUID
     AccountState AccountState,
     bool AcceptMarketing,
     string FirstName,
@@ -18,7 +19,6 @@ public sealed record UpdateUserCommand(
 {
     public AppPermission RequiredPermission => AppPermission.ManageUsers;
 }
-
 
 
 

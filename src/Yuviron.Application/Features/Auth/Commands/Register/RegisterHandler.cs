@@ -67,6 +67,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
             userId: user.Id, 
             firstName: firstName, 
             avatarUrl: null, 
+            bannerUrl: null,
             country: request.Country, 
             city: request.City,       
             bio: null, 

@@ -2,23 +2,24 @@ using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
-using Yuviron.Domain.Enums;
-using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
+using Yuviron.Domain.Entities; // Оставляем using, но используем полное имя при создании из-за конфликта имен
 
 namespace Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 
 public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
+    private readonly ICurrentUserService _currentUser;
 
-    public CreatePlaylistHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public CreatePlaylistHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider, 
+        ICurrentUserService currentUser)
     {
         _context = context;
-        _currentUser = currentUser;
         _timeProvider = timeProvider;
+        _currentUser = currentUser;
     }
 
     public async Task<Guid> Handle(CreatePlaylistCommand request, CancellationToken cancellationToken)
@@ -26,21 +27,27 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        ClaimedFileResult? coverClaim = null;
+
+        if (request.CoverFileId.HasValue)
+        {
+            coverClaim = await _context.ClaimFileAsync(
+                request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
+        }
         
-        var playlist = Domain.Entities.Playlist.Create(
+        var playlist = Yuviron.Domain.Entities.Playlist.Create(
             userId: userId,
-            title: request.Name,
+            title: request.Title, 
             description: null, 
-            finalCoverUrl,
+            coverUrl: coverClaim?.FinalPath,
             visibility: request.Visibility,
             isEditorial: false,
             utcNow: utcNow
         );
         
-        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+        if (coverClaim != null)
         {
-            playlist.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+            playlist.RegisterFileSwapEvents(coverClaim);
         }
 
         _context.Playlists.Add(playlist);

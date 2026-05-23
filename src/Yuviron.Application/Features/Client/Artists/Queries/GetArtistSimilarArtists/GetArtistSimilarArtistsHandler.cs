@@ -23,7 +23,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists)
         {
@@ -36,7 +36,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
             .SelectMany(t => t.TrackGenres
-                .Where(tg => !tg.Genre.IsDeleted)
+                
                 .Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -48,7 +48,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
 
         return await _context.Artists
             .AsNoTracking()
-            .Where(a => a.Id != request.ArtistId && !a.IsDeleted)
+            .Where(a => a.Id != request.ArtistId )
             .Where(a => a.TrackArtists.Any(ta =>
                 !ta.Track.IsDeleted &&
                 ta.Track.VisibilityStatus == VisibilityStatus.Published &&

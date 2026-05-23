@@ -19,7 +19,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists)
         {
@@ -28,7 +28,7 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
 
         var artist = await _context.Artists
             .AsNoTracking()
-            .Where(a => a.Id == request.ArtistId && !a.IsDeleted)
+            .Where(a => a.Id == request.ArtistId )
             .Select(a => new ArtistDetailsDto(
                 a.Id,
                 a.Name,

@@ -25,7 +25,7 @@ public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserD
 
         var user = await _context.Users
             .AsNoTracking()
-            .Where(u => u.Id == request.UserId && !u.IsDeleted)
+            .Where(u => u.Id == request.UserId )
             .Select(u => new UserDetailsDto(
                 u.Id,
                 u.Email,

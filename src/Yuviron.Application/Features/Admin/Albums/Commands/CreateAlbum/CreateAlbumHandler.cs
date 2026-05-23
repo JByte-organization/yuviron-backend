@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
@@ -12,20 +12,24 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICurrentUserService _currentUser;
 
-    public CreateAlbumHandler(IApplicationDbContext context,
-        TimeProvider timeProvider)
+    public CreateAlbumHandler(
+        IApplicationDbContext context,
+        TimeProvider timeProvider,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _currentUser = currentUser;
     }
 
     public async Task<Guid> Handle(CreateAlbumCommand request, CancellationToken cancellationToken)
     {
+        var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+        
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
-
-        var existingArtistsCount = await _context.Artists
-            .CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+        var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
@@ -34,12 +38,17 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        ClaimedFileResult? coverClaim = null;
+        if (request.CoverFileId.HasValue)
+        {
+            coverClaim = await _context.ClaimFileAsync(
+                request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
+        }
         
         var album = Album.Create(
             request.Title,
             request.Description,
-            finalCoverUrl, 
+            coverClaim?.FinalPath, 
             request.ReleaseDate,
             request.ReleaseType,
             request.VisibilityStatus,
@@ -47,13 +56,12 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
             uniqueArtistIds,
             utcNow);
 
-        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
+        if (coverClaim != null)
         {
-            album.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
+            album.RegisterFileSwapEvents(coverClaim);
         }
 
         _context.Albums.Add(album);
-        
         await _context.SaveChangesAsync(cancellationToken);
 
         return album.Id;

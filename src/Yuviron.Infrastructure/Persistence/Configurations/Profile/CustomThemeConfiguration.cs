@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -17,6 +14,8 @@ public class CustomThemeConfiguration : IEntityTypeConfiguration<CustomTheme>
         builder.Property(x => x.PrimaryColor).IsRequired().HasMaxLength(7).IsFixedLength();
         builder.Property(x => x.SecondaryColor).IsRequired().HasMaxLength(7).IsFixedLength();
         builder.Property(x => x.BackgroundColor).IsRequired().HasMaxLength(7).IsFixedLength();
+        
+        builder.Property(x => x.BackgroundImageUrl).HasMaxLength(2048);
 
         builder.HasIndex(x => x.UserId);
 

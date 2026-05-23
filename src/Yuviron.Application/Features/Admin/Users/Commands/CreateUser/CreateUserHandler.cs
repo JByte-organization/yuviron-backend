@@ -57,6 +57,7 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
             null,
             null,
             null,
+            null,
             null, 
             request.DateOfBirth,
             request.Gender,
@@ -120,10 +121,12 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
 
     private static bool IsDuplicateEmailViolation(DbUpdateException exception)
     {
-        var message = exception.InnerException?.Message ?? exception.Message;
+        if (exception.InnerException is MySqlConnector.MySqlException mySqlEx)
+        {
+            return mySqlEx.Number == 1062 && 
+                   mySqlEx.Message.Contains("email", StringComparison.OrdinalIgnoreCase);
+        }
 
-        return message.Contains("Duplicate entry", StringComparison.OrdinalIgnoreCase)
-               && message.Contains("users", StringComparison.OrdinalIgnoreCase)
-               && message.Contains("email", StringComparison.OrdinalIgnoreCase);
+        return false;
     }
 }

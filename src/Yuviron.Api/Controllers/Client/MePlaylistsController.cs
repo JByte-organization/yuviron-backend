@@ -28,7 +28,7 @@ public class MePlaylistsController : ApiControllerBase
     [ProducesResponseType(typeof(CreatePlaylistResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreatePlaylist([FromBody] CreatePlaylistRequest request, CancellationToken ct)
     {
-        var command = new CreatePlaylistCommand(request.Name, request.CoverUrl, request.Visibility);
+        var command = new CreatePlaylistCommand(request.Title, request.CoverFileId, request.Visibility);
         var result = await Mediator.Send(command, ct);
         return Ok(new CreatePlaylistResponse(result));
     }
@@ -37,7 +37,7 @@ public class MePlaylistsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdatePlaylist([FromRoute] Guid id, [FromBody] UpdatePlaylistRequest request, CancellationToken ct)
     {
-        var command = new UpdatePlaylistCommand(id, request.Name, request.CoverUrl, request.Visibility);
+        var command = new UpdatePlaylistCommand(id, request.Title, request.CoverFileId, request.Visibility);
         await Mediator.Send(command, ct);
         return Ok();
     }
