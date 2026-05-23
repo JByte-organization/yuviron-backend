@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using Yuviron.Application.Behaviors; 
+using Yuviron.Application.Behaviors;
+using Yuviron.Application.Policies;
+
 
 namespace Yuviron.Application;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(assembly);
+        
+        services.AddTransient<UserSettingsPolicy>();
 
         return services;
     }
