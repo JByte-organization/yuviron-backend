@@ -1,13 +1,14 @@
 using FluentValidation;
-using Yuviron.Application.Common.Utilities;
+using Yuviron.Application.Common;
 
-namespace Yuviron.Application.Features.Client.Search.Queries.GlobalSearch;
+namespace Yuviron.Application.Common.Utilities;
 
-public sealed class GlobalSearchValidator : AbstractValidator<GlobalSearchQuery>
+public abstract class SearchPaginatedValidator<TQuery> : AbstractValidator<TQuery>
+    where TQuery : PaginatedQuery
 {
-    public GlobalSearchValidator()
+    protected SearchPaginatedValidator()
     {
-        RuleFor(x => x.Query)
+        RuleFor(x => x.SearchTerm)
             .Custom((query, context) =>
             {
                 var normalizedQuery = SearchQueryNormalizer.Normalize(query);
@@ -29,7 +30,10 @@ public sealed class GlobalSearchValidator : AbstractValidator<GlobalSearchQuery>
                 }
             });
 
-        RuleFor(x => x.Limit)
-            .InclusiveBetween(1, 20).WithMessage("Limit must be between 1 and 20.");
+        RuleFor(x => x.Page)
+            .GreaterThan(0).WithMessage("Page must be greater than 0.");
+
+        RuleFor(x => x.PageSize)
+            .InclusiveBetween(1, 100).WithMessage("PageSize must be between 1 and 100.");
     }
 }

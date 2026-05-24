@@ -92,6 +92,10 @@ public class ProcessOutboxMessagesJob : BackgroundService
                                 
                                 message.MarkAsProcessed(DateTime.UtcNow);
                             }
+                            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                            {
+                                throw;
+                            }
                             catch (Exception ex)
                             {
                                 _logger.LogWarning(ex, "Failed to process outbox message {MessageId}. Attempt {Retry}", message.Id, message.RetryCount + 1);
@@ -115,18 +119,26 @@ public class ProcessOutboxMessagesJob : BackgroundService
                     }
                 });
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Critical error in Outbox Worker.");
             }
 
-            if (messagesProcessedInBatch == 20)
+            var delay = messagesProcessedInBatch == 20
+                ? TimeSpan.FromMilliseconds(100)
+                : TimeSpan.FromSeconds(5);
+
+            try
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
+                await Task.Delay(delay, stoppingToken);
             }
-            else
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                break;
             }
         }
     }
