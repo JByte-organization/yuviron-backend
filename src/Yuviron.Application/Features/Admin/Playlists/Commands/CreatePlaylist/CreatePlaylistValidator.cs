@@ -22,11 +22,5 @@ public sealed class CreatePlaylistValidator : AbstractValidator<CreatePlaylistCo
 
         RuleFor(v => v.Description)
             .MaximumLength(2000).WithMessage("Description is too long");
-        
-        RuleFor(v => v.CoverUrl)
-            .MaximumLength(2048).WithMessage("Cover URL is too long")
-            .Must(url => url == null || !url.Contains(".."))
-            .WithMessage("Invalid file path.")
-            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
     }
 }

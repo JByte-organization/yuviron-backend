@@ -29,13 +29,11 @@ public class User : Entity
 
     public static User Create(string email, string passwordHash, string firstName, bool acceptMarketing, bool acceptTerms, DateTime utcNow, AccountState accountState = AccountState.Active)
     {
-        var normalizedEmail = EmailNormalizer.Normalize(email);
-        if (string.IsNullOrWhiteSpace(normalizedEmail)) throw new ArgumentException("Email is required");
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = normalizedEmail,
+            Email = email.Trim().ToLowerInvariant(),
             PasswordHash = passwordHash,
             AccountState = accountState,
             AcceptMarketing = acceptMarketing,

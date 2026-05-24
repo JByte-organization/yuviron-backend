@@ -44,7 +44,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
                 t.Id,
                 t.Title,
                 t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)), 
                 t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))

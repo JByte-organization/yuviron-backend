@@ -8,8 +8,8 @@ public sealed record CreateArtistCommand(
     Guid? OwnerUserId,
     string Name,
     string? Bio,
-    string? AvatarUrl,
-    string? BannerUrl,
+    Guid? AvatarFileId,
+    Guid? BannerFileId,
     VerificationStatus VerificationStatus
 ) : IRequest<Guid>, ISecuredRequest
 {

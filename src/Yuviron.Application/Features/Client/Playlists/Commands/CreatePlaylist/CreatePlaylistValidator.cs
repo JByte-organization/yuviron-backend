@@ -6,13 +6,9 @@ public sealed class CreatePlaylistValidator : AbstractValidator<CreatePlaylistCo
 {
     public CreatePlaylistValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Playlist name is required.")
-            .MaximumLength(100).WithMessage("Playlist name must not exceed 100 characters.");
-
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(500).WithMessage("Cover URL is too long.")
-            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
+        RuleFor(x => x.Title)
+            .NotEmpty().WithMessage("Playlist title is required.")
+            .MaximumLength(100).WithMessage("Playlist title must not exceed 100 characters.");
         
         RuleFor(x => x.Visibility)
             .IsInEnum().WithMessage("Invalid visibility status.");

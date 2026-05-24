@@ -42,13 +42,13 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
                 AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
                 t.AlbumPosition,
                 Artists = t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
                 Genres = t.TrackGenres
-                    .Where(tg => !tg.Genre.IsDeleted)
+                    
                     .Select(tg => tg.Genre.Name),
                 Moods = t.TrackMoods
-                    .Where(tm => !tm.Mood.IsDeleted)
+                    
                     .Select(tm => tm.Mood.Name)
             })
             .FirstOrDefaultAsync(cancellationToken);

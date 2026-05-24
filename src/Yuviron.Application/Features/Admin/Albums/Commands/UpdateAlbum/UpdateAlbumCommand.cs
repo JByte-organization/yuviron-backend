@@ -8,7 +8,7 @@ public sealed record UpdateAlbumCommand(
     Guid AlbumId,
     string Title,
     string? Description,
-    string? CoverUrl,
+    Guid? CoverFileId,
     DateTime ReleaseDate,
     ReleaseType ReleaseType,
     VisibilityStatus VisibilityStatus,

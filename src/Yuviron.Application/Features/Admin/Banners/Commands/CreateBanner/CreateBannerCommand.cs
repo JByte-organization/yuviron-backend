@@ -6,7 +6,7 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.CreateBanner;
 
 public record CreateBannerCommand(
     string Title,
-    string BannerUrl,
+    Guid BannerFileId,
     string TargetUrl,
     int SortOrder,
     bool IsActive

@@ -6,14 +6,14 @@ namespace Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateP
 
 public sealed record CreateArtistProfileRequest(
     string Name,
-    string? AvatarUrl
+    Guid? AvatarFileId
 );
 
 public sealed record CreateArtistProfileResponse(Guid ArtistId);
 
 public sealed record CreateArtistProfileCommand(
     string Name,
-    string? AvatarUrl
+    Guid? AvatarFileId
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.StudioArtistProfile;

@@ -21,7 +21,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
     {
         var album = await _context.Albums
             .AsNoTracking()
-            .Where(a => a.Id == request.AlbumId && !a.IsDeleted)
+            .Where(a => a.Id == request.AlbumId)
             .Select(a => new AlbumDetailsDto(
                 a.Id,
                 a.Title,
@@ -31,13 +31,12 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                 a.ReleaseType,
                 a.VisibilityStatus,
                 a.ScheduledPublishAt,
-                a.Tracks.Count(t => !t.IsDeleted),                           
-                a.Tracks.Where(t => !t.IsDeleted).Sum(t => (long)t.DurationMs),      
-                a.Tracks.Where(t => !t.IsDeleted).Sum(t => t.PlayCount),             
+                a.Tracks.Count(),                           
+                a.Tracks.Sum(t => (long)t.DurationMs),      
+                a.Tracks.Sum(t => t.PlayCount),             
                 a.CreatedAt,
                 a.UpdatedAt,
                 a.AlbumArtists
-                    .Where(aa => !aa.Artist.IsDeleted)
                     .Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name))
             ))
             .FirstOrDefaultAsync(cancellationToken);

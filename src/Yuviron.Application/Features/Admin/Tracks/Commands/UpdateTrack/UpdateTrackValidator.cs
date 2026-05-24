@@ -11,18 +11,6 @@ public sealed class UpdateTrackCommandValidator : AbstractValidator<UpdateTrackC
         RuleFor(x => x.AlbumPosition).GreaterThan(0);
         RuleFor(x => x.Title).NotEmpty().MaximumLength(256);
 
-        RuleFor(x => x.AudioStorageKey)
-            .NotEmpty()
-            .MaximumLength(1024)
-            .Must(key => key == null || !key.Contains(".."))
-            .WithMessage("Invalid file path.");
-
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(2048)
-            .Must(url => url == null || !url.Contains(".."))
-            .WithMessage("Invalid file path.")
-            .When(x => !string.IsNullOrWhiteSpace(x.CoverUrl));
-
         RuleFor(x => x.VisibilityStatus)
             .IsInEnum();
 

@@ -125,6 +125,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+
+    
     c.SwaggerDoc("client", new OpenApiInfo 
     { 
         Title = "Yuviron Client API", 
@@ -161,7 +163,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",        
         BearerFormat = "JWT"   
     });
-
+    
     c.OperationFilter<Yuviron.Api.Common.SecurityRequirementsOperationFilter>();
 });
 

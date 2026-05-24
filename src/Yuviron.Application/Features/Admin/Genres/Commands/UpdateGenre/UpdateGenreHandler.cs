@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions; 
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
@@ -12,44 +12,54 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICurrentUserService _currentUser;
 
     public UpdateGenreHandler(
         IApplicationDbContext context, 
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateGenreCommand request, CancellationToken cancellationToken)
     {
+        var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+
         var genre = await _context.Genres
-                        .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken)
-                    ?? throw new NotFoundException(nameof(Genre), request.GenreId);
+            .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken);
+
+        if (genre == null)
+        {
+            throw new NotFoundException(nameof(Genre), request.GenreId);
+        }
 
         if (!genre.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
         {
-            if (await _context.Genres.AnyAsync(g => g.Name == request.Name, cancellationToken))
+            var isDuplicate = await _context.Genres
+                .AnyAsync(g => g.Name == request.Name , cancellationToken);
+
+            if (isDuplicate)
+            {
                 throw new InvalidOperationException($"Genre '{request.Name}' already exists.");
+            }
         }
 
-        var oldCoverUrl = genre.CoverUrl; 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        string? finalCoverUrl = genre.CoverUrl; 
         
-        var finalCoverUrl = FileStorageExtensions.PredictDestinationPath(request.CoverUrl, "covers");
+        if (request.CoverFileId.HasValue)
+        {
+            var coverClaim = await _context.ClaimFileAsync(
+                request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
+            
+            genre.RegisterFileSwapEvents(coverClaim, genre.CoverUrl);
+            finalCoverUrl = coverClaim.FinalPath;
+        }
         
         genre.Update(request.Name, finalCoverUrl, utcNow);
-
-        if (!string.IsNullOrWhiteSpace(request.CoverUrl) && request.CoverUrl.StartsWith("temp/"))
-        {
-            genre.AddDomainEvent(new TempFileNeedsMovingEvent(request.CoverUrl, "covers"));
-        }
-
-        if (!string.Equals(oldCoverUrl, finalCoverUrl, StringComparison.OrdinalIgnoreCase) 
-            && !string.IsNullOrWhiteSpace(oldCoverUrl))
-        {
-            genre.AddDomainEvent(new FileNeedsDeletionEvent(oldCoverUrl));
-        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

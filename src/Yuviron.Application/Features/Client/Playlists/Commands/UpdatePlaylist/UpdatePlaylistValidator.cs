@@ -8,13 +8,9 @@ public sealed class UpdatePlaylistValidator : AbstractValidator<UpdatePlaylistCo
     {
         RuleFor(x => x.PlaylistId).NotEmpty();
 
-        RuleFor(x => x.Name)
-            .MaximumLength(100).WithMessage("Playlist name must not exceed 100 characters.")
-            .When(x => !string.IsNullOrWhiteSpace(x.Name));
-
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(500).WithMessage("Cover URL is too long.")
-            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
+        RuleFor(x => x.Title)
+            .MaximumLength(100).WithMessage("Playlist title must not exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Title));
 
         RuleFor(x => x.Visibility)
             .IsInEnum().WithMessage("Invalid visibility status.")

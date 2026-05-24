@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
-using Yuviron.Domain.Enums; // Убедись, что тут лежит твой ArtistTeamRole
+using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistsAutocomplete;
 
@@ -27,7 +27,7 @@ public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAu
 
         return await _context.Artists
             .AsNoTracking()
-            .Where(a => !a.IsDeleted && a.Name.ToLower().Contains(searchTerm))
+            .Where(a => a.Name.ToLower().Contains(searchTerm))
             .OrderBy(a => a.Name)
             .Take(request.Limit)
             .Select(a => new ArtistAutocompleteDto(
@@ -35,7 +35,7 @@ public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAu
                 a.Name,
                 a.AvatarUrl,
                 a.TeamMembers
-                    .Where(tm => tm.Role == ArtistTeamRole.Owner && !tm.User.IsDeleted)
+                    .Where(tm => tm.Role == ArtistTeamRole.Owner)
                     .Select(tm => tm.User.Email)
                     .FirstOrDefault()
             ))

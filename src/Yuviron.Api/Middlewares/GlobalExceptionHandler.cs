@@ -50,11 +50,22 @@ public class GlobalExceptionHandler : IExceptionHandler
                 break;
 
             // 2. Standard system business logic exceptions (400)
-            case ArgumentException:
-            case InvalidOperationException:
+            case ArgumentException argEx:
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Bad Request";
-                problemDetails.Detail = "The request could not be processed due to invalid parameters or state."; 
+                problemDetails.Detail = argEx.Message;
+                break;
+
+            case InvalidOperationException invalidOpEx:
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Title = "Invalid Operation";
+                problemDetails.Detail = invalidOpEx.Message; 
+                
+                if (invalidOpEx.Message.Contains("image", StringComparison.OrdinalIgnoreCase) || 
+                    invalidOpEx.Message.Contains("audio", StringComparison.OrdinalIgnoreCase))
+                {
+                    problemDetails.Extensions["code"] = "invalid_format"; 
+                }
                 break;
 
             // 3. Not found (404)
@@ -97,11 +108,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
             // 7. We catch races and duplicates from the database (409)
             case DbUpdateException dbUpdateEx:
-                var innerMsg = dbUpdateEx.InnerException?.Message ?? dbUpdateEx.Message;
-                
-                if (innerMsg.Contains("Duplicate entry", StringComparison.OrdinalIgnoreCase) ||
-                    innerMsg.Contains("UNIQUE constraint", StringComparison.OrdinalIgnoreCase) ||
-                    innerMsg.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
+                if (dbUpdateEx.InnerException is MySqlConnector.MySqlException mySqlEx && mySqlEx.Number == 1062)
                 {
                     problemDetails.Status = StatusCodes.Status409Conflict;
                     problemDetails.Title = "Resource Conflict";

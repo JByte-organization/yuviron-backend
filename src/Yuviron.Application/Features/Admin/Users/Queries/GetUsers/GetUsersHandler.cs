@@ -25,7 +25,7 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
     {
         var query = _context.Users
             .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+            ;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

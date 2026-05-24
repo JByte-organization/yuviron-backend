@@ -9,8 +9,8 @@ public sealed record UpdateArtistCommand(
     Guid? OwnerUserId,
     string Name,
     string? Bio,
-    string? AvatarUrl,
-    string? BannerUrl,
+    Guid? AvatarFileId, 
+    Guid? BannerFileId,
     VerificationStatus VerificationStatus
 ) : IRequest<Unit>, ISecuredRequest
 {

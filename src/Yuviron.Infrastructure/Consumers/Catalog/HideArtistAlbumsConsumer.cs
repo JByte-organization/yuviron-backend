@@ -20,7 +20,7 @@ public class HideArtistAlbumsConsumer : IConsumer<ArtistDeletedEvent>
     {
         var affectedAlbums = await _context.Albums
             .Include(a => a.AlbumArtists)
-            .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == context.Message.ArtistId) && !a.IsDeleted)
+            .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == context.Message.ArtistId) )
             .ToListAsync(context.CancellationToken);
 
         if (!affectedAlbums.Any()) return;

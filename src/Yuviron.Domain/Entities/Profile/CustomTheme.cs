@@ -1,4 +1,5 @@
-﻿using Yuviron.Domain.Common;
+﻿using System;
+using Yuviron.Domain.Common;
 
 namespace Yuviron.Domain.Entities;
 
@@ -8,6 +9,9 @@ public class CustomTheme : Entity
     public string PrimaryColor { get; private set; } = string.Empty;
     public string SecondaryColor { get; private set; } = string.Empty;
     public string BackgroundColor { get; private set; } = string.Empty;
+    
+    public string? BackgroundImageUrl { get; private set; } 
+    
     public DateTime CreatedAt { get; private set; }
 
     public virtual User User { get; private set; } = null!;
@@ -19,6 +23,7 @@ public class CustomTheme : Entity
         string primaryColor, 
         string secondaryColor, 
         string backgroundColor, 
+        string? backgroundImageUrl,
         DateTime utcNow)
     {
         return new CustomTheme
@@ -28,6 +33,7 @@ public class CustomTheme : Entity
             PrimaryColor = primaryColor,
             SecondaryColor = secondaryColor,
             BackgroundColor = backgroundColor,
+            BackgroundImageUrl = backgroundImageUrl,
             CreatedAt = utcNow
         };
     }

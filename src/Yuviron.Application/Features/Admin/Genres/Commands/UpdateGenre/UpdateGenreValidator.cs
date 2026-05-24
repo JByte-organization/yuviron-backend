@@ -15,10 +15,5 @@ public sealed class UpdateGenreValidator : AbstractValidator<UpdateGenreCommand>
             .Must(name => name != null && name.Any(char.IsLetter))
             .WithMessage("Genre name must contain at least one letter.");
 
-        RuleFor(x => x.CoverUrl)
-            .MaximumLength(2048)
-            .Must(url => url == null || !url.Contains("..")) 
-            .WithMessage("Invalid file path.")
-            .When(x => !string.IsNullOrEmpty(x.CoverUrl));
     }
 }

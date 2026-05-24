@@ -28,7 +28,7 @@ public sealed class ChangeTrackPositionHandler : IRequestHandler<ChangeTrackPosi
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var playlist = await _context.Playlists
-            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken);
 
         if (playlist is null) throw new NotFoundException(nameof(Playlist), request.PlaylistId);
         if (playlist.UserId != userId) throw new ForbiddenException("Access denied.");

@@ -15,41 +15,64 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly IIdentityManager _identityManager;
+    private readonly ICurrentUserService _currentUser;
 
     public UpdateArtistHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IIdentityManager identityManager) 
+        IIdentityManager identityManager,
+        ICurrentUserService currentUser) 
     {
         _context = context;
         _timeProvider = timeProvider;
         _identityManager = identityManager;
+        _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateArtistCommand request, CancellationToken cancellationToken)
     {
+        var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+
         var artist = await _context.Artists
-                         .Include(a => a.TeamMembers) 
-                         .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
-                     ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
+            .Include(a => a.TeamMembers) 
+            .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken);
+
+        if (artist == null)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
 
         if (request.OwnerUserId.HasValue)
         {
-            var ownerExists = await _context.Users
-                .AsNoTracking()
-                .AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
-
-            if (!ownerExists) throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
+            var ownerExists = await _context.Users.AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
+            if (!ownerExists)
+            {
+                throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
+            }
         }
-
-        var oldAvatarUrl = artist.AvatarUrl;
-        var oldBannerUrl = artist.BannerUrl;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
-        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "banners");
-        
+        string? finalAvatarUrl = artist.AvatarUrl;
+        if (request.AvatarFileId.HasValue)
+        {
+            var avatarClaim = await _context.ClaimFileAsync(
+                request.AvatarFileId.Value, adminId, "image/", "avatars", cancellationToken);
+            
+            artist.RegisterFileSwapEvents(avatarClaim, artist.AvatarUrl);
+            finalAvatarUrl = avatarClaim.FinalPath;
+        }
+
+        string? finalBannerUrl = artist.BannerUrl;
+        if (request.BannerFileId.HasValue)
+        {
+            var bannerClaim = await _context.ClaimFileAsync(
+                request.BannerFileId.Value, adminId, "image/", "banners", cancellationToken);
+            
+            artist.RegisterFileSwapEvents(bannerClaim, artist.BannerUrl);
+            finalBannerUrl = bannerClaim.FinalPath;
+        }
+
         artist.UpdateDetails(
             request.Name,
             request.Bio,
@@ -57,18 +80,6 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             finalBannerUrl,
             request.VerificationStatus,
             utcNow);
-
-        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
-
-        if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "banners"));
-
-        if (!string.Equals(oldAvatarUrl, finalAvatarUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAvatarUrl))
-            artist.AddDomainEvent(new FileNeedsDeletionEvent(oldAvatarUrl));
-
-        if (!string.Equals(oldBannerUrl, finalBannerUrl, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldBannerUrl))
-            artist.AddDomainEvent(new FileNeedsDeletionEvent(oldBannerUrl));
 
         var currentOwner = artist.TeamMembers.FirstOrDefault(tm => tm.Role == ArtistTeamRole.Owner);
         var newOwnerId = request.OwnerUserId;
@@ -80,7 +91,10 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
                 artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
                 
                 var oldOwnerUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentOwner.UserId, cancellationToken);
-                if (oldOwnerUser != null) oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
+                if (oldOwnerUser != null)
+                {
+                    oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
+                }
             }
 
             if (newOwnerId.HasValue)

@@ -1,4 +1,5 @@
-﻿using Yuviron.Domain.Common;
+﻿using System;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 
@@ -8,6 +9,7 @@ public class UserProfile : Entity
 {
     public string FirstName { get; private set; } = string.Empty;
     public string? AvatarUrl { get; private set; }
+    public string? BannerUrl { get; private set; } 
     public string? Country { get; private set; }
     public string? City { get; private set; }
     public string? Bio { get; private set; }
@@ -23,6 +25,7 @@ public class UserProfile : Entity
         Guid userId, 
         string firstName, 
         string? avatarUrl, 
+        string? bannerUrl, 
         string? country, 
         string? city,
         string? bio, 
@@ -35,6 +38,7 @@ public class UserProfile : Entity
             Id = userId,
             FirstName = firstName.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
+            BannerUrl = bannerUrl?.Trim(),
             Country = country?.Trim(),
             City = city?.Trim(),
             Bio = bio?.Trim(),
@@ -47,6 +51,7 @@ public class UserProfile : Entity
     public void UpdateDetails(
         string firstName, 
         string? avatarUrl, 
+        string? bannerUrl, 
         string? country, 
         string? city,
         string? bio, 
@@ -56,6 +61,7 @@ public class UserProfile : Entity
     {
         FirstName = firstName.Trim();
         AvatarUrl = avatarUrl?.Trim();
+        BannerUrl = bannerUrl?.Trim();
         Country = country?.Trim();
         City = city?.Trim();
         Bio = bio?.Trim();
@@ -70,9 +76,15 @@ public class UserProfile : Entity
         {
             AddDomainEvent(new FileNeedsDeletionEvent(AvatarUrl));
         }
+        
+        if (!string.IsNullOrWhiteSpace(BannerUrl))
+        {
+            AddDomainEvent(new FileNeedsDeletionEvent(BannerUrl));
+        }
 
         FirstName = "Deleted User";
         AvatarUrl = null;
+        BannerUrl = null;
         Country = null;
         City = null;
         Bio = null;

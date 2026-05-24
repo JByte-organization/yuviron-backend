@@ -10,8 +10,5 @@ public sealed class CreateArtistProfileValidator : AbstractValidator<CreateArtis
             .NotEmpty().WithMessage("Artist name is required.")
             .MaximumLength(200).WithMessage("Artist name cannot exceed 200 characters.");
 
-        RuleFor(x => x.AvatarUrl)
-            .MaximumLength(2048).WithMessage("Avatar URL is too long.")
-            .When(x => !string.IsNullOrEmpty(x.AvatarUrl));
     }
 }

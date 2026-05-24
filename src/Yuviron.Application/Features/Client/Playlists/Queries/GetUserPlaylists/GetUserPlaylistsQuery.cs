@@ -4,6 +4,7 @@ using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
 namespace Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
+//это левое боковое меню в десктопном Spotify, где списком идут все твои плейлисты.
 public sealed record GetUserPlaylistsQuery(
     string? SortBy = null,    
     string? SortOrder = null,

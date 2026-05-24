@@ -18,7 +18,7 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedLi
     {
         var query = _context.Moods
             .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+            ;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

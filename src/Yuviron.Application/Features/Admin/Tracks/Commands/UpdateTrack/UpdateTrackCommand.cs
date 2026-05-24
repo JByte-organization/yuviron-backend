@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common.Models;
-using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
@@ -12,8 +11,8 @@ public sealed record UpdateTrackCommand(
     int AlbumPosition,
     string Title,
     bool Explicit,
-    string AudioStorageKey,
-    string? CoverUrl,
+    Guid? AudioFileId,
+    Guid? CoverFileId, 
     VisibilityStatus VisibilityStatus,
     List<TrackArtistDto> Artists,
     List<Guid> GenreIds,

@@ -8,8 +8,8 @@ public sealed class SyncJamendoTracksValidator : AbstractValidator<SyncJamendoTr
     {
         RuleFor(x => x.Limit)
             .GreaterThan(0)
-            .WithMessage("Количество треков для синхронизации должно быть больше нуля.")
+            .WithMessage("The number of tracks to sync must be greater than zero.")
             .LessThanOrEqualTo(50)
-            .WithMessage("Нельзя запрашивать более 50 треков за раз, чтобы не перегрузить сервер и API Jamendo.");
+            .WithMessage("You cannot request more than 50 tracks at a time to avoid overloading the server and the Jamendo API.");
     }
 }

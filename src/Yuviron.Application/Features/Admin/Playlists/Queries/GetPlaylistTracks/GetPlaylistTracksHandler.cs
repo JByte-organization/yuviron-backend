@@ -31,7 +31,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         {
             var query = _context.PlaylistTracks
                 .AsNoTracking()
-                .Where(pt => pt.PlaylistId == request.PlaylistId && !pt.Track.IsDeleted);
+                .Where(pt => pt.PlaylistId == request.PlaylistId);
 
             if (hasSearchTerm)
                 query = query.Where(pt => pt.Track.Title.Contains(request.SearchTerm!));
@@ -53,7 +53,6 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                 pt.TrackId, 
                 pt.Track.Title,
                 pt.Track.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
                     .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
                     .ToList(),
                 pt.Track.AlbumId, 
@@ -80,7 +79,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
 
             var fallbackQuery = _context.PlaylistTracks
                 .AsNoTracking()
-                .Where(pt => pt.PlaylistId == request.PlaylistId && !pt.Track.IsDeleted);
+                .Where(pt => pt.PlaylistId == request.PlaylistId);
 
             var sortedFallback = fallbackQuery.ApplySorting(null, null, nameof(PlaylistTrack.Position), false);
 
@@ -88,7 +87,6 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                 pt.TrackId, 
                 pt.Track.Title,
                 pt.Track.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
                     .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
                     .ToList(),
                 pt.Track.AlbumId, 
@@ -107,7 +105,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
             .AsNoTracking()
             .Include(t => t.Album)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
-            .Where(t => trackIds.Contains(t.Id) && !t.IsDeleted)
+            .Where(t => trackIds.Contains(t.Id))
             .ToListAsync(cancellationToken);
 
         var dtos = new List<PlaylistTrackItemDto>();
@@ -123,7 +121,6 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
                     track.Id, 
                     track.Title,
                     track.TrackArtists
-                        .Where(ta => !ta.Artist.IsDeleted)
                         .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name))
                         .ToList(),
                     track.AlbumId, 

@@ -3,7 +3,6 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
 
@@ -12,38 +11,57 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly IIdentityManager _identityManager;
+    private readonly ICurrentUserService _currentUser;
     
     public CreateArtistHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IIdentityManager identityManager) 
+        IIdentityManager identityManager,
+        ICurrentUserService currentUser) 
     {
         _context = context;
         _timeProvider = timeProvider;
         _identityManager = identityManager;
+        _currentUser = currentUser;
     }
 
     public async Task<Guid> Handle(CreateArtistCommand request, CancellationToken cancellationToken)
     {
+        var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
-        var finalBannerUrl = FileStorageExtensions.PredictDestinationPath(request.BannerUrl, "banners");
+        ClaimedFileResult? avatarClaim = null;
+        if (request.AvatarFileId.HasValue)
+        {
+            avatarClaim = await _context.ClaimFileAsync(
+                request.AvatarFileId.Value, adminId, "image/", "avatars", cancellationToken);
+        }
+
+        ClaimedFileResult? bannerClaim = null;
+        if (request.BannerFileId.HasValue)
+        {
+            bannerClaim = await _context.ClaimFileAsync(
+                request.BannerFileId.Value, adminId, "image/", "banners", cancellationToken);
+        }
         
         var artist = Artist.Create(
             request.OwnerUserId,
             request.Name,
             request.Bio,
-            finalAvatarUrl, 
-            finalBannerUrl,
+            avatarClaim?.FinalPath, 
+            bannerClaim?.FinalPath,
             request.VerificationStatus,
             utcNow);
 
-        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
-
-        if (!string.IsNullOrWhiteSpace(request.BannerUrl) && request.BannerUrl.StartsWith("temp/"))
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.BannerUrl, "banners"));
+        if (avatarClaim != null)
+        {
+            artist.RegisterFileSwapEvents(avatarClaim);
+        }
+        
+        if (bannerClaim != null)
+        {
+            artist.RegisterFileSwapEvents(bannerClaim);
+        }
 
         _context.Artists.Add(artist);
 

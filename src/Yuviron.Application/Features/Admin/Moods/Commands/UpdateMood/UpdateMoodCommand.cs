@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
 public sealed record UpdateMoodCommand(
     Guid Id,
     string Name,
-    string? CoverUrl
+    Guid? CoverFileId
 ) : IRequest<Unit>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;
