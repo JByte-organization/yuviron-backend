@@ -27,14 +27,13 @@ public sealed class GetAlbumsAutocompleteHandler : IRequestHandler<GetAlbumsAuto
 
         return await _context.Albums
             .AsNoTracking()
-            .Where(a => !a.IsDeleted && a.Title.Contains(searchTerm))
+            .Where(a => a.Title.Contains(searchTerm))
             .OrderBy(a => a.Title)
             .Take(request.Limit)
             .Select(a => new AlbumAutocompleteDto(
                 a.Id,
                 a.Title,
                 a.AlbumArtists
-                    .Where(aa => !aa.Artist.IsDeleted)
                     .Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)),
                 a.CoverUrl
             ))

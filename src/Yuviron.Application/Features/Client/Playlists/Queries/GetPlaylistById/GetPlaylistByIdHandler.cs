@@ -27,7 +27,7 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
             .AsNoTracking()
             .Include(p => p.User).ThenInclude(u => u!.Profile)
             .Include(p => p.PlaylistTracks).ThenInclude(pt => pt.Track) 
-            .FirstOrDefaultAsync(p => p.Id == request.Id && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == request.Id , cancellationToken);
 
         if (playlist == null)
             throw new NotFoundException("Playlist", request.Id);

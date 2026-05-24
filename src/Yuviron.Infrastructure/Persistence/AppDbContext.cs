@@ -86,6 +86,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<UserSavedTrack> UserSavedTracks => Set<UserSavedTrack>();
     public DbSet<UserSavedAlbum> UserSavedAlbums => Set<UserSavedAlbum>();
     public DbSet<UserFollowArtist> UserFollowArtists => Set<UserFollowArtist>();
+    public DbSet<UserFollowUser> UserFollowUsers => Set<UserFollowUser>();
     public DbSet<Plan> Plans => Set<Plan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Ad> Ads => Set<Ad>();
@@ -107,6 +108,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();
     public DbSet<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
     public DbSet<Complaint> Complaints => Set<Complaint>();
+    public DbSet<FileMetadata> FileMetadata => Set<FileMetadata>();
     public DbSet<ComplaintCounter> ComplaintCounters => Set<ComplaintCounter>();
     public DbSet<ListeningEvent> ListeningEvents => Set<ListeningEvent>();
     public DbSet<TrackListenHeatmap> TrackListenHeatmaps => Set<TrackListenHeatmap>();

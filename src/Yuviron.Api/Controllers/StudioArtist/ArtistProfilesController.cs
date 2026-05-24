@@ -16,7 +16,7 @@ public class ArtistProfilesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)] 
     public async Task<IActionResult> CreateProfile([FromBody] CreateArtistProfileRequest request, CancellationToken ct)
     {
-        var command = new CreateArtistProfileCommand(request.Name, request.AvatarUrl);
+        var command = new CreateArtistProfileCommand(request.Name, request.AvatarFileId);
         
         var artistId = await Mediator.Send(command, ct);
         

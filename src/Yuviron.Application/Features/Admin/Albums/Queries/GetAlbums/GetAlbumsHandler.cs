@@ -18,9 +18,7 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
 
     public async Task<PaginatedList<AlbumListItemDto>> Handle(GetAlbumsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Albums
-            .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+        var query = _context.Albums.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Title.Contains(request.SearchTerm));
@@ -34,19 +32,18 @@ public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, Paginated
             defaultSortBy: nameof(Album.CreatedAt),
             mapping: new Dictionary<string, Expression<Func<Album, object>>>
             {
-                [nameof(AlbumListItemDto.TracksCount)] = a => a.Tracks.Count(t => !t.IsDeleted),
-                [nameof(AlbumListItemDto.TotalPlays)] = a => a.Tracks.Where(t => !t.IsDeleted).Sum(t => t.PlayCount)
+                [nameof(AlbumListItemDto.TracksCount)] = a => a.Tracks.Count(),
+                [nameof(AlbumListItemDto.TotalPlays)] = a => a.Tracks.Sum(t => t.PlayCount)
             });
 
         var projectedQuery = sortedQuery.Select(a => new AlbumListItemDto(
             a.Id,
             a.Title,
             a.AlbumArtists
-                .Where(aa => !aa.Artist.IsDeleted)
                 .Select(aa => new SimpleArtistDto(aa.ArtistId, aa.Artist.Name)), 
             a.CoverUrl,
-            a.Tracks.Count(t => !t.IsDeleted),                 
-            a.Tracks.Where(t => !t.IsDeleted).Sum(t => t.PlayCount),   
+            a.Tracks.Count(),                 
+            a.Tracks.Sum(t => t.PlayCount),   
             a.ReleaseDate,
             a.ReleaseType,
             a.VisibilityStatus,

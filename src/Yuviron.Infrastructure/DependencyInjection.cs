@@ -17,6 +17,7 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Admin.Tracks.Consumers;
+using Yuviron.Application.Policies;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
@@ -106,6 +107,15 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddHttpClient<IJamendoApiService, JamendoApiService>();
         services.AddSingleton<IStreamTokenService, StreamTokenService>();
+        var audioSettings = configuration.GetSection("AudioSettings").Get<AudioSettingsOptions>() 
+                            ?? new AudioSettingsOptions();
+
+        services.AddSingleton(audioSettings); 
+        services.AddSingleton<UserSettingsPolicy>();
+
+        services.Configure<AudioSettingsOptions>(configuration.GetSection("AudioSettings"));
+        
+        services.Configure<StorageOptions>(configuration.GetSection("Storage"));
 
         // 5. UTILITIES
         services.AddSingleton(TimeProvider.System);

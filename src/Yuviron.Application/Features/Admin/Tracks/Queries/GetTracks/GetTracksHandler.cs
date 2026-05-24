@@ -23,7 +23,7 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
     {
         var query = _context.Tracks
             .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+            ;
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(t => t.Title.Contains(request.SearchTerm));
@@ -44,7 +44,7 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
                 ["AlbumTitle"] = t => t.Album != null ? t.Album.Title : "Unknown Album",
 
                 ["ArtistNames"] = t => t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .OrderBy(ta => ta.Role == ArtistRole.Main ? 0 : 1)
                     .Select(ta => ta.Artist.Name)
                     .FirstOrDefault()!
@@ -57,7 +57,7 @@ public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, Paginated
             t.AlbumPosition,
             t.Title,
             t.TrackArtists
-                .Where(ta => !ta.Artist.IsDeleted)
+                
                 .OrderBy(ta => ta.Role == ArtistRole.Main ? 0 : 1)
                 .Select(ta => ta.Artist.Name)
                 .ToList(), 

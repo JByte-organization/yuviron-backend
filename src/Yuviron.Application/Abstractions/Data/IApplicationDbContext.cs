@@ -39,6 +39,9 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<TrackMood> TrackMoods  { get; }
     DbSet<ArtistTeamMember> ArtistTeamMembers { get; }
     DbSet<Mood> Moods { get; }
+    
+    // --- Storage ---
+    DbSet<FileMetadata> FileMetadata { get; }
 
     // --- Library ---
     DbSet<Playlist> Playlists { get; }
@@ -46,6 +49,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<UserSavedTrack> UserSavedTracks { get; }
     DbSet<UserSavedAlbum> UserSavedAlbums { get; }
     DbSet<UserFollowArtist> UserFollowArtists { get; }
+    DbSet<UserFollowUser> UserFollowUsers { get; }
 
     // --- Monetization ---
     DbSet<Plan> Plans { get; }

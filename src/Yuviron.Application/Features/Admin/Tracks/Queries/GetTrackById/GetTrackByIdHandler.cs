@@ -20,7 +20,7 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
     {
         var track = await _context.Tracks
             .AsNoTracking()
-            .Where(t => t.Id == request.TrackId && !t.IsDeleted)
+            .Where(t => t.Id == request.TrackId )
             .Select(t => new TrackDetailsDto(
                 t.Id,
                 t.AlbumId,
@@ -37,15 +37,15 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
                 t.CreatedAt,
                 t.UpdatedAt,
                 t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .Select(ta => new TrackArtistSimpleDto(ta.ArtistId, ta.Artist.Name, ta.Role))
                     .ToList(), 
                 t.TrackGenres
-                    .Where(tg => !tg.Genre.IsDeleted)
+                    
                     .Select(tg => new TrackGenreSimpleDto(tg.GenreId, tg.Genre.Name))
                     .ToList(),
                 t.TrackMoods
-                    .Where(tm => !tm.Mood.IsDeleted)
+                    
                     .Select(tm => new TrackMoodSimpleDto(tm.MoodId, tm.Mood.Name))
                     .ToList() 
             ))

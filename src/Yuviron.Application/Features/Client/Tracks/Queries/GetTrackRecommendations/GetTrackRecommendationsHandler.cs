@@ -29,9 +29,9 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => new {
-                ArtistIds = t.TrackArtists.Where(a => !a.Artist.IsDeleted).Select(a => a.ArtistId),
-                GenreIds = t.TrackGenres.Where(g => !g.Genre.IsDeleted).Select(g => g.GenreId),
-                MoodIds = t.TrackMoods.Where(m => !m.Mood.IsDeleted).Select(m => m.MoodId)
+                ArtistIds = t.TrackArtists.Select(a => a.ArtistId),
+                GenreIds = t.TrackGenres.Select(g => g.GenreId),
+                MoodIds = t.TrackMoods.Select(m => m.MoodId)
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -56,7 +56,7 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
                     t.Explicit,
                     CoverUrl = t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
                     Artists = t.TrackArtists
-                        .Where(ta => !ta.Artist.IsDeleted)
+                        
                         .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
                     t.PlayCount
                 },

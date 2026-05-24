@@ -16,9 +16,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
 
     public async Task<PaginatedList<PlaylistDto>> Handle(GetPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Playlists
-            .AsNoTracking()
-            .Where(a => !a.IsDeleted);
+        var query = _context.Playlists.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -35,7 +33,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
                     ? "YUVIRON" 
                     : (p.User != null ? p.User.Profile.FirstName : "Unknown"),
             
-                ["TracksCount"] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted)
+                ["TracksCount"] = p => p.PlaylistTracks.Count()
             });
 
         var projectedQuery = sortedQuery.Select(p => new PlaylistDto(
@@ -46,7 +44,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             p.IsEditorial,
             p.IsEditorial ? "YUVIRON" : 
                 (p.User != null ? p.User.Profile.FirstName : "Unknown"),
-            p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
+            p.PlaylistTracks.Count(),
             p.CreatedAt,
             p.UpdatedAt
         ));

@@ -23,7 +23,7 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists)
         {

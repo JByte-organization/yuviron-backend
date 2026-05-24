@@ -26,7 +26,7 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
     public async Task<PaginatedList<UserPlaylistDto>> Handle(GetUserPublicPlaylistsQuery request, CancellationToken cancellationToken)
     {
         var userExists = await _context.Users
-            .AnyAsync(u => u.Id == request.TargetUserId && !u.IsDeleted, cancellationToken);
+            .AnyAsync(u => u.Id == request.TargetUserId , cancellationToken);
         
         if (!userExists)
         {
@@ -36,7 +36,7 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
         var query = _context.Playlists
             .AsNoTracking()
             .Where(p => p.UserId == request.TargetUserId 
-                        && !p.IsDeleted 
+                         
                         && p.Visibility == PlaylistVisibility.Public);
 
         var sortedQuery = query.ApplySorting(

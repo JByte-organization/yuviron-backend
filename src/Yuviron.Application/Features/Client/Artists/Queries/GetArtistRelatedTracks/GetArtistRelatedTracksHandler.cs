@@ -27,7 +27,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists)
         {
@@ -40,7 +40,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
             .SelectMany(t => t.TrackGenres
-                .Where(tg => !tg.Genre.IsDeleted)
+                
                 .Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -66,7 +66,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
                 SharedGenresCount = t.TrackGenres.Count(tg => !tg.Genre.IsDeleted && artistGenreIds.Contains(tg.GenreId)),
                 t.PlayCount,
                 Artists = t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
+                    
                     .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role))
             })
             .OrderByDescending(t => t.SharedGenresCount)

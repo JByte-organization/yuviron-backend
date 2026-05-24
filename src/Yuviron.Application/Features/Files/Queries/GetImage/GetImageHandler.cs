@@ -1,9 +1,12 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Data;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Common.Utilities; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Files.Queries.GetImage;
@@ -11,34 +14,31 @@ namespace Yuviron.Application.Features.Files.Queries.GetImage;
 public sealed class GetImageHandler : IRequestHandler<GetImageQuery, GetImageResponse>
 {
     private readonly IFileStorageService _fileStorage;
-    private readonly string[] _publicFolders = { "avatars", "covers", "banners" };
+    private readonly IApplicationDbContext _context;
 
-    public GetImageHandler(IFileStorageService fileStorage)
+    public GetImageHandler(IFileStorageService fileStorage, IApplicationDbContext context)
     {
         _fileStorage = fileStorage;
+        _context = context;
     }
 
     public async Task<GetImageResponse> Handle(GetImageQuery request, CancellationToken cancellationToken)
     {
-        Stream? fileStream = null;
+        if (!Guid.TryParse(request.Hash, out var fileId))
+            throw new NotFoundException("Image", request.Hash);
 
-        foreach (var folder in _publicFolders)
-        {
-            var potentialPath = $"{folder}/{request.Hash}";
-            fileStream = await _fileStorage.GetFileStreamAsync(potentialPath, cancellationToken);
-            
-            if (fileStream != null) break; 
-        }
+        var fileMeta = await _context.FileMetadata
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsTemporary, cancellationToken);
 
+        if (fileMeta == null)
+            throw new NotFoundException("Image", request.Hash);
+
+        var fileStream = await _fileStorage.GetFileStreamAsync(fileMeta.CurrentStorageKey, cancellationToken);
         
         if (fileStream == null)
-        {
             throw new NotFoundException("Image", request.Hash);
-        }
 
-        var (_, contentType) = FileSignatureDetector.Detect(fileStream);
-        fileStream.Position = 0; 
-
-        return new GetImageResponse(fileStream, contentType);
+        return new GetImageResponse(fileStream, fileMeta.ContentType);
     }
 }

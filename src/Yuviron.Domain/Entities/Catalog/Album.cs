@@ -61,17 +61,7 @@ public class Album : Entity
         VisibilityStatus = visibilityStatus;
         ScheduledPublishAt = NormalizeScheduledPublishAt(visibilityStatus, scheduledPublishAt);
         UpdatedAt = utcNow;
-
-        var sanitizedNewCoverUrl = newCoverUrl?.Trim();
-
-        if (!string.Equals(CoverUrl, sanitizedNewCoverUrl, StringComparison.OrdinalIgnoreCase) 
-            && !string.IsNullOrWhiteSpace(CoverUrl))
-        {
-            AddDomainEvent(new FileNeedsDeletionEvent(CoverUrl));
-        }
-
-        CoverUrl = sanitizedNewCoverUrl;
-
+        
         SyncArtists(artistIds);
     }
 

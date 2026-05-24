@@ -30,7 +30,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
 
         var query = _context.Playlists
             .AsNoTracking()
-            .Where(p => p.UserId == userId && !p.IsDeleted);
+            .Where(p => p.UserId == userId );
 
         var sortedQuery = query.ApplySorting(
             request.SortBy, 

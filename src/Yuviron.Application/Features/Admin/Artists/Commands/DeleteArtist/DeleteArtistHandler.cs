@@ -38,7 +38,7 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 
         var memberUserIds = artist.TeamMembers.Select(tm => tm.UserId).ToList();
         var usersWithOtherArtists = await _context.ArtistTeamMembers
-            .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId && !tm.Artist.IsDeleted) 
+            .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId) 
             .Select(tm => tm.UserId).Distinct().ToListAsync(cancellationToken);
 
         var userIdsToRevokeRole = memberUserIds.Except(usersWithOtherArtists).ToList();

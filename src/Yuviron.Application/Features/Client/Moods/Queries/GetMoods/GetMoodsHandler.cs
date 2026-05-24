@@ -28,7 +28,7 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, List<MoodIt
 
         return await _context.Moods
             .AsNoTracking()
-            .Where(m => !m.IsDeleted)
+            
             .Where(m => availableTracks.Any(t => t.TrackMoods.Any(tm => tm.MoodId == m.Id)))
             .OrderBy(m => m.Name) 
             .Take(request.Limit)

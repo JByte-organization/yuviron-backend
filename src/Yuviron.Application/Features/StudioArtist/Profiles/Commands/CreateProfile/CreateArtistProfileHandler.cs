@@ -7,7 +7,6 @@ using Yuviron.Application.Configuration;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
-using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateProfile;
@@ -15,20 +14,20 @@ namespace Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateP
 public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistProfileCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ArtistLimitsOptions _limits;
+    private readonly ICurrentUserService _currentUser;
 
     public CreateArtistProfileHandler(
         IApplicationDbContext context, 
-        ICurrentUserService currentUser, 
         TimeProvider timeProvider,
-        IOptions<ArtistLimitsOptions> options) 
+        IOptions<ArtistLimitsOptions> options,
+        ICurrentUserService currentUser) 
     {
         _context = context;
-        _currentUser = currentUser;
         _timeProvider = timeProvider;
         _limits = options.Value; 
+        _currentUser = currentUser;
     }
 
     public async Task<Guid> Handle(CreateArtistProfileCommand request, CancellationToken cancellationToken)
@@ -52,21 +51,27 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
             throw new ForbiddenException($"Limit exceeded. Your current plan allows managing up to {maxProfiles} artist profile(s).");
         }
 
-        var finalAvatarUrl = FileStorageExtensions.PredictDestinationPath(request.AvatarUrl, "avatars");
+        ClaimedFileResult? avatarClaim = null;
+    
+        if (request.AvatarFileId.HasValue)
+        {
+            avatarClaim = await _context.ClaimFileAsync(
+                request.AvatarFileId.Value, userId, "image/", "avatars", cancellationToken);
+        }
 
         var artist = Artist.Create(
             initialOwnerUserId: userId,
             name: request.Name,
             bio: null, 
-            avatarUrl: finalAvatarUrl,
+            avatarUrl: avatarClaim?.FinalPath,
             bannerUrl: null,
             verificationStatus: VerificationStatus.None,
             utcNow: utcNow
         );
 
-        if (!string.IsNullOrWhiteSpace(request.AvatarUrl) && request.AvatarUrl.StartsWith("temp/"))
+        if (avatarClaim != null)
         {
-            artist.AddDomainEvent(new TempFileNeedsMovingEvent(request.AvatarUrl, "avatars"));
+            artist.RegisterFileSwapEvents(avatarClaim);
         }
 
         _context.Artists.Add(artist);

@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
@@ -21,6 +25,12 @@ public class PermissionService : IPermissionService
         _cacheService = cacheService;
         _context = context;
         _timeProvider = timeProvider;
+    }
+
+    public async Task<bool> HasPermissionAsync(Guid userId, AppPermission permission, CancellationToken cancellationToken = default)
+    {
+        var permissions = await GetPermissionsAsync(userId, cancellationToken);
+        return permissions.Contains(permission.ToString());
     }
 
     public async Task<HashSet<string>> GetPermissionsAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -79,6 +89,9 @@ public class PermissionService : IPermissionService
             {
                 nameof(AppPermission.PlayerHighQuality),
                 nameof(AppPermission.PlayerNoAds),
+                nameof(AppPermission.PrivateSession), 
+                nameof(AppPermission.CustomTheme),    
+                nameof(AppPermission.AnimatedMedia)   
             };
 
             foreach (var perm in premiumFlags)

@@ -25,7 +25,7 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId && !a.IsDeleted, cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
 

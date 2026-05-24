@@ -1,4 +1,6 @@
 using MassTransit;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Yuviron.Application;
 using Yuviron.Infrastructure;
@@ -29,7 +31,8 @@ try
 
         x.UsingRabbitMq((context, cfg) =>
         {
-            var rabbitConfig = builder.Configuration.GetSection("RabbitMQ");
+            var configuration = context.GetRequiredService<IConfiguration>();
+            var rabbitConfig = configuration.GetSection("RabbitMQ");
             var host = rabbitConfig["Host"] ?? "127.0.0.1";
             var user = rabbitConfig["Username"] ?? "guest";
             var pass = rabbitConfig["Password"] ?? "guest";
@@ -49,12 +52,12 @@ try
         });
     });
 
-    builder.Services.AddHealthChecks();
-
     var app = builder.Build();
 
-    app.MapHealthChecks("/health/ready");
-    app.MapHealthChecks("/health/live");
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    });
 
     Log.Information("MediaWorker is ready and listening to RabbitMQ.");
 

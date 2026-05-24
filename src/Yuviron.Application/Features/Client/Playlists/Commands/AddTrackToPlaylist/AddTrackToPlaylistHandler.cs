@@ -29,12 +29,12 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var playlist = await _context.Playlists
-            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken);
 
         if (playlist is null) throw new NotFoundException(nameof(Playlist), request.PlaylistId);
         if (playlist.UserId != userId) throw new ForbiddenException("Access denied.");
 
-        var trackExists = await _context.Tracks.AnyAsync(t => t.Id == request.TrackId && !t.IsDeleted, cancellationToken);
+        var trackExists = await _context.Tracks.AnyAsync(t => t.Id == request.TrackId , cancellationToken);
         if (!trackExists) throw new NotFoundException(nameof(Track), request.TrackId);
 
         if (await _context.PlaylistTracks.AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken))

@@ -46,7 +46,7 @@ public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtists
 
         var dbArtists = await _context.Artists
             .AsNoTracking()
-            .Where(a => topArtistIds.Contains(a.Id) && !a.IsDeleted)
+            .Where(a => topArtistIds.Contains(a.Id) )
             .Select(a => new TopArtistDto(
                 a.Id,
                 a.Name,

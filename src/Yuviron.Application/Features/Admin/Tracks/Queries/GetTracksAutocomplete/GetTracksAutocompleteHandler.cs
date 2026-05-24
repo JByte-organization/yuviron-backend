@@ -27,14 +27,13 @@ public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAuto
 
         return await _context.Tracks
             .AsNoTracking()
-            .Where(t => !t.IsDeleted && t.Title.Contains(searchTerm)) 
+            .Where(t => t.Title.Contains(searchTerm)) 
             .OrderBy(t => t.Title)
             .Take(request.Limit)
             .Select(t => new TrackAutocompleteDto(
                 t.Id,
                 t.Title,
                 t.TrackArtists
-                    .Where(ta => !ta.Artist.IsDeleted)
                     .Select(ta => new SimpleArtistDto(ta.ArtistId, ta.Artist.Name)), 
                 t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
             ))

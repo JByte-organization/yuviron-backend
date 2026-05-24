@@ -12,15 +12,16 @@ namespace Yuviron.Api.Controllers.Client;
 public class StreamController : ApiControllerBase
 {
     [AllowAnonymous]
-    [HttpGet("tracks/{trackId:guid}/{**fileName}")]
+    [HttpGet("tracks/{trackId:guid}/{quality:int}/{**fileName}")] 
     public async Task<IActionResult> GetAudioStream(
         [FromRoute] Guid trackId, 
+        [FromRoute] int quality, 
         [FromRoute] string fileName, 
         [FromQuery] long exp, 
         [FromQuery] string sig, 
         CancellationToken ct = default)
     {
-        var query = new GetAudioStreamQuery(trackId, fileName, exp, sig);
+        var query = new GetAudioStreamQuery(trackId, quality, fileName, exp, sig);
         var result = await Mediator.Send(query, ct);
 
         return File(result.Stream, result.ContentType, enableRangeProcessing: true);

@@ -7,7 +7,7 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.UpdateBanner;
 public sealed record UpdateBannerCommand(
     Guid BannerId,
     string Title,
-    string BannerUrl,
+    Guid? BannerFileId,
     string TargetUrl,
     int SortOrder,
     bool IsActive

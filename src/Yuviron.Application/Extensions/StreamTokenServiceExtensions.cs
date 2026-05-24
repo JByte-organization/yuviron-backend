@@ -8,12 +8,10 @@ public static class StreamTokenServiceExtensions
 {
     private const int TokenLifetimeHours = 6;
 
-    /// <summary>
-    /// Генерирует защищенную ссылку на стриминг аудио. Возвращает null для гостей или треков без файлов.
-    /// </summary>
     public static string? GenerateAudioUrl(
         this IStreamTokenService streamTokenService, 
         Guid trackId, 
+        int quality, 
         string? fileKey, 
         bool isAuthenticated, 
         TimeProvider timeProvider)
@@ -24,11 +22,25 @@ public static class StreamTokenServiceExtensions
         }
 
         var expiration = timeProvider.GetUtcNow().AddHours(TokenLifetimeHours);
-        
-        var signature = streamTokenService.GenerateToken(trackId, expiration.UtcDateTime); 
-        var fileName = Path.GetFileName(fileKey);
+        var signature = streamTokenService.GenerateToken(trackId, quality, expiration); 
         var expUnix = expiration.ToUnixTimeSeconds();
 
-        return $"/api/stream/tracks/{trackId}/{fileName}?exp={expUnix}&sig={signature}";
+        string fileName;
+
+        if (fileKey.StartsWith("tracks/", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = "master.m3u8";
+        }
+        else
+        {
+            fileName = Path.GetFileName(fileKey);
+            
+            if (string.IsNullOrWhiteSpace(fileName)) 
+            {
+                fileName = "audio_fallback"; 
+            }
+        }
+
+        return $"/api/stream/tracks/{trackId}/{quality}/{fileName}?exp={expUnix}&sig={signature}";
     }
 }

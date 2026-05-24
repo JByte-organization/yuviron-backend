@@ -62,9 +62,9 @@ public class JamendoApiService : IJamendoApiService
         }
     }
 
-    public async Task<string> DownloadFileToTempAsync(string fileUrl, string extension, CancellationToken cancellationToken = default)
+    public async Task<JamendoDownloadedFile?> DownloadFileToTempAsync(string fileUrl, string extension, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fileUrl)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(fileUrl)) return null;
 
         _logger.LogInformation("Download the file from Jamendo: {Url}", fileUrl);
 
@@ -73,20 +73,35 @@ public class JamendoApiService : IJamendoApiService
             var response = await _httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            string contentType;
+            if (extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                contentType = "audio/mpeg";
+            }
+            else if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase))
+            {
+                contentType = "image/jpeg";
+            }
+            else
+            {
+                contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            }
+
+            var sizeBytes = response.Content.Headers.ContentLength ?? 0;
             
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             
-            var uniqueFileName = Guid.NewGuid().ToString("N");
+            var fileId = Guid.NewGuid();
+            var uniqueFileName = fileId.ToString("N");
             
             var tempKey = await _fileStorageService.UploadAsync(stream, "temp", uniqueFileName, contentType, cancellationToken);
             
-            return tempKey; 
+            return new JamendoDownloadedFile(fileId, tempKey, contentType, sizeBytes); 
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download file from link {Url}", fileUrl);
-            return string.Empty;
+            return null;
         }
     }
 }

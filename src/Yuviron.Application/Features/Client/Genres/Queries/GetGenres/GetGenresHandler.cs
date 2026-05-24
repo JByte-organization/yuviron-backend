@@ -28,7 +28,7 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, List<Genr
 
         return await _context.Genres
             .AsNoTracking()
-            .Where(g => !g.IsDeleted)
+            
             .Where(g => availableTracks.Any(t => t.TrackGenres.Any(tg => tg.GenreId == g.Id)))
             .OrderBy(g => g.Name) 
             .Take(request.Limit)
