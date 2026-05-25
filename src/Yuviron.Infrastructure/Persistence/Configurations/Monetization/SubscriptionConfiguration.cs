@@ -15,7 +15,7 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.HasKey(x => x.Id);
 
         builder.HasIndex(x => x.UserId);
-        builder.HasIndex(x => x.EndAt); // Чтобы искать истекшие
+        builder.HasIndex(x => x.EndAt); 
 
         builder.HasOne(x => x.User)
                .WithMany(u => u.Subscriptions)
@@ -25,6 +25,6 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         builder.HasOne(x => x.Plan)
                .WithMany()
                .HasForeignKey(x => x.PlanId)
-               .OnDelete(DeleteBehavior.Restrict); // Нельзя удалить План, если на нем есть люди
+               .OnDelete(DeleteBehavior.Restrict); 
     }
 }

@@ -1,5 +1,6 @@
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Application.Policies;
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
@@ -52,6 +53,22 @@ public static class FileClaimingExtensions
         if (!string.IsNullOrWhiteSpace(oldFileUrl))
         {
             entity.AddDomainEvent(new FileNeedsDeletionEvent(oldFileUrl));
+        }
+    }
+    
+    public static async Task ValidateAnimatedMediaPolicyAsync(
+        this IApplicationDbContext context,
+        Guid fileId,
+        bool hasAnimatedMediaPermission,
+        UserSettingsPolicy policy,
+        CancellationToken cancellationToken)
+    {
+        var fileMeta = await context.FileMetadata.FindAsync(new object[] { fileId }, cancellationToken);
+        if (fileMeta == null) return;
+
+        if (!policy.CanUploadAnimatedMedia(hasAnimatedMediaPermission, fileMeta.ContentType))
+        {
+            throw new ForbiddenException("Animated media (WebP/GIF) is available for Premium users only.");
         }
     }
 }
