@@ -35,8 +35,6 @@ public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery,
                 u.Profile != null ? u.Profile.FirstName : "Unknown User",
                 u.Profile != null ? u.Profile.AvatarUrl : null,
                 u.Profile != null ? u.Profile.BannerUrl : null, 
-                u.Profile != null ? u.Profile.Country : null,
-                u.Profile != null ? u.Profile.City : null,
                 u.Profile != null ? u.Profile.Bio : null,
                 
                 _context.UserFollowUsers.Count(ufu => ufu.FolloweeId == u.Id), 

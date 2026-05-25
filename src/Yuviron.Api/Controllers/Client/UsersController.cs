@@ -5,6 +5,7 @@ using Yuviron.Application.Features.Client.Library.Queries.GetUserFollowed;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.Users.Commands.FollowUser;
 using Yuviron.Application.Features.Client.Users.Commands.UnfollowUser;
+using Yuviron.Application.Features.Client.Users.Commands.UpdateUserProfile;
 using Yuviron.Application.Features.Client.Users.Queries.GetUserFollowers;
 using Yuviron.Application.Features.Client.Users.Queries.GetUserProfile;
 using Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylists;
@@ -82,5 +83,17 @@ public class UsersController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetUserProfileQuery(id), ct);
         return Ok(result);
+    }
+
+    [HttpPut("profile")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileRequest request, CancellationToken ct)
+    {
+        var command = new UpdateUserProfileCommand(request.Name, request.Bio, request.AvatarFileId, request.BannerFileId);
+        await Mediator.Send(command, ct);
+        return NoContent();
     }
 }

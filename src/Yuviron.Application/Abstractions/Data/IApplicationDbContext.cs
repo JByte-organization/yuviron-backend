@@ -60,6 +60,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<RoyaltyAccrualDaily> RoyaltyAccrualsDaily { get; }
     DbSet<PayoutRequest> PayoutRequests { get; }
     DbSet<PayoutTransaction> PayoutTransactions { get; }
+    DbSet<ArtistSubscription> ArtistSubscriptions { get; }
 
     // --- Player & Social ---
     DbSet<PlaybackSession> PlaybackSessions { get; }

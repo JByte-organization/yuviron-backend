@@ -7,8 +7,6 @@ public sealed record UserProfileDto(
     string Name,
     string? AvatarUrl,
     string? BannerUrl,
-    string? Country,
-    string? City,
     string? Bio,
     int FollowersCount,
     int FollowingCount,

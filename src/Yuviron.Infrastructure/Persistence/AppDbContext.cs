@@ -96,6 +96,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<PayoutRequest> PayoutRequests => Set<PayoutRequest>();
     public DbSet<PayoutTransaction> PayoutTransactions => Set<PayoutTransaction>();
     public DbSet<PlaybackSession> PlaybackSessions => Set<PlaybackSession>();
+    public DbSet<ArtistSubscription> ArtistSubscriptions => Set<ArtistSubscription>();
     public DbSet<PlaybackQueueItem> PlaybackQueueItems => Set<PlaybackQueueItem>();
     public DbSet<SharedRoom> SharedRooms => Set<SharedRoom>();
     public DbSet<SharedRoomMember> SharedRoomMembers => Set<SharedRoomMember>();

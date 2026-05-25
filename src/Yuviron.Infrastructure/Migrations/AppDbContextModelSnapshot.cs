@@ -328,6 +328,49 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("artist_social_links", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("PayerUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtistId");
+
+                    b.HasIndex("EndAt");
+
+                    b.HasIndex("PayerUserId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("artist_subscriptions", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.ArtistTeamMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2065,6 +2108,33 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Artist");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistSubscription", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", "PayerUser")
+                        .WithMany()
+                        .HasForeignKey("PayerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Artist");
+
+                    b.Navigation("PayerUser");
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.ArtistTeamMember", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
@@ -2744,6 +2814,8 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Pins");
 
                     b.Navigation("SocialLinks");
+
+                    b.Navigation("Subscriptions");
 
                     b.Navigation("TeamMembers");
 

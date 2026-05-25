@@ -53,11 +53,11 @@ public class UserSettingsPolicy
         return !isThemePremiumOnly || hasCustomThemePermission; 
     }
 
-    public bool CanUploadAnimatedMedia(bool hasAnimatedMediaPermission, string fileExtension)
+    public bool CanUploadAnimatedMedia(bool hasAnimatedMediaPermission, string contentType)
     {
-        bool isAnimated = fileExtension.Equals(".gif", StringComparison.OrdinalIgnoreCase) ||
-                          fileExtension.Equals(".webm", StringComparison.OrdinalIgnoreCase);
+        bool isAnimatedFormat = contentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase) ||
+                                contentType.Equals("image/gif", StringComparison.OrdinalIgnoreCase);
 
-        return !isAnimated || hasAnimatedMediaPermission; 
+        return !isAnimatedFormat || hasAnimatedMediaPermission; 
     }
 }

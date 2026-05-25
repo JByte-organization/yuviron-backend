@@ -1,15 +1,15 @@
-using System.IO;
-using System.Linq;
+
 using FluentValidation;
+using SkiaSharp;
 using Yuviron.Application.Common.Utilities;
 
 namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
 public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
 {
-    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp3", ".wav" };
+    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".mp3", ".wav" };
     
-    private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif", "audio/mpeg", "audio/wav", "audio/x-wav" };
+    private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "audio/mpeg", "audio/wav", "audio/x-wav" };
 
     public UploadFileValidator()
     {
@@ -32,6 +32,11 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
             .Must(x => HaveValidSignature(x.FileStream, x.FileName))
             .WithMessage("File content does not match its extension (Invalid Magic Bytes). Fake file detected!")
             .When(x => HaveAllowedExtension(x.FileName)); 
+        
+        RuleFor(x => x)
+            .Must(x => IsImageValidDimensions(x.FileStream, x.FileName))
+            .WithMessage("Image dimensions are invalid (too large or too small).")
+            .When(x => IsImageExtension(x.FileName));
     }
 
     private bool HaveAllowedExtension(string fileName)
@@ -59,5 +64,38 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
         var (detectedExt, _) = FileSignatureDetector.Detect(stream);
 
         return detectedExt == expectedExt;
+    }
+    
+    private bool IsImageExtension(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        
+        return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp";
+    }
+
+    private bool IsImageValidDimensions(Stream stream, string fileName)
+    {
+        try
+        {
+            using var managedStream = new SKManagedStream(stream, disposeManagedStream: false);
+        
+            using var codec = SKCodec.Create(managedStream);
+    
+            if (codec == null) return false;
+
+            return codec.Info.Width >= 150 && codec.Info.Width <= 4000 && 
+                   codec.Info.Height >= 150 && codec.Info.Height <= 4000;
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            if (stream != null && stream.CanSeek)
+            {
+                stream.Position = 0; 
+            }
+        }
     }
 }

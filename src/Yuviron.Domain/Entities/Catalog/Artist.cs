@@ -27,6 +27,7 @@ public class Artist : Entity
     public virtual ICollection<ArtistPin> Pins { get; private set; } = new List<ArtistPin>();
     public virtual ICollection<AlbumArtist> AlbumArtists { get; private set; } = new List<AlbumArtist>();
     public virtual ICollection<TrackArtist> TrackArtists { get; private set; } = new List<TrackArtist>();
+    public virtual ICollection<ArtistSubscription> Subscriptions { get; private set; } = new List<ArtistSubscription>();
 
     private Artist() { }
 
@@ -149,6 +150,13 @@ public class Artist : Entity
     public void SetMonthlyListenersCount(int count)
     {
         MonthlyListenersCount = Math.Max(0, count);
+    }
+    
+    public bool HasActivePremiumSubscription(DateTime currentDate)
+    {
+        return Subscriptions.Any(s =>
+            s.Status == SubscriptionStatus.Active &&
+            s.EndAt > currentDate);
     }
 
     public void Delete(DateTime utcNow)
