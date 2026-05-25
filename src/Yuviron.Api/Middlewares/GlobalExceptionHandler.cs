@@ -20,7 +20,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not ValidationException && exception is not ArgumentException && exception is not InvalidOperationException && exception is not DomainException)
+        if (exception is not ValidationException && exception is not ArgumentException && exception is not InvalidOperationException && exception is not DomainException && exception is not UnauthorizedAccessException)
         {
             _logger.LogError(exception, "System Exception occurred: {Message}", exception.Message);
         }
