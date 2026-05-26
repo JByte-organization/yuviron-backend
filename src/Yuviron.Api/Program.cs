@@ -315,3 +315,4 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 
 // START SERVER
 app.Run();
+public partial class Program { }

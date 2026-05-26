@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
@@ -27,7 +27,7 @@ public class AppDbContextInitializer
         _configuration = configuration;
     }
 
-    public async Task InitialiseAsync()
+    public virtual async Task InitialiseAsync()
     {
         try
         {
@@ -48,7 +48,7 @@ public class AppDbContextInitializer
         }
     }
 
-    public async Task SeedAsync()
+    public virtual async Task SeedAsync()
     {
         try
         {

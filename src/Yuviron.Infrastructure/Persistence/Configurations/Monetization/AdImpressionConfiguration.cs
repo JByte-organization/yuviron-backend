@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -16,6 +13,9 @@ public class AdImpressionConfiguration : IEntityTypeConfiguration<AdImpression>
 
         builder.Property(x => x.Context).HasMaxLength(100);
 
+        builder.HasIndex(x => x.UserId);
+        builder.HasIndex(x => x.ShownAt);
+
         builder.HasOne(x => x.Ad)
             .WithMany(a => a.Impressions)
             .HasForeignKey(x => x.AdId)
@@ -24,6 +24,6 @@ public class AdImpressionConfiguration : IEntityTypeConfiguration<AdImpression>
         builder.HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

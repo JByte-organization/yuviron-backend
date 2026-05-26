@@ -149,6 +149,18 @@ jobs:
               },
               "JamendoApi": {"ClientId": os.environ["JAMENDO_CLIENT_ID"]},
               "StreamSecurity": {"SecretKey": os.environ["STREAM_SECRET"]},
+          
+              "ArtistLimits": {
+                  "FreeUserMaxProfiles": 1,
+                  "PremiumUserMaxProfiles": 5
+              },
+              "AudioSettings": {
+                  "HlsQualities": [128, 320],
+                  "FfmpegAudioFilters": "-af loudnorm=I=-14:LRA=11:TP=-1.5"
+              },
+              "AdSettings": {
+                  "CooldownMinutes": 15 if is_prod else 2
+              }
           }
 
           print(json.dumps(config, ensure_ascii=False, indent=2))

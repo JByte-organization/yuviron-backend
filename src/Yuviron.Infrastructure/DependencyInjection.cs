@@ -124,6 +124,7 @@ public static class DependencyInjection
         services.AddSingleton<ITemplateService, FluidTemplateService>();
         services.AddScoped<IOtpService, OtpService>();
         services.Configure<ArtistLimitsOptions>(configuration.GetSection(ArtistLimitsOptions.SectionName));
+        services.Configure<AdSettingsOptions>(configuration.GetSection(AdSettingsOptions.SectionName));
 
         // 6. HEALTH CHECKS
         services.AddHealthChecks()
