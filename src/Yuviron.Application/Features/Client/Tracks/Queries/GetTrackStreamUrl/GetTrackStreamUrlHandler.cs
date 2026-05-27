@@ -70,6 +70,11 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
 
         int targetQuality = _settingsPolicy.GetAllowedStreamQuality(user.Settings, hasHighQuality);
         var audioUrl = _streamTokenService.GenerateAudioUrl(request.TrackId, targetQuality, fileKey, true, _timeProvider);
+        
+        if (string.IsNullOrEmpty(audioUrl))
+        {
+            throw new InvalidOperationException("Failed to generate stream URL.");
+        }
 
         AdPlaybackDto? pendingAd = null;
         if (!hasNoAds)
