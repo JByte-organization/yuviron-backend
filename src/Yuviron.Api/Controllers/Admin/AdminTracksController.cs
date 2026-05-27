@@ -11,9 +11,8 @@ using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/tracks")]
-public class AdminTracksController : ApiControllerBase
+public class AdminTracksController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<TrackListItemDto>), StatusCodes.Status200OK)]

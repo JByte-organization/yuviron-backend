@@ -3,4 +3,4 @@ using System.IO;
 
 namespace Yuviron.Application.Features.Files.Queries.GetImage;
 
-public sealed record GetImageQuery(string Hash) : IRequest<GetImageResponse>;
+public sealed record GetPublicFileQuery(string Hash) : IRequest<GetPublicFileResponse>;

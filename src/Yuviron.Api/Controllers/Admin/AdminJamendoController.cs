@@ -4,9 +4,8 @@ using Yuviron.Application.Features.Admin.Jamendo.Commands.SyncTracks;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/jamendo")]
-public class AdminJamendoController : ApiControllerBase
+public class AdminJamendoController : AdminApiControllerBase
 {
     [HttpPost("sync")]
     public async Task<ActionResult<SyncJamendoResponse>> SyncTracks(

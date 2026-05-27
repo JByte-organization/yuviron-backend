@@ -11,9 +11,8 @@ using Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumsAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/albums")]
-public class AdminAlbumsController : ApiControllerBase
+public class AdminAlbumsController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<AlbumListItemDto>), StatusCodes.Status200OK)]

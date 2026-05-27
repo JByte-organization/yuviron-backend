@@ -160,7 +160,16 @@ jobs:
               },
               "AdSettings": {
                   "CooldownMinutes": 15 if is_prod else 2
-              }
+              },
+          
+              "FileAccess": {
+                  "PublicFolders": [
+                      "covers/",
+                      "avatars/",
+                      "banners/",
+                      "ads/"
+                  ]
+              },
           }
 
           print(json.dumps(config, ensure_ascii=False, indent=2))

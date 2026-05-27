@@ -23,7 +23,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _timeProvider = timeProvider;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(User user, string sessionType = "client")
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -33,7 +33,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            
+            new("session_type", sessionType)
         };
 
         if (user.UserRoles != null)

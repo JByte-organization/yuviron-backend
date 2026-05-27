@@ -11,9 +11,8 @@ using Yuviron.Application.Features.Admin.Genres.Queries.GetGenresById;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/genres")]
-public class AdminGenresController : ApiControllerBase
+public class AdminGenresController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<GenreListItemDto>), StatusCodes.Status200OK)]

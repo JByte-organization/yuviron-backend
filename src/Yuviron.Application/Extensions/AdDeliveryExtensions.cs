@@ -33,8 +33,8 @@ public static class AdDeliveryExtensions
             {
                 return new AdDeliveryResult(
                     randomAd.Id, 
-                    randomAd.AudioUrl, 
-                    randomAd.ImageUrl, 
+                    Path.GetFileName(randomAd.AudioUrl),
+                    Path.GetFileName(randomAd.ImageUrl),
                     randomAd.AdvertiserName, 
                     randomAd.Title, 
                     randomAd.ClickUrl);

@@ -14,9 +14,8 @@ using Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylists;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/playlists")]
-public class AdminPlaylistsController : ApiControllerBase
+public class AdminPlaylistsController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<PlaylistDto>), StatusCodes.Status200OK)]

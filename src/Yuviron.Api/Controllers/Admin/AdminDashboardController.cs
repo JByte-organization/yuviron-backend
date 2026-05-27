@@ -4,9 +4,8 @@ using Yuviron.Application.Features.Admin.Dashboard.Queries.GetDashboardStats;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/dashboard")]
-public class AdminDashboardController : ApiControllerBase
+public class AdminDashboardController : AdminApiControllerBase
 {
     [HttpGet("stats")]
     [ProducesResponseType(StatusCodes.Status200OK)]

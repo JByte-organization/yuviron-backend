@@ -11,9 +11,8 @@ using Yuviron.Application.Features.Admin.Moods.Queries.GetMoodsAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/moods")]
-public class AdminMoodsController : ApiControllerBase
+public class AdminMoodsController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<MoodDto>), StatusCodes.Status200OK)]

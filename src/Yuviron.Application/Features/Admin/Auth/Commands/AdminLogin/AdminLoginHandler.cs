@@ -82,7 +82,7 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
 
         var permissions = _permissionService.CalculateUserPermissions(user, utcNow);
 
-        var token = _jwtTokenGenerator.GenerateToken(user);
+        var token = _jwtTokenGenerator.GenerateToken(user, "admin");
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 

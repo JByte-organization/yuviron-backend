@@ -10,6 +10,7 @@ namespace Yuviron.Api.Controllers.Admin;
 
 [Route("api/admin/auth")]
 [AllowAnonymous] 
+[ApiExplorerSettings(GroupName = "admin")]
 public class AdminAuthController : ApiControllerBase
 {
     [HttpPost("pre-login")]
