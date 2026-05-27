@@ -122,6 +122,16 @@ builder.Services.AddApiBackgroundServices(builder.Configuration);
 
 // 1.2 Controllers and Swagger
 builder.Services.AddControllers();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminSession", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim("session_type", "admin");
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

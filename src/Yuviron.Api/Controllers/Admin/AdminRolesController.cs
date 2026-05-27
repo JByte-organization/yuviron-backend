@@ -4,9 +4,8 @@ using Yuviron.Application.Features.Admin.Roles.Queries.GetRoles;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/roles")]
-public class AdminRolesController : ApiControllerBase
+public class AdminRolesController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(List<RoleDto>), StatusCodes.Status200OK)]

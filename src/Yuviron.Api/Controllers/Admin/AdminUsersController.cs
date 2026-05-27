@@ -13,9 +13,8 @@ using Yuviron.Application.Features.Admin.Users.Queries.GetUsersAutocomplete;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/users")]
-public class AdminUsersController : ApiControllerBase
+public class AdminUsersController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<UserListItemDto>), StatusCodes.Status200OK)]

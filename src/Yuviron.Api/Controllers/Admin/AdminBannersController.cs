@@ -12,10 +12,8 @@ using Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/banners")]
-[ApiExplorerSettings(GroupName = "admin")]
-public class AdminBannersController : ApiControllerBase
+public class AdminBannersController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<BannerListItemDto>), StatusCodes.Status200OK)]

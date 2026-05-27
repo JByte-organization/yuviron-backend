@@ -9,7 +9,7 @@ namespace Yuviron.Api.Controllers.Client;
 [AllowAnonymous] 
 [Route("i")]    
 [ApiExplorerSettings(GroupName = "client")]
-public class ImageController : ApiControllerBase
+public class PublicMediaController : ApiControllerBase
 {
     [HttpGet("{hash}")]
     [ResponseCache(Duration = 31536000, Location = ResponseCacheLocation.Any)] 
@@ -19,10 +19,10 @@ public class ImageController : ApiControllerBase
     {
         if (string.IsNullOrWhiteSpace(hash) || hash.Contains(".") || hash.Contains("/"))
         {
-            return BadRequest("Invalid image hash.");
+            return BadRequest("Invalid file hash.");
         }
 
-        var query = new GetImageQuery(hash);
+        var query = new GetPublicFileQuery(hash);
         var result = await Mediator.Send(query, ct);
 
         return File(result.Stream, result.ContentType, enableRangeProcessing: true);

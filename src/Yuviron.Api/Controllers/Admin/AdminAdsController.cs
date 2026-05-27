@@ -11,9 +11,7 @@ using Yuviron.Application.Features.Admin.Ads.Queries.GetAdById;
 namespace Yuviron.Api.Controllers.Admin;
 
 [Route("api/admin/ads")]
-[ApiExplorerSettings(GroupName = "admin")]
-[Authorize(Roles = "Admin")]
-public class AdminAdsController : ApiControllerBase
+public class AdminAdsController : AdminApiControllerBase
 {
 
     [HttpGet]

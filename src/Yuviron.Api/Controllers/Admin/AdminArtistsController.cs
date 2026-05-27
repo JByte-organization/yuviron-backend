@@ -16,9 +16,8 @@ using Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMembers;
 
 namespace Yuviron.Api.Controllers.Admin;
 
-[Authorize]
 [Route("api/admin/artists")]
-public class AdminArtistsController : ApiControllerBase
+public class AdminArtistsController : AdminApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<ArtistListItemDto>), StatusCodes.Status200OK)]
