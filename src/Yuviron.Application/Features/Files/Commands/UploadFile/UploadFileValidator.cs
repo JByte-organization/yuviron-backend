@@ -1,4 +1,6 @@
-
+using System;
+using System.IO;
+using System.Linq;
 using FluentValidation;
 using SkiaSharp;
 using Yuviron.Application.Common.Utilities;
@@ -58,7 +60,6 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
     {
         var expectedExt = Path.GetExtension(fileName).ToLowerInvariant();
         
-        
         if (expectedExt == ".jpeg") expectedExt = ".jpg";
 
         var (detectedExt, _) = FileSignatureDetector.Detect(stream);
@@ -77,8 +78,12 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
     {
         try
         {
+            if (stream.CanSeek)
+            {
+                stream.Position = 0;
+            }
+
             using var managedStream = new SKManagedStream(stream, disposeManagedStream: false);
-        
             using var codec = SKCodec.Create(managedStream);
     
             if (codec == null) return false;
@@ -86,15 +91,23 @@ public sealed class UploadFileValidator : AbstractValidator<UploadFileCommand>
             return codec.Info.Width >= 150 && codec.Info.Width <= 4000 && 
                    codec.Info.Height >= 150 && codec.Info.Height <= 4000;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[SkiaSharp ERROR] File: {fileName} | {ex.GetType().Name}: {ex.Message}");
             return false;
         }
         finally
         {
             if (stream != null && stream.CanSeek)
             {
-                stream.Position = 0; 
+                try 
+                { 
+                    stream.Position = 0; 
+                } 
+                catch 
+                { 
+                   
+                }
             }
         }
     }
