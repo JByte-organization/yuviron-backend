@@ -1,7 +1,15 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
+using Yuviron.Application.Extensions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAds;
 
@@ -9,33 +17,39 @@ public sealed class GetAdsHandler : IRequestHandler<GetAdsQuery, PaginatedList<A
 {
     private readonly IApplicationDbContext _context;
 
-    public GetAdsHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetAdsHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<PaginatedList<AdSummaryDto>> Handle(GetAdsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Ads
-            .AsNoTracking()
-            .OrderByDescending(a => a.CreatedAt);
+        var query = _context.Ads.AsNoTracking();
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            // Поиск сразу по имени рекламодателя и по заголовку
+            query = query.Where(a => a.AdvertiserName.StartsWith(request.SearchTerm) || a.Title.StartsWith(request.SearchTerm));
+        }
 
-        var items = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(a => new AdSummaryDto(
-                a.Id,
-                a.AdvertiserName,
-                a.Title,
-                a.IsActive,
-                a.Impressions.Count, 
-                a.Impressions.Count(i => i.IsClicked), 
-                a.CreatedAt
-            ))
-            .ToListAsync(cancellationToken);
+        var sortedQuery = query.ApplySorting(
+            request.SortBy, 
+            request.SortOrder,
+            defaultSortBy: "CreatedAt",
+            defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Ad, object>>>
+            {
+                [nameof(AdSummaryDto.ImpressionsCount)] = a => a.Impressions.Count,
+                [nameof(AdSummaryDto.ClicksCount)] = a => a.Impressions.Count(i => i.IsClicked)
+            });
 
-        return new PaginatedList<AdSummaryDto>(items, totalCount, request.PageNumber, request.PageSize);
+        var projectedQuery = sortedQuery.Select(a => new AdSummaryDto(
+            a.Id,
+            a.AdvertiserName,
+            a.Title,
+            a.IsActive,
+            a.Impressions.Count, 
+            a.Impressions.Count(i => i.IsClicked), 
+            a.CreatedAt
+        ));
+
+        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
     }
 }

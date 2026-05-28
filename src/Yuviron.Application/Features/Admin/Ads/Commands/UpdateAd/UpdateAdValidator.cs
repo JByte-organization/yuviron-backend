@@ -6,6 +6,8 @@ public sealed class UpdateAdValidator : AbstractValidator<UpdateAdCommand>
 {
     public UpdateAdValidator()
     {
+        RuleFor(x => x.AdId).NotEmpty().WithMessage("Ad Id is required.");
+        
         RuleFor(x => x.AdvertiserName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.ClickUrl).MaximumLength(500)

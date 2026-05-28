@@ -1,6 +1,6 @@
 namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAdById;
 
-public record AdDetailsDto(
+public sealed record AdDetailsDto(
     Guid Id,
     string AdvertiserName,
     string Title,
