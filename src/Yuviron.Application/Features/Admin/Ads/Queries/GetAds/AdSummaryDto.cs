@@ -1,6 +1,8 @@
+using System;
+
 namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAds;
 
-public record AdSummaryDto(
+public sealed record AdSummaryDto(
     Guid Id,
     string AdvertiserName,
     string Title,
