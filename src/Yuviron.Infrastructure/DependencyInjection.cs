@@ -13,6 +13,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Application.Abstractions.Payment;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Configuration;
@@ -28,6 +29,7 @@ using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
 using Yuviron.Infrastructure.Services.Audio;
 using Yuviron.Infrastructure.HealthChecks;
+using Yuviron.Infrastructure.Services.Payment;
 using Yuviron.Infrastructure.Services.Security;
 
 namespace Yuviron.Infrastructure;
@@ -105,6 +107,8 @@ public static class DependencyInjection
         services.AddScoped<IAudioMetadataService, AudioMetadataService>();
         services.AddScoped<IHlsTranscodingService, HlsTranscodingService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IPaymentService, StripePaymentService>();
+        services.AddScoped<IStripeWebhookParser, StripeWebhookParser>();
         services.AddHttpClient<IJamendoApiService, JamendoApiService>();
         services.AddSingleton<IStreamTokenService, StreamTokenService>();
         var audioSettings = configuration.GetSection("AudioSettings").Get<AudioSettingsOptions>() 
@@ -126,6 +130,9 @@ public static class DependencyInjection
         services.Configure<ArtistLimitsOptions>(configuration.GetSection(ArtistLimitsOptions.SectionName));
         services.Configure<AdSettingsOptions>(configuration.GetSection(AdSettingsOptions.SectionName));
         services.Configure<FileAccessOptions>(configuration.GetSection(FileAccessOptions.SectionName));
+        services.Configure<StripeOptions>(configuration.GetSection(StripeOptions.SectionName));
+        
+        
 
         // 6. HEALTH CHECKS
         services.AddHealthChecks()

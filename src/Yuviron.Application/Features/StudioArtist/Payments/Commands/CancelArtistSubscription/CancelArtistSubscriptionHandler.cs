@@ -1,0 +1,51 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Payment;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Domain.Enums;
+
+namespace Yuviron.Application.Features.StudioArtist.Payments.Commands.CancelArtistSubscription;
+
+public sealed class CancelArtistSubscriptionHandler : IRequestHandler<CancelArtistSubscriptionCommand, Unit>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPaymentService _paymentService;
+    private readonly TimeProvider _timeProvider;
+
+    public CancelArtistSubscriptionHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser, 
+        IPaymentService paymentService,
+        TimeProvider timeProvider)
+    {
+        _context = context;
+        _currentUser = currentUser;
+        _paymentService = paymentService;
+        _timeProvider = timeProvider;
+    }
+
+    public async Task<Unit> Handle(CancelArtistSubscriptionCommand request, CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+        
+        var ownsArtist = await _context.Artists.AnyAsync(a => a.Id == request.ArtistId && a.TeamMembers.Any(tm => tm.UserId == userId), cancellationToken);
+        if (!ownsArtist) throw new InvalidOperationException("You do not own this artist profile.");
+
+        var sub = await _context.ArtistSubscriptions
+            .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId && s.Status == SubscriptionStatus.Active && s.IsAutoRenewing, cancellationToken);
+
+        if (sub == null || string.IsNullOrEmpty(sub.StripeSubscriptionId))
+        {
+            throw new InvalidOperationException("No active auto-renewing subscription found for this artist.");
+        }
+
+        await _paymentService.CancelSubscriptionAsync(sub.StripeSubscriptionId, cancellationToken);
+
+        sub.CancelRenewal(_timeProvider.GetUtcNow().UtcDateTime);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Unit.Value;
+    }
+}

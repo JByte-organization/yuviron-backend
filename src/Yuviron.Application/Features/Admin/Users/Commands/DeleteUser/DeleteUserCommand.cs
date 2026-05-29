@@ -6,7 +6,7 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.DeleteUser;
 
 public sealed record DeleteUserCommand(Guid UserId) : IRequest<Unit>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageUsers;
+    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
 }
 
 

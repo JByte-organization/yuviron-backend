@@ -122,7 +122,7 @@ builder.Services.AddApiBackgroundServices(builder.Configuration);
 
 // 1.2 Controllers and Swagger
 builder.Services.AddControllers();
-/*
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminSession", policy =>
@@ -131,7 +131,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("session_type", "admin");
     });
 });
-*/
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -150,9 +150,21 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API для панели администратора"
     });
+    
+    c.SwaggerDoc("artist", new OpenApiInfo 
+    { 
+        Title = "Yuviron Artist API", 
+        Version = "v1",
+        Description = "API для Кабинета Артиста"
+    });
 
     c.DocInclusionPredicate((docName, apiDesc) =>
     {
+        if (!string.IsNullOrEmpty(apiDesc.GroupName))
+        {
+            return apiDesc.GroupName == docName;
+        }
+
         var relativePath = apiDesc.RelativePath;
         if (string.IsNullOrEmpty(relativePath)) return false;
 
@@ -279,6 +291,7 @@ if (swaggerEnabled)
     {
         c.SwaggerEndpoint("/swagger/client/swagger.json", "Client API");
         c.SwaggerEndpoint("/swagger/admin/swagger.json", "Admin API");
+        c.SwaggerEndpoint("/swagger/artist/swagger.json", "Artist API");
     });
 }
 

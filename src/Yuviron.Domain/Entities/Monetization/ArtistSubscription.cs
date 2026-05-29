@@ -1,5 +1,6 @@
 using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
+using System;
 
 namespace Yuviron.Domain.Entities;
 
@@ -7,7 +8,6 @@ public class ArtistSubscription : Entity
 {
     public Guid ArtistId { get; private set; }
     public Guid PlanId { get; private set; } 
-    
     public Guid PayerUserId { get; private set; } 
 
     public SubscriptionStatus Status { get; private set; }
@@ -15,6 +15,9 @@ public class ArtistSubscription : Entity
     public DateTime EndAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    
+    public string? StripeSubscriptionId { get; private set; } 
+    public bool IsAutoRenewing { get; private set; } = true;
 
     public virtual Artist Artist { get; private set; } = null!;
     public virtual Plan Plan { get; private set; } = null!;
@@ -29,7 +32,8 @@ public class ArtistSubscription : Entity
         DateTime startAt, 
         DateTime endAt, 
         SubscriptionStatus status,
-        DateTime utcNow)
+        DateTime utcNow,
+        string? stripeSubscriptionId = null)
     {
         return new ArtistSubscription
         {
@@ -41,7 +45,8 @@ public class ArtistSubscription : Entity
             EndAt = endAt,
             Status = status,
             CreatedAt = utcNow,
-            UpdatedAt = utcNow
+            UpdatedAt = utcNow,
+            StripeSubscriptionId = stripeSubscriptionId
         };
     }
     
@@ -56,5 +61,18 @@ public class ArtistSubscription : Entity
         {
             EndAt = utcNow; 
         }
+    }
+
+    public void CancelRenewal(DateTime utcNow)
+    {
+        IsAutoRenewing = false;
+        UpdatedAt = utcNow;
+    }
+
+    public void Renew(DateTime newEndDate, DateTime utcNow)
+    {
+        EndAt = newEndDate;
+        Status = SubscriptionStatus.Active;
+        UpdatedAt = utcNow;
     }
 }

@@ -12,5 +12,5 @@ public sealed record BlockUserCommand(
     DateTime? EndsAt
 ) : IRequest<Guid>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageUsers;
+    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
 }

@@ -74,6 +74,8 @@ jobs:
           SEED_PREMIUM_PASSWORD: ${{ secrets.SEED_PREMIUM_PASSWORD }}
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
           STREAM_SECRET: ${{ secrets.STREAM_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           set -Eeuo pipefail
 
@@ -170,6 +172,11 @@ jobs:
                       "ads/"
                   ]
               },
+              "Stripe": {
+                  "SecretKey": os.environ["STRIPE_SECRET_KEY"],
+                  "WebhookSecret": os.environ["STRIPE_WEBHOOK_SECRET"]
+              }
+          
           }
 
           print(json.dumps(config, ensure_ascii=False, indent=2))
