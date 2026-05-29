@@ -108,14 +108,10 @@ public class AppDbContextInitializer
         {
             { "Admin", allPerms },
             { "ManagementUser", new[] { 
-                nameof(AppPermission.TracksUpload), 
-                nameof(AppPermission.TracksEdit), 
-                nameof(AppPermission.TracksDelete), 
-                nameof(AppPermission.TracksBlock), 
-                nameof(AppPermission.AnalyticsView),
-                nameof(AppPermission.StudioArtistProfile) 
+                nameof(AppPermission.StudioArtistManage),
+                nameof(AppPermission.AccessArtistPanel) 
             } },
-            { "User", new[] { nameof(AppPermission.CreatePlaylist) } }
+            { "User", new[] { nameof(AppPermission.AccessBasic) } }
         };
 
         var allDbPerms = await _context.Permissions.ToListAsync();
@@ -141,10 +137,14 @@ public class AppDbContextInitializer
 
         if (!await _context.Plans.AnyAsync())
         {
+            var utcNow = DateTime.UtcNow;
+            
             await _context.Plans.AddRangeAsync(
-                Plan.Create("Premium Monthly", 9.99m, "USD", PlanPeriod.Month),
-                Plan.Create("Premium Yearly", 99.99m, "USD", PlanPeriod.Year),
-                Plan.Create("Lifetime Access", 0m, "USD", PlanPeriod.Year)
+                Plan.Create("Premium Monthly", 9.99m, "USD", PlanPeriod.Month, PlanType.Listener, utcNow),
+                Plan.Create("Premium Yearly", 99.99m, "USD", PlanPeriod.Year, PlanType.Listener, utcNow),
+                Plan.Create("Lifetime Access", 0m, "USD", PlanPeriod.Year, PlanType.Listener, utcNow),
+                
+                Plan.Create("Artist Pro Monthly", 14.99m, "USD", PlanPeriod.Month, PlanType.Artist, utcNow)
             );
             await _context.SaveChangesAsync();
         }

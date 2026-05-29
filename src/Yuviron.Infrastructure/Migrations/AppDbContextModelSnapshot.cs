@@ -379,6 +379,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("EndAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsAutoRenewing")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<Guid>("PayerUserId")
                         .HasColumnType("char(36)");
 
@@ -390,6 +393,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("StripeSubscriptionId")
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1049,6 +1055,9 @@ namespace Yuviron.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -1066,6 +1075,12 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -1514,6 +1529,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("EndAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsAutoRenewing")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<Guid>("PlanId")
                         .HasColumnType("char(36)");
 
@@ -1522,6 +1540,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("StripeSubscriptionId")
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
