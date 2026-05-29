@@ -11,23 +11,6 @@ namespace Yuviron.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
 
-            migrationBuilder.CreateIndex(
-                name: "IX_users_Email",
-                table: "users",
-                column: "Email",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_moods_Name",
-                table: "moods",
-                column: "Name",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_genres_Name",
-                table: "genres",
-                column: "Name",
-                unique: true);
         }
 
         /// <inheritdoc />

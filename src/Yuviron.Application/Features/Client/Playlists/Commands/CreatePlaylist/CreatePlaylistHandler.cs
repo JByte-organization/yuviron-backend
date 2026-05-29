@@ -2,7 +2,7 @@ using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
-using Yuviron.Domain.Entities; // Оставляем using, но используем полное имя при создании из-за конфликта имен
+using Yuviron.Domain.Entities; 
 
 namespace Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 

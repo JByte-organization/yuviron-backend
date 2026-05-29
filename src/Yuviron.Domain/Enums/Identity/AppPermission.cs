@@ -7,22 +7,16 @@ namespace Yuviron.Domain.Enums;
 public enum AppPermission
 {
     AccessAdminPanel,
-    ManageUsers,
     ManageCatalog,
-    ViewSystemLogs,
-
-    TracksUpload,
-    TracksEdit,
-    TracksDelete,
-    TracksBlock,
-    CreatePlaylist,
-
+    
     PlayerHighQuality,
     PlayerNoAds,
     PrivateSession,    
     CustomTheme,     
-    AnimatedMedia,     
+    AnimatedMedia,   
+    
+    AccessBasic,
 
-    StudioArtistProfile,
-    AnalyticsView
+    StudioArtistManage,
+    AccessArtistPanel
 }

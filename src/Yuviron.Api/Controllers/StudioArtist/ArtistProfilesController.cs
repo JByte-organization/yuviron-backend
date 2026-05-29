@@ -5,8 +5,10 @@ using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateProfi
 
 namespace Yuviron.Api.Controllers.ArtistDashboard;
 
-[Route("api/artist-dashboard/profiles")]
+
 [Authorize] 
+[Route("api/artist-dashboard/profiles")]
+[ApiExplorerSettings(GroupName = "artist")]
 public class ArtistProfilesController : ApiControllerBase
 {
     [HttpPost]

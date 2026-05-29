@@ -16,7 +16,7 @@ public sealed record CreateUserCommand(
     IReadOnlyCollection<Guid>? RoleIds = null
 ) : IRequest<Guid>, ISecuredRequest, ISensitiveRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageUsers;
+    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
 }
 
 

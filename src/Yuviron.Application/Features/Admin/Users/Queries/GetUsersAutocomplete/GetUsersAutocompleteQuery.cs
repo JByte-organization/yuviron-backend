@@ -9,5 +9,5 @@ public sealed record GetUsersAutocompleteQuery(
     int Limit = 10
 ) : IRequest<List<UserAutocompleteDto>>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageUsers; 
+    public AppPermission RequiredPermission => AppPermission.ManageCatalog; 
 }
