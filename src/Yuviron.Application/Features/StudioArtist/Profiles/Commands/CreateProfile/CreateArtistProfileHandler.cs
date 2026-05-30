@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Authentication; // <-- ИСПРАВЛЕНО (добавили Authentication)
+using Yuviron.Application.Abstractions.Data;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Extensions;
@@ -17,17 +19,20 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
     private readonly TimeProvider _timeProvider;
     private readonly ArtistLimitsOptions _limits;
     private readonly ICurrentUserService _currentUser;
+    private readonly IPermissionService _permissionService;
 
     public CreateArtistProfileHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
         IOptions<ArtistLimitsOptions> options,
-        ICurrentUserService currentUser) 
+        ICurrentUserService currentUser,
+        IPermissionService permissionService) 
     {
         _context = context;
         _timeProvider = timeProvider;
         _limits = options.Value; 
         _currentUser = currentUser;
+        _permissionService = permissionService;
     }
 
     public async Task<Guid> Handle(CreateArtistProfileCommand request, CancellationToken cancellationToken)
@@ -75,7 +80,28 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
         }
 
         _context.Artists.Add(artist);
+        
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+            .FirstAsync(u => u.Id == userId, cancellationToken);
+            
+        var managementRole = await _context.Roles
+            .FirstAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
+
+        bool roleAdded = false;
+        
+        if (!user.UserRoles.Any(ur => ur.RoleId == managementRole.Id))
+        {
+            user.UserRoles.Add(new UserRole(user.Id, managementRole.Id));
+            roleAdded = true;
+        }
+        
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (roleAdded)
+        {
+            await _permissionService.InvalidatePermissionsAsync(userId, cancellationToken);
+        }
 
         return artist.Id;
     }
