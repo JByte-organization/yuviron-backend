@@ -2068,8 +2068,25 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid>("ArtistId")
                         .HasColumnType("char(36)");
 
+                    b.Property<int>("ClaimedRole")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Links")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OfficialEmail")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ProofFileUrl")
+                        .HasColumnType("longtext");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

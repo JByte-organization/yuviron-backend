@@ -14,7 +14,4 @@ public sealed record CreateArtistProfileResponse(Guid ArtistId);
 public sealed record CreateArtistProfileCommand(
     string Name,
     Guid? AvatarFileId
-) : IRequest<Guid>, ISecuredRequest
-{
-    public AppPermission RequiredPermission => AppPermission.StudioArtistManage;
-}
+) : IRequest<Guid>;

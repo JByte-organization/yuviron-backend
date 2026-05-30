@@ -13,6 +13,5 @@ public record RegisterCommand(
     DateTime DateOfBirth, 
     Gender Gender,    
     bool AcceptMarketing, 
-    bool AcceptTerms,
-    bool IsArtist   
+    bool AcceptTerms
 ) : IRequest<Guid>, ISensitiveRequest;

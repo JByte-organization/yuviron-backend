@@ -41,10 +41,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         if (emailExists) throw new UserAlreadyExistsException(normalizedEmail);
 
         var roleNamesToAssign = new List<string> { nameof(RoleName.User) };
-        if (request.IsArtist)
-        {
-            roleNamesToAssign.Add(nameof(RoleName.ManagementUser));
-        }
 
         var rolesToAssign = await _context.Roles
             .AsNoTracking()
@@ -54,8 +50,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         if (!rolesToAssign.Any(r => r.Name == nameof(RoleName.User)))
             throw new InvalidOperationException($"Default role '{nameof(RoleName.User)}' is not configured.");
         
-        if (request.IsArtist && !rolesToAssign.Any(r => r.Name == nameof(RoleName.ManagementUser)))
-            throw new InvalidOperationException($"Role '{nameof(RoleName.ManagementUser)}' is not configured in the database.");
 
         var passwordHash = _passwordHasher.Hash(request.Password);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime; 
