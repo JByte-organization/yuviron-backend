@@ -79,16 +79,13 @@ public class CreateArtistProfileHandlerTests
         var dbContext = new AppDbContext(_dbOptions);
         var utcNow = DateTime.UtcNow;
 
-        // 1. Создаем юзера
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
         dbContext.Users.Add(user);
 
-        // 2. Учим мок
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
         
-        // Создаем артиста, которым юзер УЖЕ владеет (исчерпал лимит)
         var existingArtist = Artist.Create(user.Id, "Old Band", null, null, null, VerificationStatus.None, utcNow);
         dbContext.Artists.Add(existingArtist);
         await dbContext.SaveChangesAsync();
