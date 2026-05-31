@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
-using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Client.Albums.Queries.GetAlbumTracks;
@@ -26,9 +25,6 @@ public sealed class GetAlbumTracksHandler : IRequestHandler<GetAlbumTracksQuery,
         var albumExists = await _context.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .Where(a => a.Tracks.Any(t => !t.IsDeleted
-                                          && t.VisibilityStatus == VisibilityStatus.Published
-                                          && t.ProcessingStatus == TrackProcessingStatus.Ready))
             .AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
 
         if (!albumExists)
