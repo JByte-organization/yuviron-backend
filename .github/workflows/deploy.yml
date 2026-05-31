@@ -49,7 +49,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server/src/yuviron-backend
-          git fetch origin "${SOURCE_BRANCH}"
+          git fetch origin "${{ github.sha }}"
           incoming_sha="$(git rev-parse FETCH_HEAD)"
           if [ "$incoming_sha" != "${{ github.sha }}" ]; then
             echo "ERROR: fetched SHA ${incoming_sha} does not match trigger SHA ${{ github.sha }}" >&2
@@ -254,7 +254,7 @@ jobs:
             if ! docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v /tmp/trivy-cache:/root/.cache/trivy \
-              aquasec/trivy:latest image \
+              aquasec/trivy:0.70.0 image \
               --severity CRITICAL,HIGH \
               --ignore-unfixed \
               --no-progress \
@@ -346,23 +346,14 @@ jobs:
             -p "yuviron-${DEPLOY_ENV}" \
             ps
 
-      - name: Show backend logs
+      - name: Show service logs
         if: always()
         run: |
           set -Eeuo pipefail
-          docker logs --tail=160 "yuviron-${DEPLOY_ENV}-backend" || true
-
-      - name: Show media worker logs
-        if: always()
-        run: |
-          set -Eeuo pipefail
-          docker logs --tail=160 "yuviron-${DEPLOY_ENV}-media-worker" || true
-
-      - name: Show nginx logs
-        if: always()
-        run: |
-          set -Eeuo pipefail
-          docker logs --tail=160 "yuviron-${DEPLOY_ENV}-nginx" || true
+          for service in backend media-worker nginx; do
+            echo "=== yuviron-${DEPLOY_ENV}-${service} ==="
+            docker logs --tail=160 "yuviron-${DEPLOY_ENV}-${service}" 2>&1 || true
+          done
 
       - name: Cleanup stale migrator run containers after deploy
         if: always()
