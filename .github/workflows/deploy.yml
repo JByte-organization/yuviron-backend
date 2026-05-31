@@ -18,10 +18,35 @@ jobs:
       ASPNET_ENV: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
 
     steps:
+      - name: Initialize deploy summary
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "## Backend deploy"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Environment | ${DEPLOY_ENV} |"
+            echo "| ASP.NET environment | ${ASPNET_ENV} |"
+            echo "| Branch | ${{ github.ref_name }} |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Run | [${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
+            echo
+            echo "### Stages"
+            echo
+            echo "| Stage | Status | Likely owner | Detail |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Backend deploy::Starting ${DEPLOY_ENV} deploy for ${{ github.sha }}"
+
       - name: Capture deployed backend revision
         id: deployed-revision
         run: |
           set -Eeuo pipefail
+          stage="Capture deployed revision"
+          owner="Runner workspace"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not capture current deployed backend revision. Check the self-hosted runner workspace and git state."; echo "| '"$stage"' | FAILED | '"$owner"' | Could not capture current deployed backend revision. Check runner workspace and git state. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
 
           previous_sha="$(git rev-parse --verify HEAD)"
@@ -43,10 +68,17 @@ jobs:
           echo "previous_sha=${previous_sha}" >> "$GITHUB_OUTPUT"
           echo "rollback_dir=${rollback_dir}" >> "$GITHUB_OUTPUT"
           echo "Previous backend revision: ${previous_sha}"
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Previous revision: \`${previous_sha}\`. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sync backend source
         run: |
           set -Eeuo pipefail
+          stage="Sync backend source"
+          owner="GitHub source / runner git"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not fetch or verify the trigger commit. Check GitHub ref availability, runner git credentials, and repository state."; echo "| '"$stage"' | FAILED | '"$owner"' | Could not fetch or verify trigger commit. Check GitHub ref, git credentials, and local repo state. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
           git fetch origin "${{ github.sha }}"
           incoming_sha="$(git rev-parse FETCH_HEAD)"
@@ -57,6 +89,9 @@ jobs:
           echo "Verified: incoming SHA ${incoming_sha}"
           git reset --hard "$incoming_sha"
           git clean -fd
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Deployed commit: \`${incoming_sha}\`. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate appsettings
         env:
@@ -77,38 +112,68 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           set -Eeuo pipefail
+          stage="Generate appsettings"
+          owner="GitHub Secrets / backend config"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::A required secret may be missing or appsettings generation failed. Check the Generate appsettings log for the exact env var name."; echo "| '"$stage"' | FAILED | '"$owner"' | Appsettings generation failed. Most likely a missing GitHub Secret or config schema issue. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
           python3 scripts/generate_appsettings.py
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Appsettings generated for API and media worker. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cleanup stale migrator run containers before deploy
         if: always()
         run: |
           set -Eeuo pipefail
+          echo "::group::Cleanup stale migrator containers before deploy"
           docker ps -aq \
             --filter "name=yuviron-${DEPLOY_ENV}-migrator-run" \
             | xargs -r docker rm -f
+          echo "::endgroup::"
 
       - name: Docker disk usage before deploy
         run: |
           set -Eeuo pipefail
+          stage="Docker disk report before deploy"
+          owner="Runner Docker host"
+          trap 'code=$?; echo "::endgroup::"; echo "::warning title='"$stage"' failed::Could not collect Docker disk usage before deploy."; echo "| '"$stage"' | WARNING | '"$owner"' | Could not collect Docker disk usage report. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server
           python3 ./scripts/cli.py tools docker-clean --mode report
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Docker disk report collected. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Preflight check
         run: |
           set -Eeuo pipefail
+          stage="Preflight check"
+          owner="Server config / Docker host"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Preflight rejected the deploy. Check generated config freshness, required env files, Docker access, storage permissions, disk space, compose config, and nginx config."; echo "| '"$stage"' | FAILED | '"$owner"' | Preflight rejected deploy. Check generated config, env files, Docker access, storage, disk, compose, and nginx config. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 300 python3 ./scripts/cli.py stack preflight "${DEPLOY_ENV}" \
             --skip-connectivity-check \
             --skip-swagger
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Host and generated config checks passed. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Start full stack
         run: |
           set -Eeuo pipefail
+          stage="Start full stack"
+          owner="Application build / migrations / Docker"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Stack startup failed. Check migrator output, Docker build logs, compose startup, and service health."; echo "| '"$stage"' | FAILED | '"$owner"' | Stack startup failed. Check migrations, Docker build, compose startup, and service health. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" \
             --skip-swagger \
             --build-services backend media-worker nginx
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Backend, media worker, and nginx were built and started. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Scan deployed images for vulnerabilities
         if: success()
@@ -116,6 +181,10 @@ jobs:
           TRIVY_EXIT_CODE: ${{ github.ref_name == 'main' && '1' || '0' }}
         run: |
           set -Eeuo pipefail
+          stage="Trivy vulnerability scan"
+          owner="Container image dependencies"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Trivy found blocking vulnerabilities or the scanner failed. In prod, fixable HIGH/CRITICAL CVEs block deployment."; echo "| '"$stage"' | FAILED | '"$owner"' | Trivy found blocking vulnerabilities or scanner failed. Prod blocks fixable HIGH/CRITICAL CVEs. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           FAILED=0
           for container in \
             "yuviron-${DEPLOY_ENV}-backend" \
@@ -124,10 +193,10 @@ jobs:
           do
             IMAGE=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null || true)
             if [ -z "$IMAGE" ]; then
-              echo "Container not found, skipping scan: $container"
+              echo "::warning title=Trivy scan skipped::Container not found, skipping scan: $container"
               continue
             fi
-            echo "=== Trivy: $container ==="
+            echo "::group::Trivy: $container"
             if ! timeout 300 docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v /tmp/trivy-cache:/root/.cache/trivy \
@@ -140,17 +209,28 @@ jobs:
             then
               FAILED=$((FAILED + 1))
             fi
+            echo "::endgroup::"
           done
           if [ "$FAILED" -gt 0 ]; then
             echo "Trivy found fixable CRITICAL/HIGH CVEs in ${FAILED} image(s). Blocking ${DEPLOY_ENV} deployment."
             exit 1
           fi
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Vulnerability scan completed for deployed images. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Smoke test
         run: |
           set -Eeuo pipefail
+          stage="Smoke test"
+          owner="Runtime services / routing"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Smoke test failed after deploy. Check running services, backend readiness, nginx route health, and HTTPS checks."; echo "| '"$stage"' | FAILED | '"$owner"' | Smoke test failed. Check service health, backend readiness, nginx routes, and HTTPS. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Smoke checks passed. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rollback backend
         if: failure() && steps.deployed-revision.outputs.previous_sha != ''
@@ -159,6 +239,10 @@ jobs:
           ROLLBACK_DIR: ${{ steps.deployed-revision.outputs.rollback_dir }}
         run: |
           set -Eeuo pipefail
+          stage="Rollback backend"
+          owner="Recovery / previous deployment"
+          trap 'code=$?; echo "::endgroup::"; echo "::error title='"$stage"' failed::Automatic rollback failed. Manual recovery may be required on the server."; echo "| '"$stage"' | FAILED | '"$owner"' | Automatic rollback failed. Manual recovery may be required. |" >> "$GITHUB_STEP_SUMMARY"; exit "$code"' ERR
+          echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
 
           echo "Rolling back backend source to ${PREVIOUS_SHA}"
@@ -186,6 +270,9 @@ jobs:
           cd /opt/yuviron-server
           timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" --no-rollback --skip-migrate --no-build
           timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
+          echo "::endgroup::"
+          trap - ERR
+          echo "| ${stage} | OK | ${owner} | Rolled back to \`${PREVIOUS_SHA}\` and smoke checks passed. |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cleanup backend rollback snapshot
         if: always()
@@ -193,28 +280,35 @@ jobs:
           ROLLBACK_DIR: ${{ steps.deployed-revision.outputs.rollback_dir }}
         run: |
           set -Eeuo pipefail
+          echo "::group::Cleanup backend rollback snapshot"
           if [ -n "${ROLLBACK_DIR}" ] && [ -d "${ROLLBACK_DIR}" ]; then
             rm -rf "${ROLLBACK_DIR}"
           fi
+          echo "::endgroup::"
 
       - name: Trim Docker build cache
         if: "!cancelled()"
         run: |
           set -Eeuo pipefail
+          echo "::group::Trim Docker build cache"
           cd /opt/yuviron-server
           python3 ./scripts/cli.py tools docker-clean --mode build-cache --reserved-space 10gb --yes
+          echo "::endgroup::"
 
       - name: Docker disk usage after cleanup
         if: always()
         run: |
           set -Eeuo pipefail
+          echo "::group::Docker disk usage after cleanup"
           cd /opt/yuviron-server
           python3 ./scripts/cli.py tools docker-clean --mode report
+          echo "::endgroup::"
 
       - name: Show running services
         if: always()
         run: |
           set -Eeuo pipefail
+          echo "::group::Running services"
           cd /opt/yuviron-server
           docker compose \
             --env-file "./generated/${DEPLOY_ENV}/deploy.env" \
@@ -222,20 +316,24 @@ jobs:
             -f "./generated/${DEPLOY_ENV}/compose.frontends.yml" \
             -p "yuviron-${DEPLOY_ENV}" \
             ps
+          echo "::endgroup::"
 
       - name: Show service logs
         if: always()
         run: |
           set -Eeuo pipefail
           for service in backend media-worker nginx; do
-            echo "=== yuviron-${DEPLOY_ENV}-${service} ==="
+            echo "::group::Logs: yuviron-${DEPLOY_ENV}-${service}"
             docker logs --tail=160 "yuviron-${DEPLOY_ENV}-${service}" 2>&1 || true
+            echo "::endgroup::"
           done
 
       - name: Cleanup stale migrator run containers after deploy
         if: always()
         run: |
           set -Eeuo pipefail
+          echo "::group::Cleanup stale migrator containers after deploy"
           docker ps -aq \
             --filter "name=yuviron-${DEPLOY_ENV}-migrator-run" \
             | xargs -r docker rm -f
+          echo "::endgroup::"
