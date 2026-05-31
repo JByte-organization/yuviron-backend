@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using Yuviron.Application.Features.Client.Payments.Commands.CreateArtistCheckoutSession;
 using Yuviron.Application.Features.StudioArtist.Payments.Commands.CancelArtistSubscription;
 
-namespace Yuviron.Api.Controllers.ArtistDashboard;
+namespace Yuviron.Api.Controllers.StudioArtist;
 
 [Authorize]
-[Route("api/artist-dashboard/payments")]
+[Route("api/studio-artist/payments")]
 [ApiExplorerSettings(GroupName = "artist")]
 public class ArtistPaymentsController : ApiControllerBase
 {

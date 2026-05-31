@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.ClaimProfile;
 using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateProfile;
 
-namespace Yuviron.Api.Controllers.ArtistDashboard;
+namespace Yuviron.Api.Controllers.StudioArtist;
 
 
 [Authorize] 
-[Route("api/artist-dashboard/profiles")]
+[Route("api/studio-artist/profiles")]
 [ApiExplorerSettings(GroupName = "artist")]
 public class ArtistProfilesController : ApiControllerBase
 {
@@ -23,5 +24,27 @@ public class ArtistProfilesController : ApiControllerBase
         var artistId = await Mediator.Send(command, ct);
         
         return Ok(new CreateArtistProfileResponse(artistId));
+    }
+
+    [HttpPost("{id:guid}/claim")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)] 
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)] 
+    [ProducesResponseType(StatusCodes.Status403Forbidden)] 
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ClaimProfile([FromRoute] Guid id, [FromBody] ClaimArtistProfileRequest request, CancellationToken ct)
+    {
+        var command = new ClaimArtistProfileCommand(
+            ArtistId: id,
+            ClaimedRole: request.ClaimedRole,
+            OfficialEmail: request.OfficialEmail,
+            Links: request.Links,
+            ProofFileId: request.ProofFileId,
+            Message: request.Message
+        );
+        
+        await Mediator.Send(command, ct);
+        
+        return NoContent(); 
     }
 }
