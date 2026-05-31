@@ -30,7 +30,7 @@ jobs:
         id: deployed-revision
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Capture deployed revision" "Runner workspace" "Could not capture current deployed backend revision. Check runner workspace and git state."
+          gha_begin_stage "Capture deployed revision" "DevOps/server" "Runner workspace" "Could not capture current deployed backend revision. Check runner workspace and git state."
           cd /opt/yuviron-server/src/yuviron-backend
 
           previous_sha="$(git rev-parse --verify HEAD)"
@@ -57,7 +57,7 @@ jobs:
       - name: 02 Source | Sync trigger commit
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Sync backend source" "GitHub source / runner git" "Could not fetch or verify trigger commit. Check GitHub ref, git credentials, and local repo state."
+          gha_begin_stage "Sync backend source" "CI/GitHub" "GitHub source / runner git" "Could not fetch or verify trigger commit. Check GitHub ref, git credentials, and local repo state."
           cd /opt/yuviron-server/src/yuviron-backend
           git fetch origin "${{ github.sha }}"
           incoming_sha="$(git rev-parse FETCH_HEAD)"
@@ -89,7 +89,7 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Generate appsettings" "GitHub Secrets / backend config" "Appsettings generation failed. Most likely a missing GitHub Secret or config schema issue."
+          gha_begin_stage "Generate appsettings" "Backend config" "GitHub Secrets / appsettings" "Appsettings generation failed. Most likely a missing GitHub Secret or config schema issue."
           cd /opt/yuviron-server/src/yuviron-backend
           python3 scripts/generate_appsettings.py
           gha_pass_stage "Appsettings generated for API and media worker."
@@ -107,7 +107,7 @@ jobs:
       - name: 05 Docker | Disk usage before deploy
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Docker disk report before deploy" "Runner Docker host" "Could not collect Docker disk usage report."
+          gha_begin_stage "Docker disk report before deploy" "DevOps/server" "Runner Docker host" "Could not collect Docker disk usage report."
           cd /opt/yuviron-server
           python3 ./scripts/cli.py tools docker-clean --mode report
           gha_pass_stage "Docker disk report collected."
@@ -115,7 +115,7 @@ jobs:
       - name: 06 Validate | Preflight
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Preflight check" "Server config / Docker host" "Preflight rejected deploy. Check generated config, env files, Docker access, storage, disk, compose, and nginx config."
+          gha_begin_stage "Preflight check" "DevOps/server" "Server config / Docker host" "Preflight rejected deploy. Check generated config, env files, Docker access, storage, disk, compose, and nginx config."
           cd /opt/yuviron-server
           timeout 300 python3 ./scripts/cli.py stack preflight "${DEPLOY_ENV}" \
             --skip-connectivity-check \
@@ -125,7 +125,7 @@ jobs:
       - name: 07 Deploy | Build, migrate, and start
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Start full stack" "Application build / migrations / Docker" "Stack startup failed. Check migrations, Docker build, compose startup, and service health."
+          gha_begin_stage "Start full stack" "Backend + DevOps" "Application build / migrations / Docker" "Stack startup failed. Check migrations, Docker build, compose startup, and service health."
           cd /opt/yuviron-server
           timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" \
             --skip-swagger \
@@ -138,7 +138,7 @@ jobs:
           TRIVY_EXIT_CODE: ${{ github.ref_name == 'main' && '1' || '0' }}
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Trivy vulnerability scan" "Container image dependencies" "Trivy found blocking vulnerabilities or scanner failed. Prod blocks fixable HIGH/CRITICAL CVEs."
+          gha_begin_stage "Trivy vulnerability scan" "Security/dependencies" "Container image dependencies" "Trivy found blocking vulnerabilities or scanner failed. Prod blocks fixable HIGH/CRITICAL CVEs."
           FAILED=0
           for container in \
             "yuviron-${DEPLOY_ENV}-backend" \
@@ -174,7 +174,7 @@ jobs:
       - name: 09 Verify | Smoke test
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Smoke test" "Runtime services / routing" "Smoke test failed. Check service health, backend readiness, nginx routes, and HTTPS."
+          gha_begin_stage "Smoke test" "Runtime/backend" "Runtime services / routing" "Smoke test failed. Check service health, backend readiness, nginx routes, and HTTPS."
           cd /opt/yuviron-server
           timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
           gha_pass_stage "Smoke checks passed."
@@ -186,7 +186,7 @@ jobs:
           ROLLBACK_DIR: ${{ steps.deployed-revision.outputs.rollback_dir }}
         run: |
           source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
-          gha_begin_stage "Rollback backend" "Recovery / previous deployment" "Automatic rollback failed. Manual recovery may be required."
+          gha_begin_stage "Rollback backend" "DevOps/server" "Recovery / previous deployment" "Automatic rollback failed. Manual recovery may be required."
           cd /opt/yuviron-server/src/yuviron-backend
 
           echo "Rolling back backend source to ${PREVIOUS_SHA}"

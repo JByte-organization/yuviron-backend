@@ -6,6 +6,7 @@
 set -Eeuo pipefail
 
 GHA_STAGE=""
+GHA_AREA=""
 GHA_OWNER=""
 GHA_FAIL_DETAIL=""
 GHA_META_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-meta.md"
@@ -28,8 +29,9 @@ gha_init_summary() {
 
 gha_begin_stage() {
   GHA_STAGE="$1"
-  GHA_OWNER="$2"
-  GHA_FAIL_DETAIL="$3"
+  GHA_AREA="$2"
+  GHA_OWNER="$3"
+  GHA_FAIL_DETAIL="$4"
 
   trap 'gha_fail_stage "$?"' ERR
   echo "::group::${GHA_STAGE}"
@@ -40,7 +42,7 @@ gha_pass_stage() {
 
   echo "::endgroup::"
   trap - ERR
-  gha_record_stage "${GHA_STAGE}" "OK" "${GHA_OWNER}" "${detail}"
+  gha_record_stage "${GHA_STAGE}" "OK" "${GHA_AREA}" "${GHA_OWNER}" "${detail}"
 }
 
 gha_fail_stage() {
@@ -48,17 +50,18 @@ gha_fail_stage() {
 
   echo "::endgroup::"
   echo "::error title=${GHA_STAGE} failed::${GHA_FAIL_DETAIL}"
-  gha_record_stage "${GHA_STAGE}" "FAILED" "${GHA_OWNER}" "${GHA_FAIL_DETAIL}"
+  gha_record_stage "${GHA_STAGE}" "FAILED" "${GHA_AREA}" "${GHA_OWNER}" "${GHA_FAIL_DETAIL}"
   exit "$code"
 }
 
 gha_record_stage() {
   local stage="$1"
   local status="$2"
-  local owner="$3"
-  local detail="$4"
+  local area="$3"
+  local owner="$4"
+  local detail="$5"
 
-  echo "| ${stage} | ${status} | ${owner} | ${detail} |" >> "$GHA_STAGE_FILE"
+  echo "| ${stage} | ${status} | ${area} | ${owner} | ${detail} |" >> "$GHA_STAGE_FILE"
 }
 
 gha_render_summary() {
@@ -69,12 +72,12 @@ gha_render_summary() {
     echo
     echo "### Stages"
     echo
-    echo "| Stage | Status | Likely owner | Detail |"
-    echo "|---|---|---|---|"
+    echo "| Stage | Status | Area | Likely owner | Detail |"
+    echo "|---|---|---|---|---|"
     if [ -s "$GHA_STAGE_FILE" ]; then
       cat "$GHA_STAGE_FILE"
     else
-      echo "| Deploy | UNKNOWN | GitHub Actions | No stage data was recorded. Check the early setup logs. |"
+      echo "| Deploy | UNKNOWN | CI/GitHub | GitHub Actions | No stage data was recorded. Check the early setup logs. |"
     fi
     echo
     echo "_Job summary generated at run-time._"
