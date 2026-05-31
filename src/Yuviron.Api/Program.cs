@@ -12,8 +12,10 @@ using OpenTelemetry.Trace;
 using Serilog;
 using Yuviron.Api.Middlewares;
 using Yuviron.Application;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Infrastructure;
 using Yuviron.Infrastructure.Persistence;
+using Yuviron.Infrastructure.Services;
 using Yuviron.Infrastructure.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -124,6 +126,7 @@ builder.Services.AddApiBackgroundServices(builder.Configuration);
 // 1.2 Controllers and Swagger
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddAuthorization(options =>
 {

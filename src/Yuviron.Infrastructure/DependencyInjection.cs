@@ -141,7 +141,6 @@ public static class DependencyInjection
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddSingleton<ITemplateService, FluidTemplateService>();
-        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IOtpService, OtpService>();
         services.Configure<ArtistLimitsOptions>(configuration.GetSection(ArtistLimitsOptions.SectionName));
         services.Configure<AdSettingsOptions>(configuration.GetSection(AdSettingsOptions.SectionName));
