@@ -2,9 +2,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.VerificationRequests.Commands.ApproveRequest;
@@ -15,17 +17,20 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
+    private readonly IEventBus _eventBus;
 
     public ApproveVerificationRequestHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
-        IPermissionService permissionService)
+        IPermissionService permissionService, 
+        IEventBus eventBus)
     {
         _context = context;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _permissionService = permissionService;
+        _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(ApproveVerificationRequestCommand command, CancellationToken cancellationToken)
@@ -88,7 +93,12 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
         {
             await _permissionService.InvalidatePermissionsAsync(request.SubmittedByUserId, cancellationToken);
         }
-
+        
+        await _eventBus.PublishAsync(new ArtistClaimApprovedEvent(
+            request.SubmittedByUserId, 
+            request.ArtistId, 
+            request.Artist.Name), cancellationToken);
+        
         return Unit.Value;
     }
 }
