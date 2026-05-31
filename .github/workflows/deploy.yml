@@ -16,7 +16,6 @@ jobs:
     env:
       DEPLOY_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
       ASPNET_ENV: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
-      SOURCE_BRANCH: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
 
     steps:
       - name: Capture deployed backend revision
@@ -78,131 +77,8 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           set -Eeuo pipefail
-
-          API_CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.Api/appsettings.${ASPNET_ENV}.json"
-          WORKER_CONFIG_PATH="/opt/yuviron-server/src/yuviron-backend/src/Yuviron.MediaWorker/appsettings.${ASPNET_ENV}.json"
-
-          mkdir -p "$(dirname "$API_CONFIG_PATH")"
-          mkdir -p "$(dirname "$WORKER_CONFIG_PATH")"
-
-          umask 077
-          API_CONFIG_TMP="$(mktemp "$(dirname "$API_CONFIG_PATH")/.appsettings.${ASPNET_ENV}.api.XXXXXX")"
-          WORKER_CONFIG_TMP="$(mktemp "$(dirname "$WORKER_CONFIG_PATH")/.appsettings.${ASPNET_ENV}.worker.XXXXXX")"
-          cleanup_tmp_configs() {
-            if [ -n "${API_CONFIG_TMP:-}" ]; then
-              rm -f "$API_CONFIG_TMP"
-            fi
-            if [ -n "${WORKER_CONFIG_TMP:-}" ]; then
-              rm -f "$WORKER_CONFIG_TMP"
-            fi
-          }
-          trap cleanup_tmp_configs EXIT
-
-          python3 - <<'PY' > "$API_CONFIG_TMP"
-          import json
-          import os
-
-          is_prod = os.environ["DEPLOY_ENV"] == "prod"
-
-          cors_origins = [
-              "https://yuviron.com",
-              "https://backoffice.yuviron.com",
-              "https://admin.yuviron.com",
-          ]
-          if not is_prod:
-              cors_origins += [
-                  "https://dev.yuviron.com",
-                  "https://dev-backoffice.yuviron.com",
-                  "https://dev-admin.yuviron.com",
-                  "http://localhost:3000",
-              ]
-
-          config = {
-              "CorsSettings": {"AllowedOrigins": cors_origins},
-              "JwtSettings": {
-                  "Secret": os.environ["JWT_SECRET"],
-                  "Issuer": "YuvironApi",
-                  "Audience": "YuvironClient",
-                  "ExpiryMinutes": 60,
-              },
-              "Email": {
-                  "Host": "smtp.gmail.com",
-                  "Port": 587,
-                  "Username": os.environ["EMAIL_USERNAME"],
-                  "Password": os.environ["EMAIL_PASSWORD"],
-              },
-              "SeedUsers": {
-                  "Admin": {
-                      "Email": os.environ["SEED_ADMIN_EMAIL"],
-                      "Password": os.environ["SEED_ADMIN_PASSWORD"],
-                  },
-                  "Manager": {
-                      "Email": os.environ["SEED_MANAGER_EMAIL"],
-                      "Password": os.environ["SEED_MANAGER_PASSWORD"],
-                  },
-                  "User": {
-                      "Email": os.environ["SEED_USER_EMAIL"],
-                      "Password": os.environ["SEED_USER_PASSWORD"],
-                  },
-                  "Premium": {
-                      "Email": os.environ["SEED_PREMIUM_EMAIL"],
-                      "Password": os.environ["SEED_PREMIUM_PASSWORD"],
-                  },
-              },
-              "JamendoApi": {"ClientId": os.environ["JAMENDO_CLIENT_ID"]},
-              "StreamSecurity": {"SecretKey": os.environ["STREAM_SECRET"]},
-          
-              "ArtistLimits": {
-                  "FreeUserMaxProfiles": 1,
-                  "PremiumUserMaxProfiles": 5
-              },
-              "AudioSettings": {
-                  "HlsQualities": [128, 320],
-                  "FfmpegAudioFilters": "-af loudnorm=I=-14:LRA=11:TP=-1.5"
-              },
-              "AdSettings": {
-                  "CooldownMinutes": 15 if is_prod else 2
-              },
-          
-              "FileAccess": {
-                  "PublicFolders": [
-                      "covers/",
-                      "avatars/",
-                      "banners/",
-                      "ads/"
-                  ]
-              },
-              "Stripe": {
-                  "SecretKey": os.environ["STRIPE_SECRET_KEY"],
-                  "WebhookSecret": os.environ["STRIPE_WEBHOOK_SECRET"]
-              }
-          
-          }
-
-          print(json.dumps(config, ensure_ascii=False, indent=2))
-          PY
-
-          python3 - <<'PY' > "$WORKER_CONFIG_TMP"
-          import json
-          import os
-
-          config = {
-              "JamendoApi": {
-                  "ClientId": os.environ["JAMENDO_CLIENT_ID"]
-              }
-          }
-
-          print(json.dumps(config, ensure_ascii=False, indent=2))
-          PY
-
-          python3 -m json.tool "$API_CONFIG_TMP" >/dev/null
-          python3 -m json.tool "$WORKER_CONFIG_TMP" >/dev/null
-
-          mv -f "$API_CONFIG_TMP" "$API_CONFIG_PATH"
-          API_CONFIG_TMP=""
-          mv -f "$WORKER_CONFIG_TMP" "$WORKER_CONFIG_PATH"
-          WORKER_CONFIG_TMP=""
-          trap - EXIT
+          cd /opt/yuviron-server/src/yuviron-backend
+          python3 scripts/generate_appsettings.py
 
       - name: Cleanup stale migrator run containers before deploy
         if: always()
@@ -222,7 +98,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
-          python3 ./scripts/cli.py stack preflight "${DEPLOY_ENV}" \
+          timeout 300 python3 ./scripts/cli.py stack preflight "${DEPLOY_ENV}" \
             --skip-connectivity-check \
             --skip-swagger
 
@@ -273,7 +149,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
-          python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
+          timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
 
       - name: Rollback backend
         if: failure() && steps.deployed-revision.outputs.previous_sha != ''
@@ -308,7 +184,7 @@ jobs:
 
           cd /opt/yuviron-server
           timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" --no-rollback --skip-migrate --no-build
-          python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
+          timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
 
       - name: Cleanup backend rollback snapshot
         if: always()
@@ -321,7 +197,7 @@ jobs:
           fi
 
       - name: Trim Docker build cache
-        if: success()
+        if: "!cancelled()"
         run: |
           set -Eeuo pipefail
           cd /opt/yuviron-server
