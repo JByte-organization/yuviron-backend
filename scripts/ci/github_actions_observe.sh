@@ -8,11 +8,11 @@ set -Eeuo pipefail
 GHA_STAGE=""
 GHA_OWNER=""
 GHA_FAIL_DETAIL=""
+GHA_META_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-meta.md"
+GHA_STAGE_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-stages.md"
 
 gha_init_summary() {
   {
-    echo "## Backend deploy"
-    echo
     echo "| Field | Value |"
     echo "|---|---|"
     echo "| Environment | ${DEPLOY_ENV} |"
@@ -20,12 +20,8 @@ gha_init_summary() {
     echo "| Branch | ${GITHUB_REF_NAME} |"
     echo "| Commit | \`${GITHUB_SHA}\` |"
     echo "| Run | [${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
-    echo
-    echo "### Stages"
-    echo
-    echo "| Stage | Status | Likely owner | Detail |"
-    echo "|---|---|---|---|"
-  } >> "$GITHUB_STEP_SUMMARY"
+  } > "$GHA_META_FILE"
+  : > "$GHA_STAGE_FILE"
 
   echo "::notice title=Backend deploy::Starting ${DEPLOY_ENV} deploy for ${GITHUB_SHA}"
 }
@@ -44,7 +40,7 @@ gha_pass_stage() {
 
   echo "::endgroup::"
   trap - ERR
-  echo "| ${GHA_STAGE} | OK | ${GHA_OWNER} | ${detail} |" >> "$GITHUB_STEP_SUMMARY"
+  gha_record_stage "${GHA_STAGE}" "OK" "${GHA_OWNER}" "${detail}"
 }
 
 gha_fail_stage() {
@@ -52,8 +48,37 @@ gha_fail_stage() {
 
   echo "::endgroup::"
   echo "::error title=${GHA_STAGE} failed::${GHA_FAIL_DETAIL}"
-  echo "| ${GHA_STAGE} | FAILED | ${GHA_OWNER} | ${GHA_FAIL_DETAIL} |" >> "$GITHUB_STEP_SUMMARY"
+  gha_record_stage "${GHA_STAGE}" "FAILED" "${GHA_OWNER}" "${GHA_FAIL_DETAIL}"
   exit "$code"
+}
+
+gha_record_stage() {
+  local stage="$1"
+  local status="$2"
+  local owner="$3"
+  local detail="$4"
+
+  echo "| ${stage} | ${status} | ${owner} | ${detail} |" >> "$GHA_STAGE_FILE"
+}
+
+gha_render_summary() {
+  {
+    echo "## Backend deploy"
+    echo
+    cat "$GHA_META_FILE"
+    echo
+    echo "### Stages"
+    echo
+    echo "| Stage | Status | Likely owner | Detail |"
+    echo "|---|---|---|---|"
+    if [ -s "$GHA_STAGE_FILE" ]; then
+      cat "$GHA_STAGE_FILE"
+    else
+      echo "| Deploy | UNKNOWN | GitHub Actions | No stage data was recorded. Check the early setup logs. |"
+    fi
+    echo
+    echo "_Job summary generated at run-time._"
+  } >> "$GITHUB_STEP_SUMMARY"
 }
 
 gha_begin_group() {

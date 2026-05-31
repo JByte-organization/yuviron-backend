@@ -279,3 +279,9 @@ jobs:
             --filter "name=yuviron-${DEPLOY_ENV}-migrator-run" \
             | xargs -r docker rm -f
           gha_end_group
+
+      - name: 17 UI | Render deploy summary
+        if: always()
+        run: |
+          source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
+          gha_render_summary
