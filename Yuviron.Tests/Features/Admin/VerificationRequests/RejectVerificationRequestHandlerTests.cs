@@ -2,10 +2,13 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Features.Admin.VerificationRequests.Commands.RejectRequest;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Infrastructure.Persistence;
 
 namespace Yuviron.Tests.Features.Admin.VerificationRequests;
@@ -13,7 +16,7 @@ namespace Yuviron.Tests.Features.Admin.VerificationRequests;
 public class RejectVerificationRequestHandlerTests
 {
     [Fact]
-    public async Task Handle_Should_ChangeStatusToRejected()
+    public async Task Handle_Should_ChangeStatusToRejected_And_PublishEvent()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -24,6 +27,9 @@ public class RejectVerificationRequestHandlerTests
         var adminId = Guid.NewGuid();
         var currentUserServiceMock = new Mock<ICurrentUserService>();
         currentUserServiceMock.Setup(x => x.UserId).Returns(adminId);
+        
+        // ДОБАВИЛИ МОК ДЛЯ IEventBus
+        var eventBusMock = new Mock<IEventBus>(); 
 
         var utcNow = DateTime.UtcNow;
         var artist = Artist.Create(null, "Test Band", null, null, null, VerificationStatus.None, utcNow);
@@ -37,7 +43,10 @@ public class RejectVerificationRequestHandlerTests
         dbContext.VerificationRequests.Add(request);
         await dbContext.SaveChangesAsync();
 
-        var handler = new RejectVerificationRequestHandler(dbContext, TimeProvider.System, currentUserServiceMock.Object);
+        // ПЕРЕДАЛИ eventBusMock.Object В КОНСТРУКТОР
+        var handler = new RejectVerificationRequestHandler(
+            dbContext, TimeProvider.System, currentUserServiceMock.Object, eventBusMock.Object);
+            
         var command = new RejectVerificationRequestCommand(request.Id, "Fake links provided");
 
         // Act
@@ -48,6 +57,9 @@ public class RejectVerificationRequestHandlerTests
         updatedReq!.Status.Should().Be(VerificationRequestStatus.Rejected);
         updatedReq.AdminId.Should().Be(adminId);
         updatedReq.AdminNote.Should().Be("Fake links provided");
+        
+        // ПРОВЕРЯЕМ, ЧТО ИВЕНТ БЫЛ ОТПРАВЛЕН
+        eventBusMock.Verify(x => x.PublishAsync(It.IsAny<ArtistClaimRejectedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
     
     [Fact]
@@ -62,6 +74,9 @@ public class RejectVerificationRequestHandlerTests
         var adminId = Guid.NewGuid();
         var currentUserServiceMock = new Mock<ICurrentUserService>();
         currentUserServiceMock.Setup(x => x.UserId).Returns(adminId);
+        
+        // ДОБАВИЛИ МОК ДЛЯ IEventBus
+        var eventBusMock = new Mock<IEventBus>(); 
 
         var utcNow = DateTime.UtcNow;
         var artist = Artist.Create(null, "Test Band", null, null, null, VerificationStatus.None, utcNow);
@@ -73,12 +88,14 @@ public class RejectVerificationRequestHandlerTests
         var request = VerificationRequest.Create(
             artist.Id, user.Id, ClaimRole.Manager, "bad@mail.com", "bad-link", null, null, utcNow);
         
-        // Моделируем ситуацию: заявку уже одобрили
         request.Approve(adminId, "Approved by someone else", utcNow); 
         dbContext.VerificationRequests.Add(request);
         await dbContext.SaveChangesAsync();
 
-        var handler = new RejectVerificationRequestHandler(dbContext, TimeProvider.System, currentUserServiceMock.Object);
+        // ПЕРЕДАЛИ eventBusMock.Object В КОНСТРУКТОР
+        var handler = new RejectVerificationRequestHandler(
+            dbContext, TimeProvider.System, currentUserServiceMock.Object, eventBusMock.Object);
+            
         var command = new RejectVerificationRequestCommand(request.Id, "Trying to reject");
 
         // Act & Assert
@@ -86,5 +103,8 @@ public class RejectVerificationRequestHandlerTests
 
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Only pending requests can be rejected.");
+            
+        // ПРОВЕРЯЕМ, ЧТО ИВЕНТ НЕ ОТПРАВЛЯЛСЯ ИЗ-ЗА ОШИБКИ
+        eventBusMock.Verify(x => x.PublishAsync(It.IsAny<ArtistClaimRejectedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

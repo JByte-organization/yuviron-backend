@@ -31,14 +31,14 @@ public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand,
         
         if (string.IsNullOrEmpty(email))
         {
-            throw new UnauthorizedAccessException("Посилання недійсне або його термін дії минув.");
+            throw new UnauthorizedAccessException("The message is ineffective or its term has passed.");
         }
 
         // 2. Ищем пользователя
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         if (user == null) 
         {
-            throw new UnauthorizedAccessException("Користувача не знайдено.");
+            throw new UnauthorizedAccessException("User not found.");
         }
 
         // 3. Хешируем новый пароль и обновляем (метод SetPasswordHash также кинет событие сброса токенов!)

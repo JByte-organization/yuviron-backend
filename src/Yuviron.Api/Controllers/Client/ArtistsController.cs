@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Client.Artists.Commands.FollowArtist;
+using Yuviron.Application.Features.Client.Artists.Commands.ToggleNotifications;
 using Yuviron.Application.Features.Client.Artists.Commands.UnfollowArtist;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistById;
@@ -142,4 +143,20 @@ public class ArtistsController : ApiControllerBase
         await Mediator.Send(new UnfollowArtistCommand(id), ct);
         return NoContent();
     }
+    
+    [HttpPatch("{id:guid}/notifications")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ToggleNotifications(
+        [FromRoute] Guid id, 
+        [FromBody] ToggleNotificationsRequest request, 
+        CancellationToken ct)
+    {
+        var command = new ToggleArtistNotificationsCommand(id, request.ReceiveNotifications);
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    public record ToggleNotificationsRequest(bool ReceiveNotifications);
 }

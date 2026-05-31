@@ -19,4 +19,9 @@ public class UserFollowArtist
         NotifyNewReleases = notify;
         FollowedAt = utcNow;
     }
+    
+    public void SetNotifyNewReleases(bool notify)
+    {
+        NotifyNewReleases = notify;
+    }
 }

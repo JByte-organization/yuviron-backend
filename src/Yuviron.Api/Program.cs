@@ -14,6 +14,7 @@ using Yuviron.Api.Middlewares;
 using Yuviron.Application;
 using Yuviron.Infrastructure;
 using Yuviron.Infrastructure.Persistence;
+using Yuviron.Infrastructure.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -122,6 +123,7 @@ builder.Services.AddApiBackgroundServices(builder.Configuration);
 
 // 1.2 Controllers and Swagger
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -310,6 +312,7 @@ app.UseAuthorization();
 
 // 2.7 Endpoint routing (Controllers and HealthChecks)
 app.MapControllers();
+app.MapHub<AppHub>("/hubs/app");
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {

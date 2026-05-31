@@ -76,6 +76,21 @@ public static class DependencyInjection
                     ValidAudience = jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
                 };
+                
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/app"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -126,11 +141,13 @@ public static class DependencyInjection
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddSingleton<ITemplateService, FluidTemplateService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IOtpService, OtpService>();
         services.Configure<ArtistLimitsOptions>(configuration.GetSection(ArtistLimitsOptions.SectionName));
         services.Configure<AdSettingsOptions>(configuration.GetSection(AdSettingsOptions.SectionName));
         services.Configure<FileAccessOptions>(configuration.GetSection(FileAccessOptions.SectionName));
         services.Configure<StripeOptions>(configuration.GetSection(StripeOptions.SectionName));
+        services.AddScoped<IEventBus, MassTransitEventBus>();
         
         
 
@@ -191,6 +208,11 @@ public static class DependencyInjection
             
             
             x.AddConsumer<TrackPlayedFallbackConsumer>();
+            
+            x.AddConsumer<CreateArtistClaimApprovedNotificationConsumer>();
+            x.AddConsumer<CreateArtistClaimRejectedNotificationConsumer>();
+            x.AddConsumer<SendArtistClaimApprovedEmailConsumer>();
+            x.AddConsumer<SendArtistClaimRejectedEmailConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

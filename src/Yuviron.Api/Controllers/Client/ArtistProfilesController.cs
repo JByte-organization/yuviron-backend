@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.ClaimProfile;
 using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateProfile;
 
-namespace Yuviron.Api.Controllers.StudioArtist;
-
+namespace Yuviron.Api.Controllers.Client; 
 
 [Authorize] 
-[Route("api/studio-artist/profiles")]
-[ApiExplorerSettings(GroupName = "artist")]
+[Route("api/artist-profiles")] 
+[ApiExplorerSettings(GroupName = "client")] 
 public class ArtistProfilesController : ApiControllerBase
 {
     [HttpPost]
