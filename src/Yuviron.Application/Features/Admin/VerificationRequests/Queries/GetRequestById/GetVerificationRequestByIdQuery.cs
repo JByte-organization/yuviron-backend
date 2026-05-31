@@ -8,5 +8,5 @@ public sealed record GetVerificationRequestByIdQuery(
     Guid RequestId
 ) : IRequest<VerificationRequestDetailDto>, ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }

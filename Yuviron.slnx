@@ -6,4 +6,5 @@
     <Project Path="src/Yuviron.Infrastructure/Yuviron.Infrastructure.csproj" />
     <Project Path="src/Yuviron.MediaWorker/Yuviron.MediaWorker.csproj" />
   </Folder>
+  <Project Path="Yuviron.Tests/Yuviron.Tests.csproj" />
 </Solution>

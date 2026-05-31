@@ -16,5 +16,5 @@ public sealed record GetVerificationRequestsQuery(
     IRequest<PaginatedList<VerificationRequestListItemDto>>, 
     ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.ManageCatalog;
+    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
 }
