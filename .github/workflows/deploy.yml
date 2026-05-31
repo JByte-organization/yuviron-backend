@@ -111,6 +111,7 @@ jobs:
             --build-services backend media-worker nginx
 
       - name: Scan deployed images for vulnerabilities
+        if: success()
         env:
           TRIVY_EXIT_CODE: ${{ github.ref_name == 'main' && '1' || '0' }}
         run: |
@@ -127,7 +128,7 @@ jobs:
               continue
             fi
             echo "=== Trivy: $container ==="
-            if ! docker run --rm \
+            if ! timeout 300 docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v /tmp/trivy-cache:/root/.cache/trivy \
               aquasec/trivy:0.70.0 image \
