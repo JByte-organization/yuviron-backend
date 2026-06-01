@@ -1,10 +1,11 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed; 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
 using System;
-using System.Text.Json; // 🚀 ДОБАВЛЕНО ДЛЯ ПАРСИНГА
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions.Payment; 
@@ -20,15 +21,18 @@ public class StripeWebhookParser : IStripeWebhookParser
     private readonly IMediator _mediator;
     private readonly string _webhookSecret;
     private readonly ILogger<StripeWebhookParser> _logger;
+    private readonly IDistributedCache _cache; 
 
     public StripeWebhookParser(
         IMediator mediator, 
         IOptions<StripeOptions> stripeOptions,
-        ILogger<StripeWebhookParser> logger)
+        ILogger<StripeWebhookParser> logger,
+        IDistributedCache cache)
     {
         _mediator = mediator;
         _webhookSecret = stripeOptions.Value.WebhookSecret;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task ProcessWebhookAsync(string jsonPayload, string signature, CancellationToken cancellationToken = default)
@@ -37,7 +41,15 @@ public class StripeWebhookParser : IStripeWebhookParser
         {
             var stripeEvent = EventUtility.ConstructEvent(jsonPayload, signature, _webhookSecret);
 
-            // 1. ОБРАБОТКА ПЕРВОЙ ПОКУПКИ
+            var cacheKey = $"stripe_event:{stripeEvent.Id}";
+            var alreadyProcessed = await _cache.GetStringAsync(cacheKey, cancellationToken);
+            
+            if (!string.IsNullOrEmpty(alreadyProcessed))
+            {
+                _logger.LogInformation("Stripe webhook {EventId} was already processed. Skipping to prevent double-processing.", stripeEvent.Id);
+                return; 
+            }
+
             if (stripeEvent.Type == "checkout.session.completed")
             {
                 if (stripeEvent.Data.Object is Stripe.Checkout.Session session && session.PaymentStatus == "paid")
@@ -76,6 +88,9 @@ public class StripeWebhookParser : IStripeWebhookParser
                     }
                 }
             }
+
+            var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7) };
+            await _cache.SetStringAsync(cacheKey, "processed", cacheOptions, cancellationToken);
         }
         catch (StripeException e)
         {
