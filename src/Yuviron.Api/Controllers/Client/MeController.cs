@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
 using Yuviron.Application.Features.Client.Library.Commands.AddTrackToFavorites;
 using Yuviron.Application.Features.Client.Library.Commands.RemoveTrackFromFavorites;
 using Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists;
@@ -74,5 +76,19 @@ public class MeController : ApiControllerBase
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
+    }
+    
+    [HttpGet("top-tracks")]
+    [ProducesResponseType(typeof(List<TopTrackDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyTopTracks([FromQuery] int limit = 5, CancellationToken ct = default)
+    {
+        return Ok(await Mediator.Send(new GetUserTopTracksQuery(limit), ct));
+    }
+
+    [HttpGet("top-artists")]
+    [ProducesResponseType(typeof(List<TopArtistDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyTopArtists([FromQuery] int limit = 5, CancellationToken ct = default)
+    {
+        return Ok(await Mediator.Send(new GetUserTopArtistsQuery(limit), ct));
     }
 }
