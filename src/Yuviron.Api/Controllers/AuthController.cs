@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Antiforgery; // 🚀 ДОБАВЛЕНО
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Yuviron.Application.Abstractions.Authentication;
@@ -14,13 +15,28 @@ using Yuviron.Application.Features.Auth.Commands.ResetPassword;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 using Yuviron.Application.Features.Auth.Queries.CheckEmail;
 using Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
-using Yuviron.Domain.Enums;
 
 namespace Yuviron.Api.Controllers;
 
 [Route("api/auth")]
 public class AuthController : ApiControllerBase
 {
+    [HttpGet("csrf-token")]
+    [AllowAnonymous]
+    public IActionResult GetCsrfToken([FromServices] IAntiforgery antiforgery)
+    {
+        var tokens = antiforgery.GetAndStoreTokens(HttpContext);
+        
+        Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
+        {
+            HttpOnly = false,
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
+        
+        return NoContent();
+    }
+
     [HttpPost("check-email")]
     [EnableRateLimiting("AuthPolicy")]
     [ProducesResponseType(typeof(CheckEmailResponse), StatusCodes.Status200OK)]
@@ -87,15 +103,9 @@ public class AuthController : ApiControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh(
-        [FromHeader(Name = "X-CSRF-Protection")] string? csrfHeader, 
-        CancellationToken ct) 
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> Refresh(CancellationToken ct) 
     {
-        if (string.IsNullOrEmpty(csrfHeader))
-        {
-            return Unauthorized("Missing Anti-CSRF header.");
-        }
-
         var refreshToken = Request.Cookies["refreshToken"];
         
         if (string.IsNullOrEmpty(refreshToken))
@@ -113,6 +123,7 @@ public class AuthController : ApiControllerBase
     
     [HttpPost("logout")]
     [Authorize]
+    [ValidateAntiForgeryToken] 
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {

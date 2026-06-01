@@ -209,6 +209,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN"; 
+    options.Cookie.Name = "yuviron_csrf"; 
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.None; 
+});
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -265,6 +273,7 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 app.UseCors("YuvironCorsPolicy");
+app.UseAntiforgery();
 // 2.1 Initializing the Database (Migrations and Seed)
 using (var scope = app.Services.CreateScope())
 {
