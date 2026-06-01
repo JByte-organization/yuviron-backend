@@ -40,9 +40,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           stage="Capture deployed revision"
+          area="DevOps / server"
           owner="Runner workspace"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not capture current deployed backend revision. Check the self-hosted runner workspace and git state."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Could not capture current deployed backend revision. Check runner workspace and git state. |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not capture current deployed backend revision. Check the self-hosted runner workspace and git state."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Could not capture current deployed backend revision. Check runner workspace and git state. |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
 
@@ -69,15 +70,16 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Previous revision: \`${previous_sha}\`. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Previous revision: \`${previous_sha}\`. |" >> "$STAGES_FILE"
 
       - name: Sync backend source
         run: |
           set -Eeuo pipefail
           stage="Sync backend source"
+          area="CI / GitHub"
           owner="GitHub source / runner git"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not fetch or verify the trigger commit. Check GitHub ref availability, runner git credentials, and repository state."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Could not fetch or verify trigger commit. Check GitHub ref, git credentials, and local repo state. |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Could not fetch or verify the trigger commit. Check GitHub ref availability, runner git credentials, and repository state."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Could not fetch or verify trigger commit. Check GitHub ref, git credentials, and local repo state. |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
           git fetch origin "${{ github.sha }}"
@@ -93,7 +95,7 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Deployed commit: \`${incoming_sha}\`. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Deployed commit: \`${incoming_sha}\`. |" >> "$STAGES_FILE"
 
       - name: Generate appsettings
         env:
@@ -115,9 +117,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           stage="Generate appsettings"
+          area="CI / secrets"
           owner="GitHub Secrets / backend config"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::A required secret may be missing or appsettings generation failed. Check the Generate appsettings log for the exact env var name."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Appsettings generation failed. Most likely a missing GitHub Secret or config schema issue. |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::A required secret may be missing or appsettings generation failed. Check the Generate appsettings log for the exact env var name."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Appsettings generation failed. Most likely a missing GitHub Secret or config schema issue. |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
           python3 scripts/generate_appsettings.py
@@ -125,7 +128,7 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Appsettings generated for API and media worker. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Appsettings generated for API and media worker. |" >> "$STAGES_FILE"
 
       - name: Cleanup stale migrator run containers before deploy
         if: always()
@@ -141,9 +144,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           stage="Docker disk report before deploy"
+          area="DevOps / server"
           owner="Runner Docker host"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::warning title='"$stage"' failed::Could not collect Docker disk usage before deploy."; echo "| '"$stage"' | WARNING | '"$owner"' | ${_dur_str}Could not collect Docker disk usage report. Run: \`python3 ./scripts/cli.py tools docker-clean --mode report\` |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::warning title='"$stage"' failed::Could not collect Docker disk usage before deploy."; echo "| '"$stage"' | WARNING | '"$area"' | '"$owner"' | ${_dur_str}Could not collect Docker disk usage report. Run: \`python3 ./scripts/cli.py tools docker-clean --mode report\` |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server
           python3 ./scripts/cli.py tools docker-clean --mode report
@@ -151,15 +155,16 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Docker disk report collected. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Docker disk report collected. |" >> "$STAGES_FILE"
 
       - name: Preflight check
         run: |
           set -Eeuo pipefail
           stage="Preflight check"
+          area="DevOps / server"
           owner="Server config / Docker host"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Preflight rejected the deploy. Check generated config freshness, required env files, Docker access, storage permissions, disk space, compose config, and nginx config."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Preflight rejected deploy. Check generated config, env files, Docker access, storage, disk, compose, and nginx config. Run: \`python3 ./scripts/cli.py stack preflight ${DEPLOY_ENV}\` |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Preflight rejected the deploy. Check generated config freshness, required env files, Docker access, storage permissions, disk space, compose config, and nginx config."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Preflight rejected deploy. Check generated config, env files, Docker access, storage, disk, compose, and nginx config. Run: \`python3 ./scripts/cli.py stack preflight ${DEPLOY_ENV}\` |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 300 python3 ./scripts/cli.py stack preflight "${DEPLOY_ENV}" \
@@ -169,15 +174,16 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Host and generated config checks passed. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Host and generated config checks passed. |" >> "$STAGES_FILE"
 
       - name: Start full stack
         run: |
           set -Eeuo pipefail
           stage="Start full stack"
+          area="Backend / Docker"
           owner="Application build / migrations / Docker"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Stack startup failed. Check migrator output, Docker build logs, compose startup, and service health."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Stack startup failed. Check migrations, Docker build, compose startup, and service health. Run: \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Stack startup failed. Check migrator output, Docker build logs, compose startup, and service health."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Stack startup failed. Check migrations, Docker build, compose startup, and service health. Run: \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" \
@@ -187,7 +193,7 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Backend, media worker, and nginx were built and started. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Backend, media worker, and nginx were built and started. |" >> "$STAGES_FILE"
 
       - name: Scan deployed images for vulnerabilities
         env:
@@ -195,9 +201,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           stage="Trivy vulnerability scan"
+          area="Security"
           owner="Container image dependencies"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Trivy found blocking vulnerabilities or the scanner failed. In prod, fixable HIGH/CRITICAL CVEs block deployment."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Trivy found blocking vulnerabilities or scanner failed. Prod blocks fixable HIGH/CRITICAL CVEs. |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Trivy found blocking vulnerabilities or the scanner failed. In prod, fixable HIGH/CRITICAL CVEs block deployment."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Trivy found blocking vulnerabilities or scanner failed. Prod blocks fixable HIGH/CRITICAL CVEs. |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           FAILED=0
           for container in \
@@ -233,15 +240,16 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Vulnerability scan completed for deployed images. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Vulnerability scan completed for deployed images. |" >> "$STAGES_FILE"
 
       - name: Smoke test
         run: |
           set -Eeuo pipefail
           stage="Smoke test"
+          area="Backend / routing"
           owner="Runtime services / routing"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Smoke test failed after deploy. Check running services, backend readiness, nginx route health, and HTTPS checks."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Smoke test failed. Check service health, backend readiness, nginx routes, and HTTPS. Run: \`python3 ./scripts/cli.py stack smoke ${DEPLOY_ENV}\` or \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Smoke test failed after deploy. Check running services, backend readiness, nginx route health, and HTTPS checks."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Smoke test failed. Check service health, backend readiness, nginx routes, and HTTPS. Run: \`python3 ./scripts/cli.py stack smoke ${DEPLOY_ENV}\` or \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server
           timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
@@ -249,7 +257,7 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Smoke checks passed. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Smoke checks passed. |" >> "$STAGES_FILE"
 
       - name: Rollback backend
         id: rollback-backend
@@ -260,9 +268,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           stage="Rollback backend"
+          area="DevOps / server"
           owner="Recovery / previous deployment"
           stage_start=$SECONDS
-          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Automatic rollback failed. Manual recovery may be required on the server."; echo "| '"$stage"' | FAILED | '"$owner"' | ${_dur_str}Automatic rollback failed. Manual recovery required. Run: \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
+          trap 'code=$?; _dur=$(( SECONDS - stage_start )); _dur_str="$(( _dur / 60 ))m $(( _dur % 60 ))s — "; echo "::endgroup::"; echo "::error title='"$stage"' failed::Automatic rollback failed. Manual recovery may be required on the server."; echo "| '"$stage"' | FAILED | '"$area"' | '"$owner"' | ${_dur_str}Automatic rollback failed. Manual recovery required. Run: \`docker logs yuviron-${DEPLOY_ENV}-backend --tail 50\` |" >> "$STAGES_FILE"; exit "$code"' ERR
           echo "::group::$stage"
           cd /opt/yuviron-server/src/yuviron-backend
 
@@ -295,7 +304,7 @@ jobs:
           trap - ERR
           stage_duration=$(( SECONDS - stage_start ))
           dur_str="$(( stage_duration / 60 ))m $(( stage_duration % 60 ))s — "
-          echo "| ${stage} | OK | ${owner} | ${dur_str}Rolled back to \`${PREVIOUS_SHA}\` and smoke checks passed. |" >> "$STAGES_FILE"
+          echo "| ${stage} | OK | ${area} | ${owner} | ${dur_str}Rolled back to \`${PREVIOUS_SHA}\` and smoke checks passed. |" >> "$STAGES_FILE"
 
       - name: Deploy outcome summary
         if: always()
@@ -314,8 +323,8 @@ jobs:
             echo
             echo "### Stages"
             echo
-            echo "| Stage | Status | Likely owner | Detail |"
-            echo "|---|---|---|---|"
+            echo "| Stage | Status | Area | Likely owner | Detail |"
+            echo "|---|---|---|---|---|"
             cat "${STAGES_FILE}" 2>/dev/null || true
             echo
             echo "### Result: ${outcome}"
