@@ -32,7 +32,7 @@ public class MarkNotificationAsReadHandlerTests
         var currentUserId = Guid.NewGuid();
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
-        var notification = Notification.Create(currentUserId, "Title", "Body", null, null, DateTime.UtcNow);
+        var notification = Notification.Create(currentUserId, NotificationCategory.System, "test", "Title", "Body", null, null, DateTime.UtcNow);
         dbContext.Notifications.Add(notification);
         await dbContext.SaveChangesAsync();
 
@@ -51,11 +51,11 @@ public class MarkNotificationAsReadHandlerTests
     public async Task Handle_Should_ThrowNotFound_When_NotificationBelongsToOtherUser()
     {
         var dbContext = new AppDbContext(_dbOptions);
-        var currentUserId = Guid.NewGuid(); // Хакер
-        var victimUserId = Guid.NewGuid();  // Жертва
+        var currentUserId = Guid.NewGuid(); 
+        var victimUserId = Guid.NewGuid();  
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
-        var notification = Notification.Create(victimUserId, "Secret Info", "Body", null, null, DateTime.UtcNow);
+        var notification = Notification.Create(victimUserId, NotificationCategory.System, "test", "Secret Info", "Body", null, null, DateTime.UtcNow);
         dbContext.Notifications.Add(notification);
         await dbContext.SaveChangesAsync();
 
@@ -65,7 +65,6 @@ public class MarkNotificationAsReadHandlerTests
         // Act & Assert
         var action = async () => await handler.Handle(command, CancellationToken.None);
 
-        // Добавили экранированные кавычки вокруг \"Notification\"
         await action.Should().ThrowAsync<NotFoundException>()
             .WithMessage($"*\"Notification\" ({notification.Id}) was not found*");
     }

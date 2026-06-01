@@ -6,7 +6,7 @@ using Yuviron.Domain.Enums;
 namespace Yuviron.Application.Features.Client.Notifications.Queries.GetNotifications;
 
 public sealed record GetNotificationsQuery(
-    List<NotificationEntityType>? Types = null,
+    List<NotificationCategory>? Categories = null,
     string? SearchTerm = null,
     string? SortBy = null,
     string? SortOrder = null,

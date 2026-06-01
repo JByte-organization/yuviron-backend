@@ -29,6 +29,8 @@ public class NotificationServiceTests
         var dbContext = new AppDbContext(_dbOptions);
         var userId = Guid.NewGuid();
         var entityId = Guid.NewGuid();
+        var category = NotificationCategory.System;
+        var type = "artist_claim_approved";
         var title = "Тестовий заголовок";
         var body = "Текст повідомлення";
         
@@ -48,17 +50,24 @@ public class NotificationServiceTests
             hubContextMock.Object, 
             loggerMock.Object);
 
-        await service.SendToUserAsync(userId, title, body, NotificationEntityType.Artist, entityId, CancellationToken.None);
+        // Act
+        await service.SendToUserAsync(userId, category, type, title, body, NotificationEntityType.Artist, entityId, CancellationToken.None);
 
+        // Assert Database
         var notification = await dbContext.Notifications.FirstOrDefaultAsync(n => n.UserId == userId);
         notification.Should().NotBeNull();
-        notification!.Title.Should().Be(title);
+        notification!.Category.Should().Be(category);
+        notification.Type.Should().Be(type);
+        notification.Title.Should().Be(title);
         notification.Body.Should().Be(body);
         notification.EntityType.Should().Be(NotificationEntityType.Artist);
         notification.EntityId.Should().Be(entityId);
         notification.IsRead.Should().BeFalse();
 
+        // Assert SignalR
         clientProxyMock.Verify(x => x.ReceiveNotification(It.Is<NotificationDto>(dto => 
+            dto.Category == category.ToString() &&
+            dto.Type == type &&
             dto.EntityId == entityId && 
             dto.Title == title &&
             dto.IsRead == false

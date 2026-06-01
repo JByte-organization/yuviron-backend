@@ -30,6 +30,8 @@ public class CreateArtistClaimApprovedNotificationConsumerTests
 
         notificationServiceMock.Verify(x => x.SendToUserAsync(
             userId,
+            NotificationCategory.System, 
+            "artist_claim_approved",    
             "Заявка на профіль схвалена! 🎵",
             $"Вітаємо! Ваш профіль артиста «{artistName}» успішно підтверджено. Тепер ви маєте доступ до Студії.",
             NotificationEntityType.Artist,

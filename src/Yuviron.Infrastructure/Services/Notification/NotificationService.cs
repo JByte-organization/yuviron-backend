@@ -28,12 +28,12 @@ public class NotificationService : INotificationService
         _logger = logger;
     }
 
-    public async Task SendToUserAsync(Guid userId, string title, string body, NotificationEntityType? entityType = null, Guid? entityId = null, CancellationToken cancellationToken = default)
+    public async Task SendToUserAsync(Guid userId, NotificationCategory category, string type, string title, string body, NotificationEntityType? entityType = null, Guid? entityId = null, CancellationToken cancellationToken = default)
     {
-        await SendToUsersAsync(new[] { userId }, title, body, entityType, entityId, cancellationToken);
+        await SendToUsersAsync(new[] { userId }, category, type, title, body, entityType, entityId, cancellationToken);
     }
 
-    public async Task SendToUsersAsync(IEnumerable<Guid> userIds, string title, string body, NotificationEntityType? entityType = null, Guid? entityId = null, CancellationToken cancellationToken = default)
+    public async Task SendToUsersAsync(IEnumerable<Guid> userIds, NotificationCategory category, string type, string title, string body, NotificationEntityType? entityType = null, Guid? entityId = null, CancellationToken cancellationToken = default)
     {
         var usersList = userIds.Distinct().ToList();
         if (!usersList.Any()) return;
@@ -41,7 +41,7 @@ public class NotificationService : INotificationService
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var notifications = usersList.Select(userId => 
-            Notification.Create(userId, title, body, entityType, entityId, utcNow)
+            Notification.Create(userId, category, type, title, body, entityType, entityId, utcNow)
         ).ToList();
 
         _context.Notifications.AddRange(notifications);
@@ -49,11 +49,19 @@ public class NotificationService : INotificationService
 
         var sampleNotif = notifications.First(); 
         var dto = new NotificationDto(
-            sampleNotif.Id, title, body, entityType?.ToString(), entityId, false, utcNow);
+            sampleNotif.Id, 
+            category.ToString(),
+            type, 
+            title, 
+            body, 
+            entityType?.ToString(), 
+            entityId, 
+            false, 
+            utcNow);
 
         var connectionIds = usersList.Select(id => id.ToString()).ToList();
         await _hubContext.Clients.Users(connectionIds).ReceiveNotification(dto);
 
-        _logger.LogInformation("Sent notification '{Title}' to {Count} users.", title, usersList.Count);
+        _logger.LogInformation("Sent notification '{Type}' to {Count} users.", type, usersList.Count);
     }
 }
