@@ -71,7 +71,7 @@ public sealed class AdminPreLoginHandler : IRequestHandler<AdminPreLoginCommand,
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var codeHash = _passwordHasher.Hash(code);
 
-        await _otpService.SaveLoginCodeHashAsync(
+        await _otpService.SaveAdminLoginCodeHashAsync(
             normalizedEmail, 
             codeHash, 
             TimeSpan.FromMinutes(10), 

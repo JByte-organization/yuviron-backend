@@ -39,7 +39,7 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var cachedCodeHash = await _otpService.GetLoginCodeHashAsync(normalizedEmail, cancellationToken);
+        var cachedCodeHash = await _otpService.GetAdminLoginCodeHashAsync(normalizedEmail, cancellationToken);
         
         if (string.IsNullOrEmpty(cachedCodeHash))
         {
@@ -51,7 +51,7 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
             throw new UnauthorizedAccessException("Invalid code.");
         }
 
-        await _otpService.RemoveLoginCodeAsync(normalizedEmail, cancellationToken);
+        await _otpService.RemoveAdminLoginCodeAsync(normalizedEmail, cancellationToken);
 
         var user = await _context.Users
             .Include(u => u.UserRoles)
