@@ -271,10 +271,18 @@ var app = builder.Build();
 // Attention: The order of app.Use... calls is of great importance!
 // =========================================================================
 
+// 2.1 Error catching (Must be at the VERY beginning of the pipeline!)
+app.UseExceptionHandler();
+
 app.UseForwardedHeaders();
-app.UseCors("YuvironCorsPolicy");
-app.UseAntiforgery();
-// 2.1 Initializing the Database (Migrations and Seed)
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// 2.2 Initializing the Database (Migrations and Seed)
+// Запускается один раз при старте
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -288,15 +296,11 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogCritical(ex, "FATAL: An error occurred during database initialisation. The application will not start.");
-        
         throw; 
     }
 }
 
-// 2.2 Error catching (Must be at the very beginning of the pipeline)
-app.UseExceptionHandler();
-
-// 2.3 Swagger UI (For development only or if enabled in the config)
+// 2.3 Swagger UI
 var swaggerEnabled = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled");
 if (swaggerEnabled)
 {
@@ -309,18 +313,16 @@ if (swaggerEnabled)
     });
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-// 2.4 Basic protections and rules (CORS and limits before authorization processing)
-
+// 2.4 Basic protections and rules
+app.UseCors("YuvironCorsPolicy");
 app.UseRateLimiter();
 
-// 2.6 Authentication and Authorization (Strictly in that order!)
+// 2.5 Authentication and Authorization (Strictly in that order!)
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 2.6 Antiforgery MUST be after Auth so it knows the user identity!
+app.UseAntiforgery();
 
 // 2.7 Endpoint routing (Controllers and HealthChecks)
 app.MapControllers();
