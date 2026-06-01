@@ -7,6 +7,7 @@ public sealed class OtpService : IOtpService
 {
     private readonly IDistributedCache _cache;
     private const string LoginKeyPrefix = "login_code:";
+    private const string AdminLoginKeyPrefix = "admin_login:";
     private const string ConfirmationKeyPrefix = "email_confirm:"; 
     private const string PasswordResetKeyPrefix = "pwd_reset:";
 
@@ -29,6 +30,22 @@ public sealed class OtpService : IOtpService
     public async Task RemoveLoginCodeAsync(string email, CancellationToken cancellationToken = default)
     {
         await _cache.RemoveAsync($"{LoginKeyPrefix}{email}", cancellationToken);
+    }
+
+    public async Task SaveAdminLoginCodeHashAsync(string email, string codeHash, TimeSpan expiration, CancellationToken cancellationToken = default)
+    {
+        var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = expiration };
+        await _cache.SetStringAsync($"{AdminLoginKeyPrefix}{email}", codeHash, options, cancellationToken);
+    }
+
+    public async Task<string?> GetAdminLoginCodeHashAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _cache.GetStringAsync($"{AdminLoginKeyPrefix}{email}", cancellationToken);
+    }
+
+    public async Task RemoveAdminLoginCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        await _cache.RemoveAsync($"{AdminLoginKeyPrefix}{email}", cancellationToken);
     }
 
     public async Task SaveConfirmationTokenAsync(string token, string email, TimeSpan expiration, CancellationToken cancellationToken = default)
