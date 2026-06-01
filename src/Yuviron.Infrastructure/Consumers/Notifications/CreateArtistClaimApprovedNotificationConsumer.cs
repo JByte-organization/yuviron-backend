@@ -8,6 +8,8 @@ namespace Yuviron.Infrastructure.Consumers;
 public class CreateArtistClaimApprovedNotificationConsumer : IConsumer<ArtistClaimApprovedEvent>
 {
     private readonly INotificationService _notificationService;
+    
+    private const string NotificationType = "artist_claim_approved";
 
     public CreateArtistClaimApprovedNotificationConsumer(INotificationService notificationService)
     {
@@ -20,6 +22,8 @@ public class CreateArtistClaimApprovedNotificationConsumer : IConsumer<ArtistCla
         
         await _notificationService.SendToUserAsync(
             userId: msg.UserId,
+            category: NotificationCategory.System, 
+            type: NotificationType,              
             title: "Заявка на профіль схвалена! 🎵",
             body: $"Вітаємо! Ваш профіль артиста «{msg.ArtistName}» успішно підтверджено. Тепер ви маєте доступ до Студії.",
             entityType: NotificationEntityType.Artist,

@@ -8,6 +8,8 @@ namespace Yuviron.Infrastructure.Consumers;
 public class CreateArtistClaimRejectedNotificationConsumer : IConsumer<ArtistClaimRejectedEvent>
 {
     private readonly INotificationService _notificationService;
+    
+    private const string NotificationType = "artist_claim_rejected";
 
     public CreateArtistClaimRejectedNotificationConsumer(INotificationService notificationService)
     {
@@ -21,6 +23,8 @@ public class CreateArtistClaimRejectedNotificationConsumer : IConsumer<ArtistCla
 
         await _notificationService.SendToUserAsync(
             userId: msg.UserId,
+            category: NotificationCategory.System, 
+            type: NotificationType, 
             title: "Заявку на профіль відхилено ❌",
             body: $"Ваша заявка на профіль «{msg.ArtistName}» була відхилена. Причина: {reasonText}",
             entityType: NotificationEntityType.Artist,

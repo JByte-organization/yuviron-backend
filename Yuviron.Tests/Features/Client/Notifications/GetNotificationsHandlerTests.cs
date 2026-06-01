@@ -35,14 +35,14 @@ public class GetNotificationsHandlerTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
-        // 1. Уведомление текущего юзера (Трек)
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "New Track", "Body", NotificationEntityType.Track, Guid.NewGuid(), utcNow));
+        // 1. Уведомление текущего юзера (Музыка)
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "New Track", "Body", NotificationEntityType.Track, Guid.NewGuid(), utcNow));
         
         // 2. Уведомление текущего юзера (Система)
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "Welcome", "Body", NotificationEntityType.System, null, utcNow.AddDays(-1)));
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "welcome", "Welcome", "Body", NotificationEntityType.System, null, utcNow.AddDays(-1)));
 
         // 3. Чужое уведомление (не должно попасть в выдачу)
-        dbContext.Notifications.Add(Notification.Create(otherUserId, "Other", "Body", NotificationEntityType.Track, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(otherUserId, NotificationCategory.Music, "new_track", "Other", "Body", NotificationEntityType.Track, null, utcNow));
 
         await dbContext.SaveChangesAsync();
 
@@ -53,7 +53,6 @@ public class GetNotificationsHandlerTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        // Обращаемся напрямую к свойствам PaginatedList
         result.TotalCount.Should().Be(2); 
         result.Items.Should().Contain(n => n.Title == "New Track");
         result.Items.Should().Contain(n => n.Title == "Welcome");
@@ -61,7 +60,7 @@ public class GetNotificationsHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_FilterByEntityTypes()
+    public async Task Handle_Should_FilterByCategories()
     {
         // Arrange
         var dbContext = new AppDbContext(_dbOptions);
@@ -70,18 +69,19 @@ public class GetNotificationsHandlerTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "Track 1", "Body", NotificationEntityType.Track, null, utcNow));
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "Album 1", "Body", NotificationEntityType.Album, null, utcNow));
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "System", "Body", NotificationEntityType.System, null, utcNow));
+        // Добавляем разные категории
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "Track 1", "Body", NotificationEntityType.Track, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_release", "Album 1", "Body", NotificationEntityType.Album, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "alert", "System", "Body", NotificationEntityType.System, null, utcNow));
 
         await dbContext.SaveChangesAsync();
 
         var handler = new GetNotificationsHandler(dbContext, _currentUserServiceMock.Object);
         
-        var query = new GetNotificationsQuery(Types: new List<NotificationEntityType> 
+        // Запрашиваем только вкладку "Музыка"
+        var query = new GetNotificationsQuery(Categories: new List<NotificationCategory> 
         { 
-            NotificationEntityType.Track, 
-            NotificationEntityType.Album 
+            NotificationCategory.Music 
         });
 
         // Act
@@ -89,6 +89,6 @@ public class GetNotificationsHandlerTests
 
         // Assert
         result.TotalCount.Should().Be(2); // Системное должно отсеяться
-        result.Items.Should().OnlyContain(n => n.EntityType == "Track" || n.EntityType == "Album");
+        result.Items.Should().OnlyContain(n => n.Category == NotificationCategory.Music.ToString());
     }
 }

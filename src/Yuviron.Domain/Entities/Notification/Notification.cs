@@ -6,6 +6,10 @@ namespace Yuviron.Domain.Entities;
 public sealed class Notification : Entity
 {
     public Guid UserId { get; private set; }
+    
+    public NotificationCategory Category { get; private set; }
+    public string Type { get; private set; } = string.Empty;
+    
     public string Title { get; private set; } = string.Empty;
     public string Body { get; private set; } = string.Empty;
 
@@ -21,12 +25,15 @@ public sealed class Notification : Entity
 
     public static Notification Create(
         Guid userId, 
+        NotificationCategory category,
+        string type,
         string title, 
         string body, 
         NotificationEntityType? entityType, 
         Guid? entityId, 
         DateTime utcNow)
     {
+        if (string.IsNullOrWhiteSpace(type)) throw new ArgumentException("Notification type is required");
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Notification title is required");
         if (string.IsNullOrWhiteSpace(body)) throw new ArgumentException("Notification body is required");
 
@@ -34,6 +41,8 @@ public sealed class Notification : Entity
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            Category = category,
+            Type = type.Trim(),
             Title = title.Trim(),
             Body = body.Trim(),
             EntityType = entityType,

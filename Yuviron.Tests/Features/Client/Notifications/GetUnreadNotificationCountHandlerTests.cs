@@ -29,18 +29,18 @@ public class GetUnreadNotificationCountHandlerTests
         var utcNow = DateTime.UtcNow;
 
         // 1. Непрочитанное
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "Title 1", "Body", null, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "test", "Title 1", "Body", null, null, utcNow));
         
         // 2. Еще одно непрочитанное
-        dbContext.Notifications.Add(Notification.Create(currentUserId, "Title 2", "Body", null, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "test", "Title 2", "Body", null, null, utcNow));
         
         // 3. ПРОЧИТАННОЕ (не должно считаться)
-        var readNotif = Notification.Create(currentUserId, "Title 3", "Body", null, null, utcNow);
+        var readNotif = Notification.Create(currentUserId, NotificationCategory.System, "test", "Title 3", "Body", null, null, utcNow);
         readNotif.MarkAsRead();
         dbContext.Notifications.Add(readNotif);
 
         // 4. Непрочитанное, но ЧУЖОЕ (не должно считаться)
-        dbContext.Notifications.Add(Notification.Create(Guid.NewGuid(), "Title 4", "Body", null, null, utcNow));
+        dbContext.Notifications.Add(Notification.Create(Guid.NewGuid(), NotificationCategory.System, "test", "Title 4", "Body", null, null, utcNow));
 
         await dbContext.SaveChangesAsync();
 
@@ -50,6 +50,6 @@ public class GetUnreadNotificationCountHandlerTests
         var result = await handler.Handle(new GetUnreadNotificationCountQuery(), CancellationToken.None);
 
         // Assert
-        result.Should().Be(2); // Ровно два непрочитанных уведомления для этого юзера
+        result.Should().Be(2); 
     }
 }

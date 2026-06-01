@@ -4,7 +4,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Common.Models;
-using Yuviron.Application.Extensions; // Твои ApplySorting и ToPaginatedListAsync
+using Yuviron.Application.Extensions; 
 
 namespace Yuviron.Application.Features.Client.Notifications.Queries.GetNotifications;
 
@@ -27,9 +27,9 @@ public sealed class GetNotificationsHandler : IRequestHandler<GetNotificationsQu
             .AsNoTracking()
             .Where(n => n.UserId == userId);
 
-        if (request.Types != null && request.Types.Any())
+        if (request.Categories != null && request.Categories.Any())
         {
-            query = query.Where(n => n.EntityType.HasValue && request.Types.Contains(n.EntityType.Value));
+            query = query.Where(n => request.Categories.Contains(n.Category));
         }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -46,6 +46,8 @@ public sealed class GetNotificationsHandler : IRequestHandler<GetNotificationsQu
 
         var projectedQuery = sortedQuery.Select(n => new NotificationDto(
             n.Id,
+            n.Category.ToString(),
+            n.Type,
             n.Title,
             n.Body,
             n.EntityType.HasValue ? n.EntityType.Value.ToString() : null,
