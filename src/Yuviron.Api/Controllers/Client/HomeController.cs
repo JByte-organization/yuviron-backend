@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Yuviron.Application.Features.Client.Home.Queries.GetHomeBanners;
 using Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
-using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
-using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
+using Yuviron.Application.Features.Client.Home.Queries.GetSystemTopArtists; 
+using Yuviron.Application.Features.Client.Home.Queries.GetSystemTopTracks;  
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists; 
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks; 
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -24,11 +23,11 @@ public class HomeController : ApiControllerBase
     }
         
     [HttpGet("top-tracks")]
-    [Authorize]
+    [AllowAnonymous] 
     [ProducesResponseType(typeof(List<TopTrackDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopTracks([FromQuery] int limit = 5, CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetUserTopTracksQuery(limit), ct);
+        var result = await Mediator.Send(new GetSystemTopTracksQuery(limit), ct);
         return Ok(result);
     }
     
@@ -42,12 +41,11 @@ public class HomeController : ApiControllerBase
     }
     
     [HttpGet("top-artists")]
-    [Authorize]
+    [AllowAnonymous] 
     [ProducesResponseType(typeof(List<TopArtistDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopArtists([FromQuery] int limit = 5, CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetUserTopArtistsQuery(limit), ct);
+        var result = await Mediator.Send(new GetSystemTopArtistsQuery(limit), ct);
         return Ok(result);
     }  
-    
 }

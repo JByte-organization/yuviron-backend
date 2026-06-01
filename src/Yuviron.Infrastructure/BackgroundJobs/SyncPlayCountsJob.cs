@@ -49,75 +49,51 @@ public class SyncPlayCountsJob : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
-        var tracksToReset = new Dictionary<RedisKey, long>();
-        var artistsToReset = new Dictionary<RedisKey, long>();
+        var tracksToSync = new Dictionary<Guid, long>();
+        var artistsToSync = new Dictionary<Guid, long>();
 
-        
         foreach (var idRaw in trackIdsRaw)
         {
             var trackId = Guid.Parse(idRaw.ToString());
-            var redisKey = new RedisKey($"track:{trackId}:plays");
-            
-            var countRaw = await db.StringGetSetAsync(redisKey, 0); 
-            if (!countRaw.HasValue) continue;
-            
-            long count = (long)countRaw;
-            if (count > 0)
-            {
-                var track = await context.Tracks.FirstOrDefaultAsync(t => t.Id == trackId, ct);
-                if (track != null)
-                {
-                    track.AddPlays(count);
-                    tracksToReset[redisKey] = count; 
-                }
-            }
+            var countRaw = await db.StringGetAsync($"track:{trackId}:plays"); 
+            if (countRaw.HasValue && (long)countRaw > 0)
+                tracksToSync[trackId] = (long)countRaw;
         }
 
         foreach (var idRaw in artistIdsRaw)
         {
             var artistId = Guid.Parse(idRaw.ToString());
-            var redisKey = new RedisKey($"artist:{artistId}:plays");
-            
-            var countRaw = await db.StringGetSetAsync(redisKey, 0);
-            if (!countRaw.HasValue) continue;
-
-            long count = (long)countRaw;
-            if (count > 0)
-            {
-                var artist = await context.Artists.FirstOrDefaultAsync(a => a.Id == artistId, ct);
-                if (artist != null)
-                {
-                    artist.AddPlays(count);
-                    artistsToReset[redisKey] = count;
-                }
-            }
+            var countRaw = await db.StringGetAsync($"artist:{artistId}:plays");
+            if (countRaw.HasValue && (long)countRaw > 0)
+                artistsToSync[artistId] = (long)countRaw;
         }
 
-        try
+        if (tracksToSync.Any())
         {
-            await context.SaveChangesAsync(ct);
-            
-            if (trackIdsRaw.Length > 0)
-            {
-                await db.SetRemoveAsync("dirty_counters:tracks", trackIdsRaw);
-            }
-            if (artistIdsRaw.Length > 0)
-            {
-                await db.SetRemoveAsync("dirty_counters:artists", artistIdsRaw);
-            }
+            var trackIds = tracksToSync.Keys.ToList();
+            var tracks = await context.Tracks.Where(t => trackIds.Contains(t.Id)).ToListAsync(ct);
+            foreach (var track in tracks) track.AddPlays(tracksToSync[track.Id]);
         }
-        catch (Exception)
+
+        if (artistsToSync.Any())
         {
-            foreach (var kvp in tracksToReset)
-            {
-                await db.StringIncrementAsync(kvp.Key, kvp.Value);
-            }
-            foreach (var kvp in artistsToReset)
-            {
-                await db.StringIncrementAsync(kvp.Key, kvp.Value);
-            }
-            
-            throw;
+            var artistIds = artistsToSync.Keys.ToList();
+            var artists = await context.Artists.Where(a => artistIds.Contains(a.Id)).ToListAsync(ct);
+            foreach (var artist in artists) artist.AddPlays(artistsToSync[artist.Id]);
+        }
+
+        await context.SaveChangesAsync(ct);
+
+        foreach (var kvp in tracksToSync)
+        {
+            var newVal = await db.StringDecrementAsync($"track:{kvp.Key}:plays", kvp.Value);
+            if (newVal == 0) await db.SetRemoveAsync("dirty_counters:tracks", kvp.Key.ToString());
+        }
+
+        foreach (var kvp in artistsToSync)
+        {
+            var newVal = await db.StringDecrementAsync($"artist:{kvp.Key}:plays", kvp.Value);
+            if (newVal == 0) await db.SetRemoveAsync("dirty_counters:artists", kvp.Key.ToString());
         }
     }
 }
