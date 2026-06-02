@@ -51,4 +51,17 @@ public class TracksController : ApiControllerBase
         var result = await Mediator.Send(new GetTrackStreamUrlQuery(id, ipAddress), ct);
         return Ok(result);
     }
+    
+    [HttpGet("debug-ip")]
+    [AllowAnonymous]
+    public IActionResult DebugIp()
+    {
+        return Ok(new
+        {
+            RemoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            XForwardedFor = Request.Headers["X-Forwarded-For"].ToString(),
+            XRealIp = Request.Headers["X-Real-IP"].ToString(),
+            CFConnectingIp = Request.Headers["CF-Connecting-IP"].ToString()
+        });
+    }
 }
