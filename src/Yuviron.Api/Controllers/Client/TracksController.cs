@@ -45,23 +45,9 @@ public class TracksController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTrackStreamUrl([FromRoute] Guid id, CancellationToken ct = default)
     {
-        // 🛡️ ДОБАВЛЕНО: Получаем IP-адрес для привязки HLS-токена
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
 
         var result = await Mediator.Send(new GetTrackStreamUrlQuery(id, ipAddress), ct);
         return Ok(result);
-    }
-    
-    [HttpGet("debug-ip")]
-    [AllowAnonymous]
-    public IActionResult DebugIp()
-    {
-        return Ok(new
-        {
-            RemoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            XForwardedFor = Request.Headers["X-Forwarded-For"].ToString(),
-            XRealIp = Request.Headers["X-Real-IP"].ToString(),
-            CFConnectingIp = Request.Headers["CF-Connecting-IP"].ToString()
-        });
     }
 }
