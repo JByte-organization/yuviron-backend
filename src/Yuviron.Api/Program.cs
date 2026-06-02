@@ -124,7 +124,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiBackgroundServices(builder.Configuration);
 
 // 1.2 Controllers and Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
