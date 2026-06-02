@@ -50,7 +50,6 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         if (!rolesToAssign.Any(r => r.Name == nameof(RoleName.User)))
             throw new InvalidOperationException($"Default role '{nameof(RoleName.User)}' is not configured.");
         
-
         var passwordHash = _passwordHasher.Hash(request.Password);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime; 
 

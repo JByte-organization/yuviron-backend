@@ -10,6 +10,7 @@ using Yuviron.Domain.Common;
 namespace Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 
 public record LoginCodeModel(string Code);
+public record AccountNotFoundModel(string Email); 
 
 public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
 {
@@ -32,7 +33,7 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _logger = logger;
-        _otpService = otpService; 
+        _otpService = otpService;
         _templateService = templateService;
     }
 
@@ -46,6 +47,23 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
 
         if (!userExists)
         {
+            await Task.Delay(Random.Shared.Next(400, 800), cancellationToken);
+
+            try
+            {
+                var htmlBody = await _templateService.RenderTemplateAsync("AccountNotFound", new AccountNotFoundModel(normalizedEmail));
+                
+                await _emailService.SendEmailAsync(
+                    normalizedEmail,
+                    "Yuviron - Login Attempt",
+                    htmlBody,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send AccountNotFound notice to {Email}", normalizedEmail);
+            }
+
             return Unit.Value;
         }
 
@@ -64,7 +82,7 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
 
             await _emailService.SendEmailAsync(
                 normalizedEmail,
-                "Yuviron Login Code",
+                "Yuviron - Your Login Code",
                 htmlBody,
                 cancellationToken);
         }

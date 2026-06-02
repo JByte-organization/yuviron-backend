@@ -18,10 +18,13 @@ public class StreamController : ApiControllerBase
         [FromRoute] int quality, 
         [FromRoute] string fileName, 
         [FromQuery] long exp, 
+        [FromQuery] Guid uid, 
         [FromQuery] string sig, 
         CancellationToken ct = default)
     {
-        var query = new GetAudioStreamQuery(trackId, quality, fileName, exp, sig);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+        var query = new GetAudioStreamQuery(trackId, quality, fileName, exp, uid, sig, ipAddress);
         var result = await Mediator.Send(query, ct);
 
         return File(result.Stream, result.ContentType, enableRangeProcessing: true);

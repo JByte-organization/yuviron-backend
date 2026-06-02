@@ -69,7 +69,16 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
         if (user == null) throw new UnauthorizedAccessException();
 
         int targetQuality = _settingsPolicy.GetAllowedStreamQuality(user.Settings, hasHighQuality);
-        var audioUrl = _streamTokenService.GenerateAudioUrl(request.TrackId, targetQuality, fileKey, true, _timeProvider);
+        
+        var audioUrl = _streamTokenService.GenerateAudioUrl(
+            request.TrackId, 
+            targetQuality, 
+            fileKey, 
+            true, 
+            _timeProvider,
+            currentUserId,   
+            request.IpAddress 
+        );
         
         if (string.IsNullOrEmpty(audioUrl))
         {

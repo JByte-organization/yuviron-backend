@@ -26,7 +26,6 @@ public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand,
 
     public async Task<Unit> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        // 1. Пытаемся достать email по токену из Redis
         var email = await _otpService.GetEmailByPasswordResetTokenAsync(request.Token, cancellationToken);
         
         if (string.IsNullOrEmpty(email))
@@ -34,23 +33,19 @@ public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand,
             throw new UnauthorizedAccessException("The message is ineffective or its term has passed.");
         }
 
-        // 2. Ищем пользователя
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         if (user == null) 
         {
             throw new UnauthorizedAccessException("User not found.");
         }
 
-        // 3. Хешируем новый пароль и обновляем (метод SetPasswordHash также кинет событие сброса токенов!)
         var newHash = _passwordHasher.Hash(request.NewPassword);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
         user.SetPasswordHash(newHash, utcNow);
 
-        // 4. Сохраняем изменения
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 5. Обязательно удаляем токен, чтобы его нельзя было использовать повторно
         await _otpService.RemovePasswordResetTokenAsync(request.Token, cancellationToken);
 
         return Unit.Value;

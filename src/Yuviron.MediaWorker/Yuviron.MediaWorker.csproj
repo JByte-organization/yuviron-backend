@@ -16,6 +16,7 @@
       <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
+      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
       <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1-dev-02339" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />

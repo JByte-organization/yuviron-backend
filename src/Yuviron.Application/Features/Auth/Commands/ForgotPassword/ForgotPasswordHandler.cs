@@ -30,7 +30,11 @@ public sealed class ForgotPasswordHandler : IRequestHandler<ForgotPasswordComman
             .Include(u => u.Profile)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (user == null) return Unit.Value;
+        if (user == null) 
+        {
+            await Task.Delay(Random.Shared.Next(150, 300), cancellationToken);
+            return Unit.Value;
+        }
 
         var token = Guid.NewGuid().ToString("N");
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;

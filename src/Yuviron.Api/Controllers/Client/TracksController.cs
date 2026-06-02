@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackById;
@@ -44,7 +45,10 @@ public class TracksController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTrackStreamUrl([FromRoute] Guid id, CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetTrackStreamUrlQuery(id), ct);
+        // 🛡️ ДОБАВЛЕНО: Получаем IP-адрес для привязки HLS-токена
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+        var result = await Mediator.Send(new GetTrackStreamUrlQuery(id, ipAddress), ct);
         return Ok(result);
     }
 }

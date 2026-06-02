@@ -25,9 +25,9 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
 
     public async Task<GetAudioStreamResponse> Handle(GetAudioStreamQuery request, CancellationToken cancellationToken)
     {
-        if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Sig))
+        if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Uid, request.IpAddress, request.Sig))
         {
-            throw new UnauthorizedAccessException("Invalid or expired stream token.");
+            throw new UnauthorizedAccessException("Invalid, expired, or stolen stream token.");
         }
 
         var sanitizedFileName = Path.GetFileName(request.FileName);
@@ -54,7 +54,8 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
             {
                 var sb = new StringBuilder();
                 string? line;
-                var queryParams = $"?exp={request.Exp}&sig={request.Sig}";
+                
+                var queryParams = $"?exp={request.Exp}&uid={request.Uid:N}&sig={request.Sig}";
 
                 while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
                 {
