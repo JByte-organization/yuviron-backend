@@ -16,6 +16,7 @@ jobs:
     env:
       DEPLOY_ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
       ASPNET_ENV: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
+      GHA_DEPLOY_TITLE: Backend deploy
 
     steps:
       - name: Initialize deploy summary

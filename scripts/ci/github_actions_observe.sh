@@ -2,6 +2,11 @@
 
 # Helpers for GitHub Actions logs, annotations, and job summaries.
 # Keep workflow YAML readable: GitHub prints every `run:` block when a step is opened.
+#
+# Env vars consumed (set before sourcing):
+#   GHA_DEPLOY_TITLE  — summary heading, e.g. "Backend deploy" or "Frontend deploy: admin"
+#   ASPNET_ENV        — optional; shown in metadata table when set
+#   DEPLOY_APP        — optional; shown in metadata table when set (e.g. matrix app name)
 
 set -Eeuo pipefail
 
@@ -11,6 +16,7 @@ GHA_OWNER=""
 GHA_FAIL_DETAIL=""
 GHA_FAIL_CMD=""
 GHA_FAIL_SEVERITY="error"
+GHA_DEPLOY_TITLE="${GHA_DEPLOY_TITLE:-Deploy}"
 _GHA_STAGE_START=0
 GHA_META_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-meta.md"
 GHA_STAGE_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-stages.md"
@@ -20,14 +26,15 @@ gha_init_summary() {
     echo "| Field | Value |"
     echo "|---|---|"
     echo "| Environment | ${DEPLOY_ENV} |"
-    echo "| ASP.NET environment | ${ASPNET_ENV} |"
+    [ -n "${ASPNET_ENV:-}" ]  && echo "| ASP.NET environment | ${ASPNET_ENV} |"
+    [ -n "${DEPLOY_APP:-}" ]  && echo "| App | \`${DEPLOY_APP}\` |"
     echo "| Branch | ${GITHUB_REF_NAME} |"
     echo "| Commit | \`${GITHUB_SHA}\` |"
     echo "| Run | [${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
   } > "$GHA_META_FILE"
   : > "$GHA_STAGE_FILE"
 
-  echo "::notice title=Backend deploy::Starting ${DEPLOY_ENV} deploy for ${GITHUB_SHA}"
+  echo "::notice title=${GHA_DEPLOY_TITLE}::Starting ${DEPLOY_ENV} deploy for ${GITHUB_SHA}"
 }
 
 gha_begin_stage() {
@@ -85,7 +92,7 @@ gha_render_summary() {
   local deploy_env="${2:-}"
 
   {
-    echo "## Backend deploy"
+    echo "## ${GHA_DEPLOY_TITLE}"
     echo
     cat "$GHA_META_FILE"
     echo
