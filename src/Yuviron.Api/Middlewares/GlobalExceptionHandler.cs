@@ -68,18 +68,18 @@ public class GlobalExceptionHandler : IExceptionHandler
                 }
                 break;
 
-            // 3. Not found (404)
+            // 3. Not found (404) - РАЗМЫВАНИЕ ОШИБКИ
             case NotFoundException notFoundEx:
                 problemDetails.Status = StatusCodes.Status404NotFound;
-                problemDetails.Title = "Resource Not Found";
-                problemDetails.Detail = notFoundEx.Message;
+                problemDetails.Title = "Not Found";
+                problemDetails.Detail = "The requested resource was not found or you do not have permission to access it.";
                 break;
 
-            // 4. Conflicts (409)
+            // 4. Conflicts (409) - ЗАЩИТА ОТ ACCOUNT ENUMERATION
             case UserAlreadyExistsException existsEx:
                 problemDetails.Status = StatusCodes.Status409Conflict;
-                problemDetails.Title = "Resource Conflict";
-                problemDetails.Detail = existsEx.Message;
+                problemDetails.Title = "Request Conflict";
+                problemDetails.Detail = "Unable to process the request with the provided information.";
                 break;
 
             // 5. Access problems (401 / 403)

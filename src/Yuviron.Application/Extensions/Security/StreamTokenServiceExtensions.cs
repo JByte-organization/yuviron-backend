@@ -1,8 +1,4 @@
-using System;
-using System.IO;
-using Yuviron.Application.Abstractions.Security; 
-
-namespace Yuviron.Application.Extensions;
+using Yuviron.Application.Abstractions.Security;
 
 public static class StreamTokenServiceExtensions
 {
@@ -14,33 +10,21 @@ public static class StreamTokenServiceExtensions
         int quality, 
         string? fileKey, 
         bool isAuthenticated, 
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        Guid userId,      
+        string ipAddress) 
     {
         if (!isAuthenticated || string.IsNullOrWhiteSpace(fileKey))
-        {
             return null;
-        }
 
         var expiration = timeProvider.GetUtcNow().AddHours(TokenLifetimeHours);
-        var signature = streamTokenService.GenerateToken(trackId, quality, expiration); 
+        var signature = streamTokenService.GenerateToken(trackId, quality, expiration, userId, ipAddress); 
         var expUnix = expiration.ToUnixTimeSeconds();
 
-        string fileName;
+        string fileName = fileKey.StartsWith("tracks/", StringComparison.OrdinalIgnoreCase) 
+            ? "master.m3u8" 
+            : Path.GetFileName(fileKey) ?? "audio_fallback";
 
-        if (fileKey.StartsWith("tracks/", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName = "master.m3u8";
-        }
-        else
-        {
-            fileName = Path.GetFileName(fileKey);
-            
-            if (string.IsNullOrWhiteSpace(fileName)) 
-            {
-                fileName = "audio_fallback"; 
-            }
-        }
-
-        return $"/api/stream/tracks/{trackId}/{quality}/{fileName}?exp={expUnix}&sig={signature}";
+        return $"/api/stream/tracks/{trackId}/{quality}/{fileName}?exp={expUnix}&uid={userId:N}&sig={signature}";
     }
 }

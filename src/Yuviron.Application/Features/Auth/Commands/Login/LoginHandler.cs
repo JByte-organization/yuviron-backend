@@ -43,10 +43,21 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResponse>
              .Include(u => u.Subscriptions)
              .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (user == null) throw new UnauthorizedAccessException("Invalid credentials.");
+        bool isPasswordValid = false;
 
-        bool isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash);
-        if (!isPasswordValid) throw new UnauthorizedAccessException("Invalid credentials.");
+        if (user != null)
+        {
+            isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash);
+        }
+        else
+        {
+            await Task.Delay(Random.Shared.Next(300, 500), cancellationToken);
+        }
+
+        if (user == null || !isPasswordValid) 
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
 
         if (user.AccountState == AccountState.Deleted)
         {

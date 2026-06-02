@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Antiforgery; // 🚀 ДОБАВЛЕНО
+﻿using Microsoft.AspNetCore.Antiforgery; 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Features.Auth.Commands.ChangePassword;
 using Yuviron.Application.Features.Auth.Commands.ConfirmEmail;
 using Yuviron.Application.Features.Auth.Commands.ForgotPassword;
@@ -13,7 +12,6 @@ using Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
 using Yuviron.Application.Features.Auth.Commands.Register;
 using Yuviron.Application.Features.Auth.Commands.ResetPassword;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
-using Yuviron.Application.Features.Auth.Queries.CheckEmail;
 using Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
 
 namespace Yuviron.Api.Controllers;
@@ -35,15 +33,6 @@ public class AuthController : ApiControllerBase
         });
         
         return NoContent();
-    }
-
-    [HttpPost("check-email")]
-    [EnableRateLimiting("AuthPolicy")]
-    [ProducesResponseType(typeof(CheckEmailResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CheckEmail([FromBody] CheckEmailQuery query, CancellationToken ct)
-    {
-        var exists = await Mediator.Send(query, ct);
-        return Ok(new CheckEmailResponse(exists));
     }
 
     public sealed record CheckEmailResponse(bool Exists);
