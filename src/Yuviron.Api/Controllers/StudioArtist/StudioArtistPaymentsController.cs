@@ -12,7 +12,7 @@ namespace Yuviron.Api.Controllers.StudioArtist;
 [Authorize]
 [Route("api/studio-artist/payments")]
 [ApiExplorerSettings(GroupName = "artist")]
-public class ArtistPaymentsController : ApiControllerBase
+public class StudioArtistPaymentsController : ApiControllerBase
 {
     [HttpPost("artist-checkout")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
