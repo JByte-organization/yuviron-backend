@@ -9,6 +9,9 @@ GHA_STAGE=""
 GHA_AREA=""
 GHA_OWNER=""
 GHA_FAIL_DETAIL=""
+GHA_FAIL_CMD=""
+GHA_FAIL_SEVERITY="error"
+_GHA_STAGE_START=0
 GHA_META_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-meta.md"
 GHA_STAGE_FILE="${RUNNER_TEMP}/yuviron-deploy-summary-stages.md"
 
@@ -28,10 +31,14 @@ gha_init_summary() {
 }
 
 gha_begin_stage() {
+  # Usage: gha_begin_stage <stage> <area> <owner> <fail_detail> [fail_cmd] [fail_severity:error|warning]
   GHA_STAGE="$1"
   GHA_AREA="$2"
   GHA_OWNER="$3"
   GHA_FAIL_DETAIL="$4"
+  GHA_FAIL_CMD="${5:-}"
+  GHA_FAIL_SEVERITY="${6:-error}"
+  _GHA_STAGE_START=$SECONDS
 
   trap 'gha_fail_stage "$?"' ERR
   echo "::group::${GHA_STAGE}"
@@ -39,32 +46,44 @@ gha_begin_stage() {
 
 gha_pass_stage() {
   local detail="$1"
+  local dur=$(( SECONDS - _GHA_STAGE_START ))
+  local dur_str="$(( dur / 60 ))m $(( dur % 60 ))s — "
 
   echo "::endgroup::"
   trap - ERR
-  gha_record_stage "${GHA_STAGE}" "OK" "${GHA_AREA}" "${GHA_OWNER}" "${detail}"
+  gha_record_stage "${GHA_STAGE}" "OK" "${GHA_AREA}" "${GHA_OWNER}" "${dur_str}${detail}"
 }
 
 gha_fail_stage() {
   local code="$1"
+  local dur=$(( SECONDS - _GHA_STAGE_START ))
+  local dur_str="$(( dur / 60 ))m $(( dur % 60 ))s — "
+  local detail="${dur_str}${GHA_FAIL_DETAIL}"
+  local status="FAILED"
+
+  if [ -n "${GHA_FAIL_CMD}" ]; then
+    detail="${detail} Run: \`${GHA_FAIL_CMD}\`"
+  fi
+  if [ "${GHA_FAIL_SEVERITY}" = "warning" ]; then
+    status="WARNING"
+  fi
 
   echo "::endgroup::"
-  echo "::error title=${GHA_STAGE} failed::${GHA_FAIL_DETAIL}"
-  gha_record_stage "${GHA_STAGE}" "FAILED" "${GHA_AREA}" "${GHA_OWNER}" "${GHA_FAIL_DETAIL}"
+  echo "::${GHA_FAIL_SEVERITY} title=${GHA_STAGE} failed::${GHA_FAIL_DETAIL}"
+  gha_record_stage "${GHA_STAGE}" "${status}" "${GHA_AREA}" "${GHA_OWNER}" "${detail}"
   exit "$code"
 }
 
 gha_record_stage() {
-  local stage="$1"
-  local status="$2"
-  local area="$3"
-  local owner="$4"
-  local detail="$5"
-
+  local stage="$1" status="$2" area="$3" owner="$4" detail="$5"
   echo "| ${stage} | ${status} | ${area} | ${owner} | ${detail} |" >> "$GHA_STAGE_FILE"
 }
 
 gha_render_summary() {
+  # Usage: gha_render_summary [outcome] [deploy_env]
+  local outcome="${1:-}"
+  local deploy_env="${2:-}"
+
   {
     echo "## Backend deploy"
     echo
@@ -77,10 +96,39 @@ gha_render_summary() {
     if [ -s "$GHA_STAGE_FILE" ]; then
       cat "$GHA_STAGE_FILE"
     else
-      echo "| Deploy | UNKNOWN | CI/GitHub | GitHub Actions | No stage data was recorded. Check the early setup logs. |"
+      echo "| Deploy | UNKNOWN | CI / GitHub | GitHub Actions | No stage data was recorded. Check the early setup logs. |"
+    fi
+  } >> "$GITHUB_STEP_SUMMARY"
+
+  if [ -n "${deploy_env}" ]; then
+    gha_health_snapshot "${deploy_env}"
+  fi
+
+  {
+    if [ -n "$outcome" ]; then
+      echo
+      echo "### Result: ${outcome}"
     fi
     echo
     echo "_Job summary generated at run-time._"
+  } >> "$GITHUB_STEP_SUMMARY"
+}
+
+gha_health_snapshot() {
+  local env="$1"
+  local service state
+  {
+    echo
+    echo "### Service health"
+    echo
+    echo "| Service | Health |"
+    echo "|---|---|"
+    for service in backend media-worker nginx mysql redis rabbitmq; do
+      state=$(docker inspect "yuviron-${env}-${service}" \
+        --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{if .State.Running}}running{{else}}stopped{{end}}{{end}}' \
+        2>/dev/null || echo "missing")
+      echo "| \`${service}\` | ${state} |"
+    done
   } >> "$GITHUB_STEP_SUMMARY"
 }
 
@@ -95,6 +143,5 @@ gha_end_group() {
 gha_warn() {
   local title="$1"
   local message="$2"
-
   echo "::warning title=${title}::${message}"
 }
