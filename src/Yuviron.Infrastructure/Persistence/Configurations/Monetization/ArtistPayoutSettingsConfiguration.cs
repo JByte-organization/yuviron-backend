@@ -18,11 +18,13 @@ public class ArtistPayoutSettingsConfiguration : IEntityTypeConfiguration<Artist
 
         builder.Property(x => x.MinWithdrawAmount).HasPrecision(18, 2);
         builder.Property(x => x.MaxWithdrawAmount).HasPrecision(18, 2);
-        builder.Property(x => x.CustomRatePerStream).HasPrecision(18, 6); // Цена за стрим дробная (0.003$)
+        builder.Property(x => x.CustomRatePerStream).HasPrecision(18, 6); 
 
         builder.HasOne(x => x.Artist)
-               .WithOne() // Можно добавить св-во PayoutSettings в Artist
-               .HasForeignKey<ArtistPayoutSettings>(x => x.ArtistId)
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithOne(a => a.PayoutSettings) 
+            .HasForeignKey<ArtistPayoutSettings>(x => x.ArtistId)
+            .OnDelete(DeleteBehavior.Cascade);
+               
+        builder.Property(x => x.AccountDetails).HasMaxLength(255);
     }
 }

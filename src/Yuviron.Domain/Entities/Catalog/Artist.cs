@@ -28,6 +28,8 @@ public class Artist : Entity
     public virtual ICollection<AlbumArtist> AlbumArtists { get; private set; } = new List<AlbumArtist>();
     public virtual ICollection<TrackArtist> TrackArtists { get; private set; } = new List<TrackArtist>();
     public virtual ICollection<ArtistSubscription> Subscriptions { get; private set; } = new List<ArtistSubscription>();
+    public virtual ArtistWallet? ArtistWallet { get; private set; }
+    public virtual ArtistPayoutSettings? PayoutSettings { get; private set; }
 
     private Artist() { }
 

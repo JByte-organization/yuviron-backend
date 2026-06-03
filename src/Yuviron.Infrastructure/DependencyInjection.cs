@@ -213,6 +213,16 @@ public static class DependencyInjection
             x.AddConsumer<CreateArtistClaimRejectedNotificationConsumer>();
             x.AddConsumer<SendArtistClaimApprovedEmailConsumer>();
             x.AddConsumer<SendArtistClaimRejectedEmailConsumer>();
+            
+            x.AddConsumer<NotifyOwnersOnPayoutApprovedConsumer>();
+            x.AddConsumer<NotifyOwnersOnPayoutRejectedConsumer>();
+            
+            x.AddConsumer<NotifyOwnersOnFirstRoyaltiesConsumer>();
+            
+            //x.AddConsumer<NotifyStudioTeamOnTrackProcessedConsumer>();
+            //x.AddConsumer<NotifyStudioTeamOnPlaylistAdditionConsumer>();
+            //x.AddConsumer<NotifyOwnersOnTeamMemberJoinedConsumer>();
+            //x.AddConsumer<NotifyUserOnTeamRoleChangedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -241,6 +251,7 @@ public static class DependencyInjection
         services.AddHostedService<TempFilesCleanupJob>();
         services.AddHostedService<SyncPlayCountsJob>();
         services.AddHostedService<SyncArtistMonthlyListenersJob>();
+        services.AddHostedService<DailyRoyaltyJob>();
 
         return services;
     }
