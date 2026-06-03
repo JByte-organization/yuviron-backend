@@ -1931,6 +1931,43 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("user_blocks", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("BrowserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("LastIpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<DateTime>("LastUsedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "DeviceName", "BrowserName");
+
+                    b.ToTable("user_devices", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserFollowArtist", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -2820,6 +2857,17 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("BlockedByAdmin");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserDevice", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

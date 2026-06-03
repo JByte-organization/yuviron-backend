@@ -12,6 +12,7 @@ using StackExchange.Redis;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Identity;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Payment;
 using Yuviron.Application.Abstractions.Security;
@@ -148,6 +149,8 @@ public static class DependencyInjection
         services.Configure<FileAccessOptions>(configuration.GetSection(FileAccessOptions.SectionName));
         services.Configure<StripeOptions>(configuration.GetSection(StripeOptions.SectionName));
         services.AddScoped<IEventBus, MassTransitEventBus>();
+        services.AddScoped<IClientContextService, ClientContextService>();
+        services.AddScoped<IUserDeviceTracker, UserDeviceTracker>();
         
         
 
@@ -219,10 +222,10 @@ public static class DependencyInjection
             
             x.AddConsumer<NotifyOwnersOnFirstRoyaltiesConsumer>();
             
-            //x.AddConsumer<NotifyStudioTeamOnTrackProcessedConsumer>();
-            //x.AddConsumer<NotifyStudioTeamOnPlaylistAdditionConsumer>();
-            //x.AddConsumer<NotifyOwnersOnTeamMemberJoinedConsumer>();
-            //x.AddConsumer<NotifyUserOnTeamRoleChangedConsumer>();
+            x.AddConsumer<NotifyStudioTeamOnTrackProcessedConsumer>();
+            x.AddConsumer<NotifyStudioTeamOnPlaylistAdditionConsumer>();
+            x.AddConsumer<NotifyOwnersOnTeamMemberJoinedConsumer>();
+            x.AddConsumer<NotifyUserOnTeamRoleChangedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

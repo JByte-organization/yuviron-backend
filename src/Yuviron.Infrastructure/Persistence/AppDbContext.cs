@@ -105,6 +105,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SmartLinkClick> SmartLinkClicks => Set<SmartLinkClick>();
     public DbSet<Banner>  Banners => Set<Banner>();
     public DbSet<Lyrics> Lyrics => Set<Lyrics>();
+    public DbSet<UserDevice>  UserDevices => Set<UserDevice>();
     public DbSet<LyricsSegment> LyricsSegments => Set<LyricsSegment>();
     public DbSet<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();
     public DbSet<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
