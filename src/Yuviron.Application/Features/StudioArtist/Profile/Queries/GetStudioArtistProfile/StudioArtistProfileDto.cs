@@ -9,7 +9,7 @@ public sealed record StudioArtistProfileDto(
     string VerificationStatus,
     bool IsPremium,
     StudioArtistDetailsDto Details,
-    StudioArtistStatsDto Stats,
+    ProfileStatsDto Stats,
     StudioArtistFinanceDto Finance,
     List<StudioTeamMemberDto> Team,
     List<StudioSocialLinkDto> SocialLinks
@@ -22,7 +22,7 @@ public sealed record StudioArtistDetailsDto(
     DateTime CreatedAt
 );
 
-public sealed record StudioArtistStatsDto(
+public sealed record ProfileStatsDto(
     long TotalPlays,
     int MonthlyListenersCount
 );

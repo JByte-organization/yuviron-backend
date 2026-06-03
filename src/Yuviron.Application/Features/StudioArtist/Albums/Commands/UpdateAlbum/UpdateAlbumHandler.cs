@@ -57,7 +57,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
                 request.CoverFileId.Value, 
                 userId, 
                 "image/", 
-                "albums/covers", 
+                "covers", 
                 cancellationToken);
         }
 

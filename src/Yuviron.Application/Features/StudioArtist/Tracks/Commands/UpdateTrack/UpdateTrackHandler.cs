@@ -47,7 +47,6 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             if (isPosTaken) throw new PositionConflictException(position, "Track in this Album");
         }
 
-        // ЕЛЕГАНТНА ПЕРЕВІРКА ЗВ'ЯЗКІВ
         var uniqueGenres = request.GenreIds?.Distinct().ToList() ?? track.TrackGenres.Select(tg => tg.GenreId).ToList();
         var uniqueMoods = request.MoodIds?.Distinct().ToList() ?? track.TrackMoods.Select(tm => tm.MoodId).ToList();
         var trackArtists = request.Collaborators?.Select(c => (c.ArtistId, c.Role)).ToList() ?? track.TrackArtists.Select(ta => (ta.ArtistId, ta.Role)).ToList();
@@ -59,7 +58,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         string? finalCoverUrl = track.CoverUrl;
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(request.CoverFileId.Value, userId, "image/", "tracks/covers", cancellationToken);
+            var coverClaim = await _context.ClaimFileAsync(request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
             track.RegisterFileSwapEvents(coverClaim, track.CoverUrl);
             finalCoverUrl = coverClaim.FinalPath;
         }

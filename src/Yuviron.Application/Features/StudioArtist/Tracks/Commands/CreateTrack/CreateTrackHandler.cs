@@ -61,7 +61,7 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(request.CoverFileId.Value, userId, "image/", "tracks/covers", cancellationToken);
+            coverClaim = await _context.ClaimFileAsync(request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
         }
 
         var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(audioClaim.SourceKey, cancellationToken);
@@ -75,8 +75,11 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             coverClaim?.FinalPath, audioClaim.SourceKey, album.VisibilityStatus, null,
             trackArtists, uniqueGenres, uniqueMoods, _timeProvider.GetUtcNow().UtcDateTime);
 
-        track.RegisterFileSwapEvents(audioClaim);
-        if (coverClaim != null) track.RegisterFileSwapEvents(coverClaim);
+        
+        if (coverClaim != null) 
+        {
+            track.RegisterFileSwapEvents(coverClaim);
+        }
 
         _context.Tracks.Add(track);
         await _context.SaveChangesAsync(cancellationToken);

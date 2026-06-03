@@ -468,9 +468,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid>("ArtistId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("ArtistId1")
-                        .HasColumnType("char(36)");
-
                     b.Property<decimal>("AvailableBalance")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -494,9 +491,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ArtistId")
-                        .IsUnique();
-
-                    b.HasIndex("ArtistId1")
                         .IsUnique();
 
                     b.ToTable("ArtistWallets");
@@ -2365,14 +2359,10 @@ namespace Yuviron.Infrastructure.Migrations
             modelBuilder.Entity("Yuviron.Domain.Entities.ArtistWallet", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
-                        .WithOne()
+                        .WithOne("ArtistWallet")
                         .HasForeignKey("Yuviron.Domain.Entities.ArtistWallet", "ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.Artist", null)
-                        .WithOne("ArtistWallet")
-                        .HasForeignKey("Yuviron.Domain.Entities.ArtistWallet", "ArtistId1");
 
                     b.Navigation("Artist");
                 });

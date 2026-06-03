@@ -32,39 +32,19 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var albumExists = await _context.Albums.AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
-        if (!albumExists)
-        {
-            throw new NotFoundException(nameof(Album), request.AlbumId);
-        }
+        if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         var isPositionTaken = await _context.Tracks.AnyAsync(t => t.AlbumId == request.AlbumId && t.AlbumPosition == request.AlbumPosition, cancellationToken);
-        if (isPositionTaken)
-        {
-            throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
-        }
+        if (isPositionTaken) throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
         
         var uniqueArtists = request.Artists.DistinctBy(a => a.Id).ToList();
         var uniqueArtistIds = uniqueArtists.Select(a => a.Id).ToList();
-        
-        var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
-        if (existingArtistsCount != uniqueArtistIds.Count)
-        {
-            throw new NotFoundException(nameof(Artist), "One or more provided IDs");
-        }
-
         var uniqueGenreIds = request.GenreIds.Distinct().ToList();
-        var existingGenresCount = await _context.Genres.CountAsync(g => uniqueGenreIds.Contains(g.Id), cancellationToken);
-        if (existingGenresCount != uniqueGenreIds.Count)
-        {
-            throw new NotFoundException(nameof(Genre), "One or more provided IDs");
-        }
-
         var uniqueMoodIds = request.MoodIds.Distinct().ToList();
-        var existingMoodsCount = await _context.Moods.CountAsync(m => uniqueMoodIds.Contains(m.Id), cancellationToken);
-        if (existingMoodsCount != uniqueMoodIds.Count)
-        {
-            throw new NotFoundException(nameof(Mood), "One or more provided IDs");
-        }
+
+        await _context.Artists.EnsureAllExistAsync(uniqueArtistIds, nameof(Artist), cancellationToken);
+        await _context.Genres.EnsureAllExistAsync(uniqueGenreIds, nameof(Genre), cancellationToken);
+        await _context.Moods.EnsureAllExistAsync(uniqueMoodIds, nameof(Mood), cancellationToken);
 
         var trackId = Guid.NewGuid();
         var targetAudioFolder = $"tracks/{trackId}";
@@ -80,11 +60,8 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
         }
 
         var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(audioClaim.SourceKey, cancellationToken);
-        
         if (audioMeta.DurationMs < 1000 || audioMeta.DurationMs > 1000 * 60 * 60 * 3)
-        {
             throw new InvalidOperationException("Audio track duration is out of allowed bounds.");
-        }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 

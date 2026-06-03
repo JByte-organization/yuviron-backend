@@ -1,6 +1,6 @@
 namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetStudioArtistStats;
 
-public record StudioArtistStatsDto(
+public record ArtistAnalyticsDto(
     long TotalPlays,
     int MonthlyListeners,
     int TotalAlbums,

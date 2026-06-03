@@ -7,10 +7,10 @@ namespace Yuviron.Api.Controllers.StudioArtist;
 public class StudioArtistAnalyticsController : StudioArtistApiControllerBase
 {
     [HttpGet("stats")]
-    [ProducesResponseType(typeof(StudioArtistStatsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ArtistAnalyticsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<StudioArtistStatsDto>> GetStats([FromQuery] Guid artistId, CancellationToken ct)
+    public async Task<ActionResult<ArtistAnalyticsDto>> GetStats([FromQuery] Guid artistId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetStudioArtistStatsQuery(artistId), ct);
         return Ok(result);
