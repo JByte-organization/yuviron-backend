@@ -284,6 +284,11 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid>("ArtistId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("AccountDetails")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<decimal?>("CustomRatePerStream")
                         .HasPrecision(18, 6)
                         .HasColumnType("decimal(18,6)");
@@ -292,12 +297,18 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("Method")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("MinWithdrawAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("PlatformPercent")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("ArtistId");
 
@@ -446,6 +457,49 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("artist_team_members", (string)null);
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistWallet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ArtistId1")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("AvailableBalance")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("HeldBalance")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<decimal>("TotalEarned")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtistId")
+                        .IsUnique();
+
+                    b.HasIndex("ArtistId1")
+                        .IsUnique();
+
+                    b.ToTable("ArtistWallets");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Banner", b =>
@@ -2120,6 +2174,40 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("verification_requests", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid?>("ReferenceId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "CreatedAt");
+
+                    b.ToTable("WalletTransactions");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.AdImpression", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Ad", "Ad")
@@ -2161,7 +2249,7 @@ namespace Yuviron.Infrastructure.Migrations
             modelBuilder.Entity("Yuviron.Domain.Entities.ArtistPayoutSettings", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
-                        .WithOne()
+                        .WithOne("PayoutSettings")
                         .HasForeignKey("Yuviron.Domain.Entities.ArtistPayoutSettings", "ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2235,6 +2323,21 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Artist");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.ArtistWallet", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithOne()
+                        .HasForeignKey("Yuviron.Domain.Entities.ArtistWallet", "ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.Artist", null)
+                        .WithOne("ArtistWallet")
+                        .HasForeignKey("Yuviron.Domain.Entities.ArtistWallet", "ArtistId1");
+
+                    b.Navigation("Artist");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Complaint", b =>
@@ -2878,6 +2981,17 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("SubmittedByUser");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.ArtistWallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Ad", b =>
                 {
                     b.Navigation("Impressions");
@@ -2893,6 +3007,10 @@ namespace Yuviron.Infrastructure.Migrations
             modelBuilder.Entity("Yuviron.Domain.Entities.Artist", b =>
                 {
                     b.Navigation("AlbumArtists");
+
+                    b.Navigation("ArtistWallet");
+
+                    b.Navigation("PayoutSettings");
 
                     b.Navigation("Pins");
 

@@ -61,6 +61,8 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<PayoutRequest> PayoutRequests { get; }
     DbSet<PayoutTransaction> PayoutTransactions { get; }
     DbSet<ArtistSubscription> ArtistSubscriptions { get; }
+    DbSet<ArtistWallet> ArtistWallets { get; }
+    DbSet<WalletTransaction> WalletTransactions { get; }
 
     // --- Player & Social ---
     DbSet<PlaybackSession> PlaybackSessions { get; }

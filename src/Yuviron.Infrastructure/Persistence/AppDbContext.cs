@@ -117,6 +117,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<ReleaseNotificationTemplate> ReleaseNotificationTemplates => Set<ReleaseNotificationTemplate>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<UserAchievement> UserAchievements => Set<UserAchievement>();
+    public DbSet<ArtistWallet>  ArtistWallets => Set<ArtistWallet>();
+    public DbSet<WalletTransaction>  WalletTransactions => Set<WalletTransaction>();
     public DbSet<UserAchievementProgress> UserAchievementProgress => Set<UserAchievementProgress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
