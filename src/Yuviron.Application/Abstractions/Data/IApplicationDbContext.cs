@@ -18,6 +18,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<UserBlock> UserBlocks { get; }
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
+    DbSet<UserDevice>  UserDevices { get; }
 
 
     // --- Profile ---

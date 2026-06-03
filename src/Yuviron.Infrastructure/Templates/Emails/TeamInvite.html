@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0413; margin: 0; padding: 0; width: 100% !important; }
+        .wrapper { padding: 40px 20px; background-color: #0b0413; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #140b24; border: 1px solid #321b54; border-radius: 20px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(116, 45, 230, 0.15); text-align: center; }
+        h1 { color: #ffffff; margin: 0 0 20px 0; font-size: 24px; }
+        p { color: #b3a7c6; line-height: 1.6; font-size: 16px; margin-bottom: 30px; }
+        strong { color: #ffffff; }
+        .button { display: inline-block; padding: 14px 35px; background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%); color: #ffffff !important; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(217, 70, 239, 0.4); }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+        <h1>Запрошення в команду 🤝</h1>
+        <p>Вас запросили приєднатися до команди артиста <strong>{{ ArtistName }}</strong> у ролі <strong>{{ RoleName }}</strong> на платформі Yuviron.</p>
+        <a href="{{ InviteLink }}" class="button">Прийняти запрошення</a>
+        <p style="margin-top: 30px; font-size: 13px; color: #5d4d7a;">Посилання дійсне протягом 48 годин.</p>
+    </div>
+</div>
+</body>
+</html>
