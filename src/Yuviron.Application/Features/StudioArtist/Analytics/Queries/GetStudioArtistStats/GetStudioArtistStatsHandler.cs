@@ -9,7 +9,7 @@ using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetStudioArtistStats;
 
-public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtistStatsQuery, StudioArtistStatsDto>
+public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtistStatsQuery, ArtistAnalyticsDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
@@ -25,7 +25,7 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
         _cacheService = cacheService;
     }
 
-    public async Task<StudioArtistStatsDto> Handle(GetStudioArtistStatsQuery request, CancellationToken cancellationToken)
+    public async Task<ArtistAnalyticsDto> Handle(GetStudioArtistStatsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
@@ -37,7 +37,7 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
 
         string cacheKey = $"studio:artist:{request.ArtistId}:stats";
 
-        var cachedStats = await _cacheService.GetAsync<StudioArtistStatsDto>(cacheKey, cancellationToken);
+        var cachedStats = await _cacheService.GetAsync<ArtistAnalyticsDto>(cacheKey, cancellationToken);
         if (cachedStats != null) return cachedStats;
 
         var artist = await _context.Artists
@@ -65,7 +65,7 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
-        var result = new StudioArtistStatsDto(
+        var result = new ArtistAnalyticsDto(
             artist.TotalPlays,
             artist.MonthlyListenersCount,
             totalAlbums,

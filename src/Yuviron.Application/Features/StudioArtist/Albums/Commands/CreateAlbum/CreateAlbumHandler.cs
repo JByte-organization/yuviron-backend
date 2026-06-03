@@ -46,7 +46,7 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
                 request.CoverFileId.Value, 
                 userId, 
                 "image/", 
-                "albums/covers", 
+                "covers", 
                 cancellationToken);
         }
 

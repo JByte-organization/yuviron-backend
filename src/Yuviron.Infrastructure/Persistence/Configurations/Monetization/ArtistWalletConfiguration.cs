@@ -10,18 +10,15 @@ public class ArtistWalletConfiguration : IEntityTypeConfiguration<ArtistWallet>
     {
         builder.HasKey(x => x.Id);
 
-        // Зв'язок 1-до-1 з Артистом
-        builder.HasOne(x => x.Artist)
-            .WithOne()
-            .HasForeignKey<ArtistWallet>(x => x.ArtistId)
+        builder.HasOne(w => w.Artist)
+            .WithOne(a => a.ArtistWallet) 
+            .HasForeignKey<ArtistWallet>(w => w.ArtistId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Гроші вимагають строгої точності
         builder.Property(x => x.AvailableBalance).HasPrecision(18, 4);
         builder.Property(x => x.HeldBalance).HasPrecision(18, 4);
         builder.Property(x => x.TotalEarned).HasPrecision(18, 4);
 
-        // КРИТИЧНО ВАЖЛИВО: Захист від гонки (Double-spend problem)
         builder.Property(x => x.RowVersion)
             .IsRowVersion()
             .IsConcurrencyToken();

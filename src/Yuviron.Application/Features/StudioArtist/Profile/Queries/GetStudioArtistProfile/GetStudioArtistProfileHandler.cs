@@ -50,7 +50,7 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
             new StudioArtistDetailsDto(
                 artist.Bio, artist.AvatarUrl, artist.BannerUrl, artist.CreatedAt),
                 
-            new StudioArtistStatsDto(
+            new ProfileStatsDto(
                 artist.TotalPlays, artist.MonthlyListenersCount),
                 
             new StudioArtistFinanceDto(
