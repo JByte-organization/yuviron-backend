@@ -126,6 +126,19 @@ jobs:
           python3 ./scripts/cli.py tools docker-clean --mode report
           gha_pass_stage "Docker disk report collected."
 
+      - name: Clean Docker build cache before preflight
+        continue-on-error: true
+        run: |
+          set -Eeuo pipefail
+          source "${RUNNER_TEMP}/yuviron-gha-observe.sh"
+          gha_begin_stage "Clean Docker build cache" "DevOps / server" "Runner Docker host" \
+            "Could not clean Docker build cache — deploy may fail the disk-space preflight check." \
+            "python3 ./scripts/cli.py tools docker-clean --mode build-cache --yes" \
+            "warning"
+          cd /opt/yuviron-server
+          python3 ./scripts/cli.py tools docker-clean --mode build-cache --yes
+          gha_pass_stage "Docker build cache cleaned."
+
       - name: Preflight check
         run: |
           set -Eeuo pipefail
@@ -252,7 +265,10 @@ jobs:
           done
 
           cd /opt/yuviron-server
-          timeout 1200 python3 ./scripts/cli.py stack up "${DEPLOY_ENV}" --no-rollback --skip-migrate --no-build
+          python3 ./scripts/cli.py tools docker-clean --mode safe --yes || true
+
+          timeout 1200 python3 ./scripts/cli.py stack restart backend media-worker \
+            --rebuild --env "${DEPLOY_ENV}"
           timeout 120 python3 ./scripts/cli.py stack smoke "${DEPLOY_ENV}"
           gha_pass_stage "Rolled back to \`${PREVIOUS_SHA}\` and smoke checks passed."
 
