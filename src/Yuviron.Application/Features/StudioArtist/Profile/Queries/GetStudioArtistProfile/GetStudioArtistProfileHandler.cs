@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Entities;
 
@@ -28,53 +29,48 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
 
         if (!hasAccess) throw new ForbiddenException("No access to this artist's profile.");
 
-        var artist = await _context.Artists
+        var profileDto = await _context.Artists
             .AsNoTracking()
-            .Include(a => a.ArtistWallet)
-            .Include(a => a.PayoutSettings)
-            .Include(a => a.SocialLinks)
-            .Include(a => a.Subscriptions)
-            .Include(a => a.TeamMembers)
-                .ThenInclude(tm => tm.User) 
-                .ThenInclude(u => u!.Profile) 
-            .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken);
-
-        if (artist == null) throw new NotFoundException(nameof(Artist), request.ArtistId);
-
-        return new StudioArtistProfileDto(
-            artist.Id,
-            artist.Name,
-            artist.VerificationStatus.ToString(),
-            artist.HasActivePremiumSubscription(utcNow),
-            
-            new StudioArtistDetailsDto(
-                artist.Bio, artist.AvatarUrl, artist.BannerUrl, artist.CreatedAt),
+            .Where(a => a.Id == request.ArtistId)
+            .Select(a => new StudioArtistProfileDto(
+                a.Id,
+                a.Name,
+                a.VerificationStatus.ToString(),
+                a.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
                 
-            new ProfileStatsDto(
-                artist.TotalPlays, artist.MonthlyListenersCount),
+                new StudioArtistDetailsDto(
+                    a.Bio, a.AvatarUrl, a.BannerUrl, a.CreatedAt),
+                    
+                new ProfileStatsDto(
+                    a.TotalPlays, a.MonthlyListenersCount),
+                    
+                new StudioArtistFinanceDto(
+                    a.ArtistWallet != null ? a.ArtistWallet.AvailableBalance : 0,
+                    a.ArtistWallet != null ? a.ArtistWallet.HeldBalance : 0,
+                    a.ArtistWallet != null ? a.ArtistWallet.TotalEarned : 0,
+                    a.PayoutSettings != null ? new StudioPayoutSettingsDto(
+                        a.PayoutSettings.Method.ToString(),
+                        a.PayoutSettings.AccountDetails,
+                        a.PayoutSettings.MinWithdrawAmount,
+                        a.PayoutSettings.PlatformPercent) : null
+                ),
                 
-            new StudioArtistFinanceDto(
-                artist.ArtistWallet?.AvailableBalance ?? 0,
-                artist.ArtistWallet?.HeldBalance ?? 0,
-                artist.ArtistWallet?.TotalEarned ?? 0,
-                artist.PayoutSettings != null ? new StudioPayoutSettingsDto(
-                    artist.PayoutSettings.Method.ToString(),
-                    artist.PayoutSettings.AccountDetails,
-                    artist.PayoutSettings.MinWithdrawAmount,
-                    artist.PayoutSettings.PlatformPercent) : null
-            ),
-            
-            artist.TeamMembers.Select(tm => new StudioTeamMemberDto(
-                tm.UserId,
-                tm.User.Email,
-                tm.User.Profile?.FirstName ?? string.Empty,
-                tm.Role.ToString(),
-                tm.CreatedAt
-            )).ToList(),
-            
-            artist.SocialLinks.Select(sl => new StudioSocialLinkDto(
-                sl.Type, sl.Url
-            )).ToList()
-        );
+                a.TeamMembers.Select(tm => new StudioTeamMemberDto(
+                    tm.UserId,
+                    tm.User.Email,
+                    tm.User.Profile != null ? tm.User.Profile.FirstName : string.Empty,
+                    tm.Role.ToString(),
+                    tm.CreatedAt
+                )).ToList(),
+                
+                a.SocialLinks.Select(sl => new StudioSocialLinkDto(
+                    sl.Type, sl.Url
+                )).ToList()
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (profileDto == null) throw new NotFoundException(nameof(Artist), request.ArtistId);
+
+        return profileDto;
     }
 }

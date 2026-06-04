@@ -9,22 +9,9 @@ namespace Yuviron.Infrastructure.Consumers;
 public class NotifyUserOnTeamRoleChangedConsumer : IConsumer<TeamRoleChangedEvent>
 {
     private readonly INotificationService _notificationService;
+    public NotifyUserOnTeamRoleChangedConsumer(INotificationService notificationService) => _notificationService = notificationService;
 
-    public NotifyUserOnTeamRoleChangedConsumer(INotificationService notificationService)
-    {
-        _notificationService = notificationService;
-    }
-
-    public async Task Consume(ConsumeContext<TeamRoleChangedEvent> context)
-    {
-        await _notificationService.SendToUserAsync(
-            context.Message.TargetUserId, 
-            NotificationCategory.System, 
-            "team_role_changed",
-            "Зміна прав доступу 🔑",
-            $"Ваша роль в команді артиста {context.Message.ArtistName} була змінена на «{context.Message.NewRole}».",
-            NotificationEntityType.Artist, 
-            context.Message.ArtistId, 
-            context.CancellationToken);
-    }
+    public async Task Consume(ConsumeContext<TeamRoleChangedEvent> context) =>
+        await _notificationService.SendToUserAsync(context.Message.TargetUserId, NotificationCategory.System, "team_role_changed", 
+            "Зміна прав доступу 🔑", $"Ваша роль в команді {context.Message.ArtistName} змінена на «{context.Message.NewRole}».", NotificationEntityType.Artist, context.Message.ArtistId, context.CancellationToken);
 }

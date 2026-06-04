@@ -7,34 +7,15 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
+using Yuviron.Infrastructure.Consumers.Bases;
 
 namespace Yuviron.Infrastructure.Consumers;
 
-public class NotifyOwnersOnTeamMemberJoinedConsumer : IConsumer<TeamMemberJoinedEvent>
+public class NotifyOwnersOnTeamMemberJoinedConsumer : NotifyArtistOwnersConsumerBase<TeamMemberJoinedEvent>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly INotificationService _notificationService;
+    public NotifyOwnersOnTeamMemberJoinedConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
-    public NotifyOwnersOnTeamMemberJoinedConsumer(IApplicationDbContext context, INotificationService notificationService)
-    {
-        _context = context;
-        _notificationService = notificationService;
-    }
-
-    public async Task Consume(ConsumeContext<TeamMemberJoinedEvent> context)
-    {
-        var ownerIds = await _context.ArtistTeamMembers
-            .AsNoTracking()
-            .Where(tm => tm.ArtistId == context.Message.ArtistId && tm.Role == ArtistTeamRole.Owner)
-            .Select(tm => tm.UserId)
-            .ToListAsync(context.CancellationToken);
-
-        if (!ownerIds.Any()) return;
-
-        await _notificationService.SendToUsersAsync(
-            ownerIds, NotificationCategory.System, "team_joined",
-            "В команді поповнення! 🤝",
-            $"Користувач {context.Message.JoinedUserEmail} прийняв запрошення і приєднався до команди артиста {context.Message.ArtistName} як {context.Message.Role}.",
-            NotificationEntityType.Artist, context.Message.ArtistId, context.CancellationToken);
-    }
+    protected override async Task SendNotificationAsync(TeamMemberJoinedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
+        await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.System, "team_joined", 
+            "В команді поповнення! 🤝", $"Користувач {msg.JoinedUserEmail} приєднався до команди як {msg.Role}.", NotificationEntityType.Artist, msg.ArtistId, ct);
 }

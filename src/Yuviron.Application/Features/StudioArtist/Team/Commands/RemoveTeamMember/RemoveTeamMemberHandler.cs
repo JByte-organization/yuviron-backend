@@ -4,9 +4,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Entities;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Team.Commands.RemoveTeamMember;
@@ -16,10 +18,15 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventBus _eventBus;
 
-    public RemoveTeamMemberHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public RemoveTeamMemberHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser, 
+        TimeProvider timeProvider,
+        IEventBus eventBus) 
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(RemoveTeamMemberCommand request, CancellationToken cancellationToken)
@@ -40,6 +47,9 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
         artist.RemoveTeamMember(request.TargetUserId, utcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _eventBus.PublishAsync(new TeamMemberRemovedEvent(request.TargetUserId, artist.Id, artist.Name), cancellationToken);
+
         return Unit.Value;
     }
 }
