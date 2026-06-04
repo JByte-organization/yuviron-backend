@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Messaging; 
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Enums.Monetization;
+using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Finance.Commands.RequestPayout;
@@ -14,10 +16,15 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
+    private readonly IEventBus _eventBus;
 
-    public RequestPayoutHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUser)
+    public RequestPayoutHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider, 
+        ICurrentUserService currentUser,
+        IEventBus eventBus) 
     {
-        _context = context; _timeProvider = timeProvider; _currentUser = currentUser;
+        _context = context; _timeProvider = timeProvider; _currentUser = currentUser; _eventBus = eventBus;
     }
 
     public async Task<Guid> Handle(RequestPayoutCommand request, CancellationToken cancellationToken)
@@ -39,9 +46,7 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
             .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId, cancellationToken);
 
         if (settings == null || string.IsNullOrWhiteSpace(settings.AccountDetails))
-        {
             throw new InvalidOperationException("Please configure your payout method (PayPal/Stripe) before requesting a payout.");
-        }
 
         if (request.Amount < settings.MinWithdrawAmount)
             throw new InvalidOperationException($"Minimum payout amount is {settings.MinWithdrawAmount}");
@@ -72,6 +77,8 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
         {
             throw new InvalidOperationException("The wallet balance was modified by another transaction. Please try again.");
         }
+
+        await _eventBus.PublishAsync(new PayoutRequestedEvent(request.ArtistId, request.Amount), cancellationToken);
 
         return payoutRequest.Id;
     }

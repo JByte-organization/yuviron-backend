@@ -5,9 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Finance.Commands.UpdatePayoutSettings;
@@ -17,10 +19,15 @@ public sealed class UpdatePayoutSettingsHandler : IRequestHandler<UpdatePayoutSe
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventBus _eventBus;
 
-    public UpdatePayoutSettingsHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public UpdatePayoutSettingsHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser, 
+        TimeProvider timeProvider,
+        IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(UpdatePayoutSettingsCommand request, CancellationToken cancellationToken)
@@ -47,6 +54,9 @@ public sealed class UpdatePayoutSettingsHandler : IRequestHandler<UpdatePayoutSe
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _eventBus.PublishAsync(new PayoutSettingsChangedEvent(request.ArtistId), cancellationToken);
+
         return Unit.Value;
     }
 }

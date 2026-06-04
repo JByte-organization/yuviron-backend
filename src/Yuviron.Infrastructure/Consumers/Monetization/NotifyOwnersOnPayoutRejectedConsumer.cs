@@ -7,41 +7,15 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
+using Yuviron.Infrastructure.Consumers.Bases;
 
 namespace Yuviron.Infrastructure.Consumers;
 
-public class NotifyOwnersOnPayoutRejectedConsumer : IConsumer<PayoutRejectedEvent>
+public class NotifyOwnersOnPayoutRejectedConsumer : NotifyArtistOwnersConsumerBase<PayoutRejectedEvent>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly INotificationService _notificationService;
+    public NotifyOwnersOnPayoutRejectedConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
-    public NotifyOwnersOnPayoutRejectedConsumer(IApplicationDbContext context, INotificationService notificationService)
-    {
-        _context = context;
-        _notificationService = notificationService;
-    }
-
-    public async Task Consume(ConsumeContext<PayoutRejectedEvent> context)
-    {
-        var msg = context.Message;
-        
-        var ownerIds = await _context.ArtistTeamMembers
-            .AsNoTracking()
-            .Where(tm => tm.ArtistId == msg.ArtistId && tm.Role == ArtistTeamRole.Owner)
-            .Select(tm => tm.UserId)
-            .ToListAsync(context.CancellationToken);
-
-        if (!ownerIds.Any()) return;
-
-        await _notificationService.SendToUsersAsync(
-            userIds: ownerIds,
-            category: NotificationCategory.Billing,
-            type: "payout_rejected",
-            title: "Увага: Заявку на виплату відхилено ❌",
-            body: $"Ваш запит на виведення ${msg.Amount:F2} відхилено адміністратором. Причина: {msg.Reason}. Гроші повернено на ваш баланс.",
-            entityType: NotificationEntityType.Artist,
-            entityId: msg.ArtistId,
-            cancellationToken: context.CancellationToken
-        );
-    }
+    protected override async Task SendNotificationAsync(PayoutRejectedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
+        await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.Billing, "payout_rejected", 
+            "Увага: Заявку на виплату відхилено ❌", $"Ваш запит на виведення ${msg.Amount:F2} відхилено адміністратором. Причина: {msg.Reason}", NotificationEntityType.Artist, msg.ArtistId, ct);
 }
