@@ -15,9 +15,9 @@ public record StudioAlbumDetailsDto(
     VisibilityStatus VisibilityStatus,
     DateTime? ScheduledPublishAt,
     int TracksCount,     
-    long TotalDurationMs, 
-    long TotalPlays,     
+    long TotalDurationMs,
+    long TotalPlays,    
     DateTime CreatedAt,  
     DateTime UpdatedAt, 
-    IEnumerable<TrackArtistDto> Artists
+    IEnumerable<TrackArtistDto> Artists 
 );
