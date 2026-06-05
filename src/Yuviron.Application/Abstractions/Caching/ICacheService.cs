@@ -21,4 +21,8 @@ public interface ICacheService
     Task<long> SortedSetAddManyAsync(string key, Dictionary<string, double> membersAndScores, CancellationToken cancellationToken = default);
     
     Task<Dictionary<string, double>> SortedSetRangeByRankWithScoresAsync(string key, long start = 0, long stop = -1, CancellationToken cancellationToken = default);
+    
+    Task<bool> SetContainsAsync(string key, string member, CancellationToken cancellationToken = default);
+    
+    Task<bool> SetRemoveAsync(string key, string member, CancellationToken cancellationToken = default);
 }

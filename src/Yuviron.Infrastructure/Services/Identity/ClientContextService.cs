@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using System;
 using System.Linq;
 using UAParser;
 using Yuviron.Application.Abstractions.Identity;
@@ -17,14 +18,21 @@ public class ClientContextService : IClientContextService
     public ClientContext GetClientContext()
     {
         var context = _httpContextAccessor.HttpContext;
-        if (context == null) return new ClientContext("Unknown", "Unknown", "Unknown");
+        if (context == null) return new ClientContext("Unknown", "Unknown", "Unknown", Guid.NewGuid().ToString());
 
         var userAgent = context.Request.Headers.UserAgent.ToString();
         var ip = GetClientIpAddress(context);
 
+        // ЧИТАЕМ УНИКАЛЬНЫЙ ID ОТ ФРОНТЕНДА
+        var fingerprint = context.Request.Headers["X-Device-Fingerprint"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(fingerprint))
+        {
+            fingerprint = Guid.NewGuid().ToString(); 
+        }
+
         if (string.IsNullOrWhiteSpace(userAgent))
         {
-            return new ClientContext("Unknown OS", "Unknown Browser", ip);
+            return new ClientContext("Unknown OS", "Unknown Browser", ip, fingerprint);
         }
 
         var uaParser = Parser.GetDefault();
@@ -41,7 +49,8 @@ public class ClientContextService : IClientContextService
         return new ClientContext(
             string.IsNullOrWhiteSpace(device) || device == "Other" ? "Unknown OS" : device,
             string.IsNullOrWhiteSpace(browser) || browser == "Other" ? "Unknown Browser" : browser,
-            ip
+            ip,
+            fingerprint 
         );
     }
 

@@ -72,6 +72,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Artist> Artists => Set<Artist>();
     public DbSet<ArtistSocialLink> ArtistSocialLinks => Set<ArtistSocialLink>();
     public DbSet<ArtistPin> ArtistPins => Set<ArtistPin>();
+    public DbSet<BannerRequest>  BannerRequests => Set<BannerRequest>();
     public DbSet<Album> Albums => Set<Album>();
     public DbSet<Track> Tracks => Set<Track>();
     public DbSet<Genre> Genres => Set<Genre>();
@@ -106,7 +107,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Banner>  Banners => Set<Banner>();
     public DbSet<Lyrics> Lyrics => Set<Lyrics>();
     public DbSet<UserDevice>  UserDevices => Set<UserDevice>();
-    public DbSet<LyricsSegment> LyricsSegments => Set<LyricsSegment>();
+    public DbSet<UserSavedPlaylist> UserSavedPlaylists => Set<UserSavedPlaylist>();
     public DbSet<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();
     public DbSet<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
     public DbSet<Complaint> Complaints => Set<Complaint>();

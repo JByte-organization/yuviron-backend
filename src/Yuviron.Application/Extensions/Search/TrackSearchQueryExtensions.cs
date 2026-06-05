@@ -57,7 +57,8 @@ public static class TrackSearchQueryExtensions
             t.TrackArtists
                 .Where(ta => !ta.Artist.IsDeleted)
                 .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
-            t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null)
+            t.CoverUrl ?? (t.Album != null ? t.Album.CoverUrl : null),
+            false
         ));
     }
 

@@ -148,6 +148,8 @@ public static class DependencyInjection
         services.Configure<AdSettingsOptions>(configuration.GetSection(AdSettingsOptions.SectionName));
         services.Configure<FileAccessOptions>(configuration.GetSection(FileAccessOptions.SectionName));
         services.Configure<StripeOptions>(configuration.GetSection(StripeOptions.SectionName));
+        services.Configure<MarketingOptions>(configuration.GetSection(MarketingOptions.SectionName));
+        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.SectionName));
         services.AddScoped<IEventBus, MassTransitEventBus>();
         services.AddScoped<IClientContextService, ClientContextService>();
         services.AddScoped<IUserDeviceTracker, UserDeviceTracker>();

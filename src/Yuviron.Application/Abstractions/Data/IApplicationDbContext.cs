@@ -51,6 +51,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<UserSavedAlbum> UserSavedAlbums { get; }
     DbSet<UserFollowArtist> UserFollowArtists { get; }
     DbSet<UserFollowUser> UserFollowUsers { get; }
+    DbSet<UserSavedPlaylist> UserSavedPlaylists { get; }
 
     // --- Monetization ---
     DbSet<Plan> Plans { get; }
@@ -77,7 +78,7 @@ public interface IApplicationDbContext : IUnitOfWork
     // --- Content & Analytics & Gamification ---
     DbSet<Banner> Banners { get; }
     DbSet<Lyrics> Lyrics { get; }
-    DbSet<LyricsSegment> LyricsSegments { get; }
+    DbSet<BannerRequest> BannerRequests { get; }
     DbSet<CopyrightClaim> CopyrightClaims { get; }
     DbSet<VerificationRequest> VerificationRequests { get; }
     DbSet<Complaint> Complaints { get; }

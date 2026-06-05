@@ -67,7 +67,8 @@ public static class AlbumSearchQueryExtensions
             a.Title,
             a.AlbumArtists.Where(aa => !aa.Artist.IsDeleted).Select(aa => new TrackArtistDto(aa.Artist.Id, aa.Artist.Name, aa.Role)),
             a.CoverUrl,
-            a.ReleaseDate.Year
+            a.ReleaseDate.Year,
+            false
         ));
     }
 

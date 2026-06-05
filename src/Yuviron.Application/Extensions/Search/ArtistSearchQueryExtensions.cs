@@ -49,7 +49,8 @@ public static class ArtistSearchQueryExtensions
         return query.Select(a => new SearchArtistDto(
             a.Id,
             a.Name,
-            a.AvatarUrl
+            a.AvatarUrl,
+            false
         ));
     }
 

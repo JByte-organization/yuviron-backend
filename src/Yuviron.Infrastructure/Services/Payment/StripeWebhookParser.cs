@@ -12,6 +12,7 @@ using Yuviron.Application.Abstractions.Payment;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Webhooks.Commands.FulfillSubscription;
 using Yuviron.Application.Features.Webhooks.Commands.FulfillArtistSubscription;
+using Yuviron.Application.Features.Webhooks.Commands.FulfillBannerPayment;
 using Yuviron.Application.Features.Webhooks.Commands.RenewSubscription;
 
 namespace Yuviron.Infrastructure.Services.Payment;
@@ -54,19 +55,35 @@ public class StripeWebhookParser : IStripeWebhookParser
             {
                 if (stripeEvent.Data.Object is Stripe.Checkout.Session session && session.PaymentStatus == "paid")
                 {
-                    var userId = Guid.Parse(session.ClientReferenceId);
-                    var planId = Guid.Parse(session.Metadata["PlanId"]);
-                    var stripeSubId = session.SubscriptionId; 
-
-                    if (session.Metadata.TryGetValue("ArtistId", out var artistIdStr) && Guid.TryParse(artistIdStr, out var artistId))
+                    if (session.Metadata.TryGetValue("BannerRequestId", out var bannerReqIdStr) && Guid.TryParse(bannerReqIdStr, out var bannerReqId))
                     {
-                        _logger.LogInformation("Artist Payment success received for User {UserId}, Artist {ArtistId}, Plan {PlanId}", userId, artistId, planId);
-                        await _mediator.Send(new FulfillArtistSubscriptionCommand(userId, artistId, planId, stripeSubId), cancellationToken);
+                        _logger.LogInformation("Banner Payment success received for Request {BannerReqId}", bannerReqId);
+                        await _mediator.Send(new FulfillBannerPaymentCommand(bannerReqId, session.PaymentIntentId), cancellationToken);
+                    }
+                    else if (session.Metadata.TryGetValue("PlanId", out var planIdStr) && Guid.TryParse(planIdStr, out var planId))
+                    {
+                        if (!Guid.TryParse(session.ClientReferenceId, out var userId))
+                        {
+                            _logger.LogWarning("Missing or invalid ClientReferenceId in Stripe Session.");
+                            return;
+                        }
+
+                        var stripeSubId = session.SubscriptionId; 
+
+                        if (session.Metadata.TryGetValue("ArtistId", out var artistIdStr) && Guid.TryParse(artistIdStr, out var artistId))
+                        {
+                            _logger.LogInformation("Artist Payment success received for User {UserId}, Artist {ArtistId}, Plan {PlanId}", userId, artistId, planId);
+                            await _mediator.Send(new FulfillArtistSubscriptionCommand(userId, artistId, planId, stripeSubId), cancellationToken);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Payment success received for User {UserId}, Plan {PlanId}", userId, planId);
+                            await _mediator.Send(new FulfillSubscriptionCommand(userId, planId, stripeSubId), cancellationToken);
+                        }
                     }
                     else
                     {
-                        _logger.LogInformation("Payment success received for User {UserId}, Plan {PlanId}", userId, planId);
-                        await _mediator.Send(new FulfillSubscriptionCommand(userId, planId, stripeSubId), cancellationToken);
+                        _logger.LogWarning("Unknown checkout session completed metadata configuration: {SessionId}", session.Id);
                     }
                 }
             }
