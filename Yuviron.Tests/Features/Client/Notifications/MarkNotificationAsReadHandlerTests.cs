@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
@@ -48,7 +48,7 @@ public class MarkNotificationAsReadHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ThrowNotFound_When_NotificationBelongsToOtherUser()
+    public async Task Handle_Should_ThrowForbidden_When_NotificationBelongsToOtherUser()
     {
         var dbContext = new AppDbContext(_dbOptions);
         var currentUserId = Guid.NewGuid(); 
@@ -65,7 +65,8 @@ public class MarkNotificationAsReadHandlerTests
         // Act & Assert
         var action = async () => await handler.Handle(command, CancellationToken.None);
 
-        await action.Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"*\"Notification\" ({notification.Id}) was not found*");
+        await action.Should().ThrowAsync<ForbiddenException>()
+            ;
     }
 }
+

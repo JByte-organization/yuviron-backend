@@ -1,13 +1,17 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using Yuviron.Application.Abstractions.Data;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 using Yuviron.Application.Abstractions.Identity;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Domain.Entities;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
-using Xunit;
-using Yuviron.Domain.Entities;
+
+namespace Yuviron.Tests.Infrastructure.Services;
 
 public class UserDeviceTrackerTests
 {
@@ -36,7 +40,8 @@ public class UserDeviceTrackerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var clientInfo = new ClientContext("Windows 10", "Chrome", "192.168.1.1");
+        var fingerprint = "device-fingerprint-123";
+        var clientInfo = new ClientContext("Windows 10", "Chrome", "192.168.1.1", fingerprint);
 
         // Act
         await _tracker.TrackDeviceAsync(userId, clientInfo, DateTime.UtcNow, CancellationToken.None);
@@ -44,9 +49,9 @@ public class UserDeviceTrackerTests
         // Assert
         var device = await _context.UserDevices.FirstOrDefaultAsync(d => d.UserId == userId);
         device.Should().NotBeNull();
-        device.DeviceName.Should().Be("Windows 10");
+        device!.DeviceName.Should().Be("Windows 10");
+        device.Fingerprint.Should().Be(fingerprint);
         
-        // Проверяем, что событие в шину было опубликовано (факт логина)
         _mockEventBus.Verify(bus => bus.PublishAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -55,10 +60,17 @@ public class UserDeviceTrackerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var clientInfo = new ClientContext("Windows 10", "Chrome", "192.168.1.1");
+        var fingerprint = "device-fingerprint-123";
+        var clientInfo = new ClientContext("Windows 10", "Chrome", "192.168.1.1", fingerprint);
         
-        // Добавляем существующее устройство
-        var existingDevice = UserDevice.Create(userId, clientInfo.Device, clientInfo.Browser, clientInfo.IpAddress, DateTime.UtcNow);
+        var existingDevice = UserDevice.Create(
+            userId, 
+            clientInfo.Fingerprint, 
+            clientInfo.Device, 
+            clientInfo.Browser, 
+            clientInfo.IpAddress, 
+            DateTime.UtcNow);
+
         _context.UserDevices.Add(existingDevice);
         await _context.SaveChangesAsync();
 
@@ -66,7 +78,6 @@ public class UserDeviceTrackerTests
         await _tracker.TrackDeviceAsync(userId, clientInfo, DateTime.UtcNow, CancellationToken.None);
 
         // Assert
-        // Проверяем, что событие НЕ публиковалось повторно
         _mockEventBus.Verify(bus => bus.PublishAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
