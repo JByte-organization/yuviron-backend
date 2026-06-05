@@ -18,5 +18,7 @@ public record TrackDetailsDto(
     
     IEnumerable<TrackArtistDto> Artists,
     IEnumerable<string> Genres,
-    IEnumerable<string> Moods
+    IEnumerable<string> Moods, 
+    
+    bool IsSaved = false
 );

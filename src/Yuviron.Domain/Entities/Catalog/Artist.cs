@@ -160,6 +160,40 @@ public class Artist : Entity
             s.Status == SubscriptionStatus.Active &&
             s.EndAt > currentDate);
     }
+    
+    public void UpdateSocialLinks(IEnumerable<(string Type, string Url)> newLinks, DateTime utcNow)
+    {
+        SocialLinks.Clear();
+
+        foreach (var link in newLinks)
+        {
+            SocialLinks.Add(ArtistSocialLink.Create(this.Id, link.Type, link.Url));
+        }
+
+        UpdatedAt = utcNow;
+    }
+
+    public void SetPin(ArtistPinType type, Guid entityId, int position, DateTime utcNow)
+    {
+        var existingPin = Pins.FirstOrDefault(p => p.Position == position);
+        if (existingPin != null)
+        {
+            Pins.Remove(existingPin);
+        }
+
+        Pins.Add(ArtistPin.Create(this.Id, type, entityId, position, utcNow));
+        UpdatedAt = utcNow;
+    }
+
+    public void RemovePin(int position, DateTime utcNow)
+    {
+        var existingPin = Pins.FirstOrDefault(p => p.Position == position);
+        if (existingPin != null)
+        {
+            Pins.Remove(existingPin);
+            UpdatedAt = utcNow;
+        }
+    }
 
     public void Delete(DateTime utcNow)
     {

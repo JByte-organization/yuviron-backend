@@ -28,6 +28,7 @@ public class Track : Entity
     public DateTime? DeletedAt { get; private set; }
 
     public virtual Album? Album { get; private set; }
+    public virtual Lyrics? Lyrics { get; private set; }
     public virtual ICollection<TrackArtist> TrackArtists { get; private set; } = new List<TrackArtist>();
     public virtual ICollection<TrackGenre> TrackGenres { get; private set; } = new List<TrackGenre>();
     
@@ -148,6 +149,24 @@ public class Track : Entity
             {
                 existingArtist.UpdateRole(newArtist.Role);
             }
+        }
+    }
+    
+    public void SetLyrics(string? text, string languageCode = "en")
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            Lyrics = null;
+            return;
+        }
+
+        if (Lyrics == null)
+        {
+            Lyrics = Lyrics.Create(this.Id, languageCode, text);
+        }
+        else
+        {
+            Lyrics.UpdateText(text);
         }
     }
 

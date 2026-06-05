@@ -10,5 +10,6 @@ public record RecommendedTrackDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    IEnumerable<TrackArtistDto> Artists 
+    IEnumerable<TrackArtistDto> Artists, 
+    bool IsSaved = false 
 );
