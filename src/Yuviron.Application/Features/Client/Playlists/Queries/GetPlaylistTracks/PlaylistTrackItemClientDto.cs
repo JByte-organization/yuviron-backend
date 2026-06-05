@@ -10,5 +10,6 @@ public record PlaylistTrackItemClientDto(
     string? CoverUrl,        
     int DurationMs,           
     double Position,
-    DateTime AddedAt
+    DateTime AddedAt, 
+    bool IsSaved = false
 );

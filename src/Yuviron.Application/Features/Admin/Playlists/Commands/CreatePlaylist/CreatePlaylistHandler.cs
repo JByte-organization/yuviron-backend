@@ -1,8 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; 
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -15,9 +18,9 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
     private readonly ICurrentUserService _currentUser;
 
     public CreatePlaylistHandler(
-        IApplicationDbContext context, 
+        IApplicationDbContext context,
         TimeProvider timeProvider,
-        ICurrentUserService currentUser) 
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -28,15 +31,20 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         
-        var userId = request.IsEditorial ? (Guid?)null : request.OwnerUserId;
+        // Если редакторский - принудительно null. Если нет - берем из реквеста.
+        var targetUserId = request.IsEditorial ? (Guid?)null : request.OwnerUserId;
+        var targetArtistId = request.IsEditorial ? (Guid?)null : request.ArtistId;
 
-        if (userId.HasValue)
+        if (targetUserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == userId.Value, cancellationToken);
-            if (!userExists)
-            {
-                throw new NotFoundException(nameof(User), userId.Value);
-            }
+            var userExists = await _context.Users.AnyAsync(u => u.Id == targetUserId.Value, cancellationToken);
+            if (!userExists) throw new NotFoundException(nameof(User), targetUserId.Value);
+        }
+
+        if (targetArtistId.HasValue)
+        {
+            var artistExists = await _context.Artists.AnyAsync(a => a.Id == targetArtistId.Value, cancellationToken);
+            if (!artistExists) throw new NotFoundException(nameof(Artist), targetArtistId.Value);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -49,13 +57,14 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         }
 
         var playlist = Playlist.Create(
-            userId, 
-            request.Title,
-            request.Description,
-            coverClaim?.FinalPath, 
-            request.Visibility,
-            request.IsEditorial,
-            utcNow
+            userId: targetUserId,
+            artistId: targetArtistId, 
+            title: request.Title,
+            description: request.Description,
+            coverUrl: coverClaim?.FinalPath,
+            visibility: request.Visibility,
+            isEditorial: request.IsEditorial,
+            utcNow: utcNow
         );
 
         if (coverClaim != null)

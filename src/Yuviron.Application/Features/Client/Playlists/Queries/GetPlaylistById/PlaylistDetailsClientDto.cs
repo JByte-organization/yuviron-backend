@@ -16,5 +16,6 @@ public record PlaylistDetailsClientDto(
     int TotalTracks,
     int TotalDurationMs,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt, 
+    bool IsSaved = false
 );

@@ -1,5 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
@@ -29,12 +32,8 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var playlist = await _context.Playlists
-            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken);
-
-        if (playlist is null)
-        {
-            throw new NotFoundException(nameof(Playlist), request.PlaylistId);
-        }
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
         if (playlist.UserId != userId)
         {
@@ -59,7 +58,8 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             coverUrl: finalCoverUrl,
             visibility: request.Visibility ?? playlist.Visibility, 
             isEditorial: playlist.IsEditorial,
-            userId: playlist.UserId,
+            userId: playlist.UserId, 
+            artistId: playlist.ArtistId,
             utcNow: utcNow
         );
 
