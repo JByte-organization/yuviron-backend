@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Exceptions;
+using Yuviron.Domain.Entities;
 
 namespace Yuviron.Application.Features.Client.Notifications.Commands.MarkAsRead;
 
@@ -21,15 +22,17 @@ public sealed class MarkNotificationAsReadHandler : IRequestHandler<MarkNotifica
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var notification = await _context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == request.NotificationId && n.UserId == userId, cancellationToken);
+        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
+    
+        if (notification == null) 
+            throw new NotFoundException(nameof(Notification), request.NotificationId);
 
-        if (notification == null)
-            throw new NotFoundException(nameof(Domain.Entities.Notification), request.NotificationId);
+        // Потом проверяем права
+        if (notification.UserId != userId) 
+            throw new ForbiddenException("You cannot mark this notification as read.");
 
         notification.MarkAsRead();
         await _context.SaveChangesAsync(cancellationToken);
-
         return Unit.Value;
     }
 }
