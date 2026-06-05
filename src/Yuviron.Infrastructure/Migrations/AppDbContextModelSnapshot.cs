@@ -539,6 +539,65 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("banners", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.BannerRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<Guid?>("AlbumId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("BannerUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StripeSessionId")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlbumId");
+
+                    b.HasIndex("ArtistId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.ToTable("banner_requests", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Complaint", b =>
                 {
                     b.Property<Guid>("Id")
@@ -862,33 +921,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("lyrics", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.LyricsSegment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("EndMs")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StartMs")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<Guid>("TrackId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TrackId", "StartMs");
-
-                    b.ToTable("lyrics_segments", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Mood", b =>
@@ -1222,6 +1254,9 @@ namespace Yuviron.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("ArtistId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("CoverUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("varchar(2048)");
@@ -1254,6 +1289,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ArtistId");
 
                     b.HasIndex("IsDeleted");
 
@@ -1944,6 +1981,11 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
                     b.Property<string>("LastIpAddress")
                         .IsRequired()
                         .HasMaxLength(45)
@@ -1957,7 +1999,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "DeviceName", "BrowserName");
+                    b.HasIndex("UserId", "Fingerprint")
+                        .IsUnique();
 
                     b.ToTable("user_devices", (string)null);
                 });
@@ -2079,6 +2122,24 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasIndex("AlbumId");
 
                     b.ToTable("user_saved_albums", (string)null);
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserSavedPlaylist", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("PlaylistId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("UserId", "PlaylistId");
+
+                    b.HasIndex("PlaylistId");
+
+                    b.ToTable("user_saved_playlist", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserSavedTrack", b =>
@@ -2367,6 +2428,32 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Artist");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.BannerRequest", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Album", "Album")
+                        .WithMany()
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithMany()
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Album");
+
+                    b.Navigation("Artist");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Complaint", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.User", "CreatedByUser")
@@ -2439,19 +2526,8 @@ namespace Yuviron.Infrastructure.Migrations
             modelBuilder.Entity("Yuviron.Domain.Entities.Lyrics", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Track", "Track")
-                        .WithOne()
+                        .WithOne("Lyrics")
                         .HasForeignKey("Yuviron.Domain.Entities.Lyrics", "TrackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Track");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.LyricsSegment", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.Track", "Track")
-                        .WithMany()
-                        .HasForeignKey("TrackId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2538,10 +2614,16 @@ namespace Yuviron.Infrastructure.Migrations
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Playlist", b =>
                 {
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithMany()
+                        .HasForeignKey("ArtistId");
+
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Artist");
 
                     b.Navigation("User");
                 });
@@ -2949,6 +3031,25 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserSavedPlaylist", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Playlist", "Playlist")
+                        .WithMany()
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yuviron.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserSavedTrack", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Track", "Track")
@@ -3107,6 +3208,8 @@ namespace Yuviron.Infrastructure.Migrations
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Track", b =>
                 {
+                    b.Navigation("Lyrics");
+
                     b.Navigation("TrackArtists");
 
                     b.Navigation("TrackGenres");
