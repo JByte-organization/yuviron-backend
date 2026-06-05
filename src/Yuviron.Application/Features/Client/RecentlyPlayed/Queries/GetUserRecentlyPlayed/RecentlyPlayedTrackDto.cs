@@ -8,5 +8,6 @@ public record RecentlyPlayedTrackDto(
     string Title,
     IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl,
-    DateTime LastPlayedAt
+    DateTime LastPlayedAt, 
+    bool IsSaved = false
 );

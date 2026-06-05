@@ -63,7 +63,8 @@ public static class PlaylistSearchQueryExtensions
             p.Id,
             p.Title,
             p.IsEditorial ? "Yuviron" : (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "User"),
-            p.CoverUrl
+            p.CoverUrl,
+            false
         ));
     }
 

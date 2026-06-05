@@ -1,6 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
 using Yuviron.Domain.Entities;
@@ -12,11 +18,19 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetArtistPopularReleasesHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetArtistPopularReleasesHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<List<ArtistAlbumDto>> Handle(GetArtistPopularReleasesQuery request, CancellationToken cancellationToken)
@@ -31,11 +45,9 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var publicTracks = _context.Tracks
-            .AsNoTracking()
-            .AvailableForPublic(utcNow);
+        var publicTracks = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow);
 
-        return await _context.Albums
+        var albums = await _context.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
@@ -59,8 +71,17 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
                 a.Id,
                 a.Title,
                 a.CoverUrl,
-                a.ReleaseDate.Year
+                a.ReleaseDate.Year,
+                false 
             ))
             .ToListAsync(cancellationToken);
+
+        return await albums.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "saved_albums", 
+            x => x.Id, 
+            (x, saved) => x with { IsSaved = saved }, 
+            cancellationToken);
     }
 }

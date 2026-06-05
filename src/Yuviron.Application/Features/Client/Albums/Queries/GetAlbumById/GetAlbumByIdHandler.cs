@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
@@ -13,11 +15,19 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetAlbumByIdHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetAlbumByIdHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<AlbumDetailsDto> Handle(GetAlbumByIdQuery request, CancellationToken cancellationToken)
@@ -41,15 +51,19 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
                                     && t.ProcessingStatus == TrackProcessingStatus.Ready),
                 a.AlbumArtists
                     .Where(aa => !aa.Artist.IsDeleted)
-                    .Select(aa => new TrackArtistDto(aa.Artist.Id, aa.Artist.Name, aa.Role))
+                    .Select(aa => new TrackArtistDto(aa.Artist.Id, aa.Artist.Name, aa.Role)),
+                false 
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (album is null)
-        {
-            throw new NotFoundException(nameof(Album), request.AlbumId);
-        }
+        if (album is null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
-        return album;
+        return await album.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "saved_albums", 
+            x => x.Id, 
+            (x, saved) => x with { IsSaved = saved }, 
+            cancellationToken);
     }
 }

@@ -1,10 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching; 
+using Yuviron.Application.Abstractions.Services; 
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Enums;
@@ -17,37 +16,28 @@ namespace Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylis
 public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPublicPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICacheService _cache; 
+    private readonly ICurrentUserService _currentUser;
 
-    public GetUserPublicPlaylistsHandler(IApplicationDbContext context)
+    public GetUserPublicPlaylistsHandler(
+        IApplicationDbContext context,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<PaginatedList<UserPlaylistDto>> Handle(GetUserPublicPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        var userExists = await _context.Users
-            .AnyAsync(u => u.Id == request.TargetUserId , cancellationToken);
-        
-        if (!userExists)
-        {
-            throw new NotFoundException(nameof(User), request.TargetUserId);
-        }
+        var userExists = await _context.Users.AnyAsync(u => u.Id == request.TargetUserId , cancellationToken);
+        if (!userExists) throw new NotFoundException(nameof(User), request.TargetUserId);
 
-        var query = _context.Playlists
-            .AsNoTracking()
-            .Where(p => p.UserId == request.TargetUserId 
-                         
-                        && p.Visibility == PlaylistVisibility.Public);
+        var query = _context.Playlists.AsNoTracking().Where(p => p.UserId == request.TargetUserId && p.Visibility == PlaylistVisibility.Public && p.ArtistId == null);
 
-        var sortedQuery = query.ApplySorting(
-            request.SortBy, 
-            request.SortOrder,
-            defaultSortBy: nameof(Yuviron.Domain.Entities.Playlist.CreatedAt), 
-            defaultDesc: true,
-            mapping: new Dictionary<string, Expression<Func<Domain.Entities.Playlist, object>>>
-            {
-                [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted)
-            });
+        var sortedQuery = query.ApplySorting(request.SortBy, request.SortOrder, defaultSortBy: nameof(Yuviron.Domain.Entities.Playlist.CreatedAt), defaultDesc: true,
+            mapping: new Dictionary<string, Expression<Func<Domain.Entities.Playlist, object>>> { [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted) });
 
         var projectedQuery = sortedQuery.Select(p => new UserPlaylistDto(
             p.Id,
@@ -57,9 +47,18 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
             p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
             p.CreatedAt,
             p.UpdatedAt,
-            false 
+            false, 
+            false  
         ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var result = await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+
+        return await result.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "saved_playlists", 
+            x => x.Id, 
+            (x, saved) => x with { IsSaved = saved }, 
+            cancellationToken);
     }
 }

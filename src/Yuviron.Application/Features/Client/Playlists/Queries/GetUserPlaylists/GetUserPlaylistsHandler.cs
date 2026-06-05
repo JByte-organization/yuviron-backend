@@ -30,7 +30,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
 
         var query = _context.Playlists
             .AsNoTracking()
-            .Where(p => p.UserId == userId );
+            .Where(p => p.UserId == userId && p.ArtistId == null); 
 
         var sortedQuery = query.ApplySorting(
             request.SortBy, 
@@ -50,7 +50,8 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
             p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted),
             p.CreatedAt,
             p.UpdatedAt,
-            false 
+            false,
+            false
         ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

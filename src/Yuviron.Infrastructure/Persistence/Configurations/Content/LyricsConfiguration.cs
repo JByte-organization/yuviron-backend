@@ -16,7 +16,7 @@ public class LyricsConfiguration : IEntityTypeConfiguration<Lyrics>
         builder.Property(x => x.PlainText).IsRequired();
 
         builder.HasOne(x => x.Track)
-            .WithOne() 
+            .WithOne(x => x.Lyrics)
             .HasForeignKey<Lyrics>(x => x.TrackId)
             .OnDelete(DeleteBehavior.Cascade);
     }

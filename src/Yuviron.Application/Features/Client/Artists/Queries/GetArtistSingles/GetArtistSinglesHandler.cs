@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Artists.Queries.GetArtistAlbums;
@@ -15,11 +17,17 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetArtistSinglesHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetArtistSinglesHandler(IApplicationDbContext context, TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistSinglesQuery request, CancellationToken cancellationToken)
@@ -55,9 +63,18 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
             a.Id,
             a.Title,
             a.CoverUrl,
-            a.ReleaseDate.Year
+            a.ReleaseDate.Year,
+            false // <-- ЯВНЫЙ FALSE
         ));
 
-        return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+        var result = await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);
+
+        return await result.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "saved_albums", 
+            x => x.Id, 
+            (x, saved) => x with { IsSaved = saved }, 
+            cancellationToken);
     }
 }

@@ -1,12 +1,17 @@
+using System;
+using System.Collections.Generic;
 using Yuviron.Domain.Enums;
 
-namespace Yuviron.Application.Features.Admin.Artists.Queries;
+namespace Yuviron.Application.Features.Admin.Artists.Queries; 
 
 public record ArtistOwnerDto(
     Guid UserId, 
     string Email, 
     string FirstName
 );
+
+public record AdminSocialLinkDto(string Type, string Url);
+public record AdminArtistPinDto(ArtistPinType EntityType, Guid EntityId, int Position);
 
 public record ArtistDetailsDto(
     Guid Id,
@@ -18,6 +23,8 @@ public record ArtistDetailsDto(
     VerificationStatus VerificationStatus,
     int TotalAlbums,   
     int TotalTracks,   
+    List<AdminSocialLinkDto> SocialLinks, 
+    List<AdminArtistPinDto> Pins,      
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

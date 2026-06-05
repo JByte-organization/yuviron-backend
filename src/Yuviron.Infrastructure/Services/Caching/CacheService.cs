@@ -182,4 +182,24 @@ public class CacheService : ICacheService
             return new Dictionary<string, double>();
         }
     }
+    
+    public async Task<bool> SetContainsAsync(string key, string member, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            return await db.SetContainsAsync(key, member);
+        }
+        catch (RedisConnectionException) { return false; }
+    }
+
+    public async Task<bool> SetRemoveAsync(string key, string member, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            return await db.SetRemoveAsync(key, member);
+        }
+        catch (RedisConnectionException) { return false; }
+    }
 }

@@ -1,4 +1,7 @@
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
@@ -37,11 +40,12 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         
         var playlist = Yuviron.Domain.Entities.Playlist.Create(
             userId: userId,
+            artistId: null, 
             title: request.Title, 
             description: null, 
             coverUrl: coverClaim?.FinalPath,
             visibility: request.Visibility,
-            isEditorial: false,
+            isEditorial: false, 
             utcNow: utcNow
         );
         

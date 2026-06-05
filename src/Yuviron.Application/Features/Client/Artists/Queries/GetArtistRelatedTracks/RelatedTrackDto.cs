@@ -8,5 +8,6 @@ public sealed record RelatedTrackDto(
     int DurationMs,
     bool Explicit,
     string? CoverUrl,
-    IEnumerable<TrackArtistDto> Artists
+    IEnumerable<TrackArtistDto> Artists, 
+    bool IsSaved = false
 );

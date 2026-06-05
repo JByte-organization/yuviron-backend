@@ -1,11 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Tracks.Commands.CreateTrack;
 using Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrack;
+using Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
+using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
+using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplete;
 
@@ -62,4 +70,33 @@ public class AdminTracksController : AdminApiControllerBase
         var result = await Mediator.Send(new GetTracksAutocompleteQuery(searchTerm, limit), ct);
         return Ok(result);
     }
+
+    // --- LYRICS ---
+    
+    [HttpGet("{id:guid}/lyrics")]
+    [ProducesResponseType(typeof(AdminTrackLyricsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminTrackLyricsDto>> GetTrackLyrics(Guid id, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetTrackLyricsQuery(id), ct);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/lyrics")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateTrackLyrics(Guid id, [FromBody] UpdateTrackLyricsRequest request, CancellationToken ct)
+    {
+        await Mediator.Send(new UpdateTrackLyricsCommand(id, request.LyricsText), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/lyrics")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteTrackLyrics(Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new DeleteTrackLyricsCommand(id), ct);
+        return NoContent();
+    }
 }
+
+public record UpdateTrackLyricsRequest(string LyricsText);

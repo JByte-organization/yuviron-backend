@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
 using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Features.Client.Home.Queries.GetSystemTopArtists;
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
 using Yuviron.Domain.Entities;
@@ -15,13 +16,19 @@ public class GetSystemTopArtistsHandlerTests
 {
     private readonly DbContextOptions<AppDbContext> _dbOptions;
     private readonly Mock<ICacheService> _cacheServiceMock;
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock; // +
 
     public GetSystemTopArtistsHandlerTests()
     {
         _dbOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
+            
         _cacheServiceMock = new Mock<ICacheService>();
+        _currentUserServiceMock = new Mock<ICurrentUserService>(); // +
+        
+        // Мокаем текущего юзера
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
     }
 
     [Fact]
@@ -46,7 +53,12 @@ public class GetSystemTopArtistsHandlerTests
         _cacheServiceMock.Setup(x => x.GetAsync<List<TopArtistDto>>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((List<TopArtistDto>?)null);
 
-        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object);
+        // Мокаем гидратацию: пусть для Global Superstar вернется true (юзер подписан на него)
+        _cacheServiceMock.Setup(x => x.SetContainsAsync(It.IsAny<string>(), artist2.Id.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Добавили ICurrentUserService
+        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
         var query = new GetSystemTopArtistsQuery(Limit: 2); 
 
         // Act
@@ -55,7 +67,10 @@ public class GetSystemTopArtistsHandlerTests
         // Assert
         result.Should().HaveCount(2); 
         result[0].Name.Should().Be("Global Superstar"); 
+        result[0].IsFollowed.Should().BeTrue(); // Проверяем нашу магию кэша!
+        
         result[1].Name.Should().Be("Mid-tier Artist");  
+        result[1].IsFollowed.Should().BeFalse(); // На этого не подписан
 
         _cacheServiceMock.Verify(x => x.SetAsync(
             "system_top_artists_limit_2", 
@@ -72,13 +87,14 @@ public class GetSystemTopArtistsHandlerTests
         
         var cachedArtists = new List<TopArtistDto>
         {
-            new TopArtistDto(Guid.NewGuid(), "Cached Artist", null, 999)
+            new TopArtistDto(Guid.NewGuid(), "Cached Artist", null, 999) // IsFollowed по умолчанию false
         };
 
         _cacheServiceMock.Setup(x => x.GetAsync<List<TopArtistDto>>("system_top_artists_limit_5", It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedArtists);
 
-        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object);
+        // Добавили ICurrentUserService
+        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
 
         // Act
         var result = await handler.Handle(new GetSystemTopArtistsQuery(Limit: 5), CancellationToken.None);

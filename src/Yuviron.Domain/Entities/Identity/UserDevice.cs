@@ -7,9 +7,10 @@ public class UserDevice : Entity
 {
     public Guid UserId { get; private set; }
     
+    public string Fingerprint { get; private set; } = string.Empty; // <-- НОВАЯ КОЛОНКА
+    
     public string DeviceName { get; private set; } = string.Empty; 
     public string BrowserName { get; private set; } = string.Empty; 
-    
     public string LastIpAddress { get; private set; } = string.Empty; 
     
     public DateTime CreatedAt { get; private set; }
@@ -19,12 +20,13 @@ public class UserDevice : Entity
 
     private UserDevice() { }
 
-    public static UserDevice Create(Guid userId, string deviceName, string browserName, string ipAddress, DateTime utcNow)
+    public static UserDevice Create(Guid userId, string fingerprint, string deviceName, string browserName, string ipAddress, DateTime utcNow)
     {
         return new UserDevice
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            Fingerprint = fingerprint, 
             DeviceName = deviceName,
             BrowserName = browserName,
             LastIpAddress = ipAddress,

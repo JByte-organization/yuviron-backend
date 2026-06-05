@@ -8,5 +8,6 @@ public record TopTrackDto(
     Guid Id,
     string Title,
     IEnumerable<TrackArtistDto> Artists,
-    string? CoverUrl
+    string? CoverUrl,
+    bool IsSaved = false
 );

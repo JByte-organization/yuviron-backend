@@ -29,9 +29,9 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             defaultSortBy: nameof(Playlist.CreatedAt),
             mapping: new Dictionary<string, Expression<Func<Playlist, object>>>
             {
-                ["CreatorName"] = p => p.IsEditorial 
-                    ? "YUVIRON" 
-                    : (p.User != null ? p.User.Profile.FirstName : "Unknown"),
+                ["CreatorName"] = p => p.IsEditorial ? "YUVIRON" : 
+                                       p.Artist != null ? p.Artist.Name : 
+                                       (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "Unknown"),
             
                 ["TracksCount"] = p => p.PlaylistTracks.Count()
             });
@@ -43,7 +43,8 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
             p.Visibility,
             p.IsEditorial,
             p.IsEditorial ? "YUVIRON" : 
-                (p.User != null ? p.User.Profile.FirstName : "Unknown"),
+                p.Artist != null ? p.Artist.Name :
+                (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "Unknown"),
             p.PlaylistTracks.Count(),
             p.CreatedAt,
             p.UpdatedAt

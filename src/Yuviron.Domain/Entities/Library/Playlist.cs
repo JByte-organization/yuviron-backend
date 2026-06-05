@@ -7,6 +7,10 @@ namespace Yuviron.Domain.Entities;
 public class Playlist : Entity
 {
     public Guid? UserId { get; private set; } 
+    
+    // ДОБАВЛЕНО: Привязка к профилю артиста (если плейлист кураторский)
+    public Guid? ArtistId { get; private set; } 
+    
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public string? CoverUrl { get; private set; }
@@ -19,12 +23,16 @@ public class Playlist : Entity
     public DateTime UpdatedAt { get; private set; }
 
     public virtual User? User { get; private set; }
+    
+    public virtual Artist? Artist { get; private set; } 
+    
     public virtual ICollection<PlaylistTrack> PlaylistTracks { get; private set; } = new List<PlaylistTrack>();
 
     private Playlist() { }
 
     public static Playlist Create(
         Guid? userId, 
+        Guid? artistId,
         string title, 
         string? description, 
         string? coverUrl, 
@@ -32,16 +40,17 @@ public class Playlist : Entity
         bool isEditorial, 
         DateTime utcNow)
     {
-        
         if (isEditorial)
         {
             userId = null;
+            artistId = null;
         }
         
         return new Playlist
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            ArtistId = artistId, 
             Title = title.Trim(),
             Description = description?.Trim(),
             CoverUrl = coverUrl,
@@ -52,7 +61,6 @@ public class Playlist : Entity
             UpdatedAt = utcNow
         };
     }
-   
 
     public void Update(
         string title, 
@@ -61,11 +69,13 @@ public class Playlist : Entity
         PlaylistVisibility visibility,
         bool isEditorial, 
         Guid? userId,   
+        Guid? artistId, 
         DateTime utcNow)
     {
         if (isEditorial)
         {
             userId = null;
+            artistId = null;
         }
 
         Title = title.Trim();
@@ -75,6 +85,7 @@ public class Playlist : Entity
         
         IsEditorial = isEditorial; 
         UserId = userId;    
+        ArtistId = artistId; 
         
         UpdatedAt = utcNow;
     }

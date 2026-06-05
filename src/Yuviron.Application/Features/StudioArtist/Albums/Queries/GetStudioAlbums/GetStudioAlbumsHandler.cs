@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common;
@@ -29,13 +31,10 @@ public sealed class GetStudioAlbumsHandler : IRequestHandler<GetStudioAlbumsQuer
             .HasManagementAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
-        if (!hasPermission)
-        {
-            throw new ForbiddenException("You do not have permission to view this artist's content.");
-        }
+        if (!hasPermission) throw new ForbiddenException("No access to this artist's content.");
 
         var query = _context.Albums.AsNoTracking()
-            .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == request.ArtistId));
+            .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == request.ArtistId) && !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Title.Contains(request.SearchTerm));
@@ -44,23 +43,16 @@ public sealed class GetStudioAlbumsHandler : IRequestHandler<GetStudioAlbumsQuer
             request.SortBy,
             request.SortOrder,
             defaultSortBy: nameof(Album.CreatedAt),
-            mapping: new Dictionary<string, Expression<Func<Album, object>>>
-            {
-                [nameof(StudioAlbumListItemDto.TracksCount)] = a => a.Tracks.Count(),
-                [nameof(StudioAlbumListItemDto.TotalPlays)] = a => a.Tracks.Sum(t => t.PlayCount)
-            });
+            defaultDesc: true);
 
         var projectedQuery = sortedQuery.Select(a => new StudioAlbumListItemDto(
             a.Id,
             a.Title,
             a.CoverUrl,
-            a.Tracks.Count(),                 
-            a.Tracks.Sum(t => t.PlayCount),   
-            a.ReleaseDate,
             a.ReleaseType,
             a.VisibilityStatus,
-            a.CreatedAt,
-            a.UpdatedAt
+            a.ReleaseDate,
+            a.CreatedAt
         ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

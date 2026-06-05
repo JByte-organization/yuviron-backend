@@ -1,5 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Models;
@@ -27,7 +31,7 @@ public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumBy
 
         var albumData = await _context.Albums
             .AsNoTracking()
-            .Where(a => a.Id == request.AlbumId)
+            .Where(a => a.Id == request.AlbumId && !a.IsDeleted)
             .Select(a => new 
             {
                 ArtistIds = a.AlbumArtists.Select(aa => aa.ArtistId).ToList(),
@@ -40,9 +44,9 @@ public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumBy
                     a.ReleaseType,
                     a.VisibilityStatus,
                     a.ScheduledPublishAt,
-                    a.Tracks.Count(),                           
-                    a.Tracks.Sum(t => (long)t.DurationMs),      
-                    a.Tracks.Sum(t => t.PlayCount),             
+                    a.Tracks.Count(t => !t.IsDeleted),                           
+                    a.Tracks.Where(t => !t.IsDeleted).Sum(t => (long)t.DurationMs),      
+                    a.Tracks.Where(t => !t.IsDeleted).Sum(t => t.PlayCount),             
                     a.CreatedAt,
                     a.UpdatedAt,
                     a.AlbumArtists.Select(aa => new TrackArtistDto(aa.ArtistId, aa.Artist.Name, aa.Role))

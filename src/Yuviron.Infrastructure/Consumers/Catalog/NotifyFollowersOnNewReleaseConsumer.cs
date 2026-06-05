@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +22,7 @@ public class NotifyFollowersOnNewReleaseConsumer : IConsumer<NewReleasePublished
     public async Task Consume(ConsumeContext<NewReleasePublishedEvent> context)
     {
         var msg = context.Message;
-        var followerIds = await _context.UserFollowArtists.AsNoTracking().Where(f => f.ArtistId == msg.ArtistId).Select(f => f.UserId).ToListAsync(context.CancellationToken);
+        var followerIds = await _context.UserFollowArtists.AsNoTracking().Where(f => f.ArtistId == msg.ArtistId && f.NotifyNewReleases).Select(f => f.UserId).ToListAsync(context.CancellationToken);
 
         if (!followerIds.Any()) return; 
 

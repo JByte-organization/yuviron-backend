@@ -7,5 +7,6 @@ public enum ArtistPinType
 { 
     Unknown = 0, 
     Track = 1, 
-    Album = 2 
+    Album = 2 ,
+    Playlist = 3
 }

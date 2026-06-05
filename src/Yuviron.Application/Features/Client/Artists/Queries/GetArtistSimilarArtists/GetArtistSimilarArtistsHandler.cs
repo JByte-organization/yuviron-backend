@@ -1,6 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
@@ -12,11 +18,19 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetArtistSimilarArtistsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetArtistSimilarArtistsHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<List<SimilarArtistDto>> Handle(GetArtistSimilarArtistsQuery request, CancellationToken cancellationToken)
@@ -25,28 +39,20 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
-        if (!artistExists)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
+        if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var artistGenreIds = await _context.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
-            .SelectMany(t => t.TrackGenres
-                
-                .Select(tg => tg.GenreId))
+            .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        if (artistGenreIds.Count == 0)
-        {
-            return new List<SimilarArtistDto>();
-        }
+        if (artistGenreIds.Count == 0) return new List<SimilarArtistDto>();
 
-        return await _context.Artists
+        var artists = await _context.Artists
             .AsNoTracking()
             .Where(a => a.Id != request.ArtistId )
             .Where(a => a.TrackArtists.Any(ta =>
@@ -90,8 +96,17 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
                 x.Name,
                 x.AvatarUrl,
                 x.VerificationStatus,
-                x.FollowersCount
+                x.FollowersCount,
+                false 
             ))
             .ToListAsync(cancellationToken);
+
+        return await artists.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "followed_artists", 
+            x => x.Id, 
+            (x, followed) => x with { IsFollowed = followed }, 
+            cancellationToken);
     }
 }

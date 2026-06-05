@@ -1,6 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -9,26 +15,24 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistById;
 public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, ArtistDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetArtistByIdHandler(IApplicationDbContext context)
+    public GetArtistByIdHandler(
+        IApplicationDbContext context,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<ArtistDetailsDto> Handle(GetArtistByIdQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
-            .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
-
-        if (!artistExists)
-        {
-            throw new NotFoundException(nameof(Artist), request.ArtistId);
-        }
-
         var artist = await _context.Artists
             .AsNoTracking()
-            .Where(a => a.Id == request.ArtistId )
+            .Where(a => a.Id == request.ArtistId)
             .Select(a => new ArtistDetailsDto(
                 a.Id,
                 a.Name,
@@ -36,10 +40,26 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                 a.AvatarUrl,
                 a.BannerUrl,
                 a.VerificationStatus,
-                a.MonthlyListenersCount
+                a.MonthlyListenersCount,
+                a.SocialLinks.Select(sl => new ClientSocialLinkDto(
+                    sl.Type, 
+                    sl.Url
+                )).ToList(),
+                false 
             ))
-            .FirstAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken); 
 
-        return artist;
+        if (artist == null)
+        {
+            throw new NotFoundException(nameof(Artist), request.ArtistId);
+        }
+
+        return await artist.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "followed_artists", 
+            x => x.Id, 
+            (x, followed) => x with { IsFollowed = followed }, 
+            cancellationToken);
     }
 }

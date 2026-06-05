@@ -5,5 +5,6 @@ public record ArtistAlbumDto(
     Guid Id,
     string Title,
     string? CoverUrl,
-    int ReleaseYear
+    int ReleaseYear, 
+    bool IsSaved = false
 );

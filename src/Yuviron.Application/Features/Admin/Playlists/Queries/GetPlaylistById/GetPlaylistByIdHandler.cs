@@ -24,6 +24,8 @@ public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuer
                                p.CoverUrl,
                                p.Visibility,
                                p.IsEditorial,
+                               p.ArtistId,                             
+                               p.Artist != null ? p.Artist.Name : null, 
                                p.IsEditorial || p.User == null ? null : new PlaylistCreatorDto(
                                    p.UserId,
                                    p.User.Profile.FirstName,

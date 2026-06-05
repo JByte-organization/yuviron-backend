@@ -6,5 +6,6 @@ public sealed record ArtistPlaylistDto(
     string CreatorName,
     string? CoverUrl,
     int TracksCount,
-    bool IsEditorial
+    bool IsEditorial, 
+    bool IsSaved = false
 );

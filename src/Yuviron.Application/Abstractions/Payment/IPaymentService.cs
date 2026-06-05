@@ -16,4 +16,7 @@ public interface IPaymentService
         CancellationToken cancellationToken = default);
 
     Task CancelSubscriptionAsync(string stripeSubscriptionId, CancellationToken cancellationToken = default);
+    
+    Task<CheckoutSessionResult> CreateBannerCheckoutSessionAsync(User user, BannerRequest bannerRequest, decimal amount, string currency, string successUrl, string cancelUrl, CancellationToken cancellationToken = default);
+    Task RefundPaymentAsync(string paymentIntentId, CancellationToken cancellationToken = default);
 }

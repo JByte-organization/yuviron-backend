@@ -12,6 +12,10 @@ public class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevice>
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Fingerprint)
+            .HasMaxLength(256)
+            .IsRequired(); 
+
         builder.Property(x => x.DeviceName)
             .HasMaxLength(100)
             .IsRequired();
@@ -29,6 +33,6 @@ public class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevice>
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => new { x.UserId, x.DeviceName, x.BrowserName });
+        builder.HasIndex(x => new { x.UserId, x.Fingerprint }).IsUnique(); 
     }
 }

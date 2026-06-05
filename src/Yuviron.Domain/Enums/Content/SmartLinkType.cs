@@ -5,8 +5,8 @@ namespace Yuviron.Domain.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum SmartLinkType
 {
-    Unknown = 0,
-    Track = 1,
+    Artist = 1,
     Album = 2,
-    Artist = 3
+    Track = 3,
+    Playlist = 4 
 }

@@ -87,4 +87,60 @@ public class StripePaymentService : IPaymentService
             CancelAtPeriodEnd = true 
         }, cancellationToken: cancellationToken);
     }
+    
+    public async Task<CheckoutSessionResult> CreateBannerCheckoutSessionAsync(
+        User user, 
+        BannerRequest bannerRequest, 
+        decimal amount, 
+        string currency, 
+        string successUrl, 
+        string cancelUrl, 
+        CancellationToken cancellationToken = default)
+    {
+        var options = new SessionCreateOptions
+        {
+            PaymentMethodTypes = new List<string> { "card" },
+            CustomerEmail = user.Email,
+            LineItems = new List<SessionLineItemOptions>
+            {
+                new SessionLineItemOptions
+                {
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        UnitAmountDecimal = amount * 100m,
+                        Currency = currency.ToLower(),
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = $"Banner Promotion: {bannerRequest.Title}",
+                            Description = "Yuviron Homepage Banner Advertisement" 
+                        },
+                    },
+                    Quantity = 1,
+                },
+            },
+            Mode = "payment",
+            SuccessUrl = successUrl,
+            CancelUrl = cancelUrl,
+            ClientReferenceId = user.Id.ToString(), 
+            Metadata = new Dictionary<string, string>
+            {
+                { "BannerRequestId", bannerRequest.Id.ToString() } 
+            }
+        };
+
+        var service = new SessionService();
+        Session session = await service.CreateAsync(options, cancellationToken: cancellationToken);
+
+        return new CheckoutSessionResult(session.Id, session.Url);
+    }
+
+    public async Task RefundPaymentAsync(string paymentIntentId, CancellationToken cancellationToken = default)
+    {
+        var options = new RefundCreateOptions
+        {
+            PaymentIntent = paymentIntentId
+        };
+        var service = new RefundService();
+        await service.CreateAsync(options, cancellationToken: cancellationToken);
+    }
 }
