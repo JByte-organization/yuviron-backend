@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackById;
+using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackLyrics;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackRecommendations;
 using Yuviron.Application.Features.Client.Tracks.Queries.GetTrackStreamUrl;
 
@@ -48,6 +49,17 @@ public class TracksController : ApiControllerBase
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
 
         var result = await Mediator.Send(new GetTrackStreamUrlQuery(id, ipAddress), ct);
+        return Ok(result);
+    }
+
+    
+    [HttpGet("{id:guid}/lyrics")]
+    [AllowAnonymous] 
+    [ProducesResponseType(typeof(TrackLyricsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTrackLyrics([FromRoute] Guid id, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetTrackLyricsQuery(id), ct);
         return Ok(result);
     }
 }
