@@ -7,5 +7,6 @@ public sealed record SimilarArtistDto(
     string Name,
     string? AvatarUrl,
     VerificationStatus VerificationStatus,
-    int FollowersCount
+    int FollowersCount, 
+    bool IsFollowed = false
 );

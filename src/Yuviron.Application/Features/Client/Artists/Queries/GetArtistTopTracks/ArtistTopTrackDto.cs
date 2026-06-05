@@ -11,5 +11,6 @@ public record ArtistTopTrackDto(
     long PlayCount,
     Guid AlbumId,
     string AlbumTitle,
-    IEnumerable<SimpleArtistDto> Artists 
+    IEnumerable<SimpleArtistDto> Artists, 
+    bool IsSaved = false 
 );

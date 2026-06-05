@@ -6,13 +6,15 @@ public sealed record SearchTrackDto(
     Guid Id, 
     string Title, 
     IEnumerable<TrackArtistDto> Artists,
-    string? CoverUrl
+    string? CoverUrl, 
+    bool IsSaved = false
 );
 
 public sealed record SearchArtistDto(
     Guid Id, 
     string Name, 
-    string? AvatarUrl
+    string? AvatarUrl, 
+    bool IsFollowed = false
 );
 
 public sealed record SearchAlbumDto(
@@ -20,12 +22,14 @@ public sealed record SearchAlbumDto(
     string Title,
     IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl,
-    int ReleaseYear
+    int ReleaseYear, 
+    bool IsSaved = false
 );
 
 public sealed record SearchPlaylistDto(
     Guid Id,
     string Title,
     string CreatorName,
-    string? CoverUrl
+    string? CoverUrl, 
+    bool IsSaved = false
 );

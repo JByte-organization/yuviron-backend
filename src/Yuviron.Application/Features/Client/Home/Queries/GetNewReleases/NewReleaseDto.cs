@@ -9,5 +9,6 @@ public record NewReleaseDto(
     string Title,
     IEnumerable<TrackArtistDto> Artists,
     string? CoverUrl,
-    int TracksCount
+    int TracksCount, 
+    bool IsSaved = false
 );

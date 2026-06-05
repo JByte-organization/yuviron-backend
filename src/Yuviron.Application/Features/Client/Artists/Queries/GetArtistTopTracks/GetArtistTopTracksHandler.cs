@@ -1,7 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
-using Yuviron.Application.Abstractions.Security;
+using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Models;
 using Yuviron.Application.Extensions;
@@ -14,20 +18,26 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache;
+    private readonly ICurrentUserService _currentUser;
 
     public GetArtistTopTracksHandler(
         IApplicationDbContext context,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<List<ArtistTopTrackDto>> Handle(GetArtistTopTracksQuery request, CancellationToken cancellationToken)
     {
         var artistExists = await _context.Artists
             .AsNoTracking()
-            .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
+            .AnyAsync(a => a.Id == request.ArtistId, cancellationToken);
 
         if (!artistExists)
         {
@@ -53,13 +63,11 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
                 t.PlayCount,
                 t.AlbumId,
                 AlbumTitle = t.Album != null ? t.Album.Title : "Unknown Album",
-                Artists = t.TrackArtists
-                    
-                    .Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
+                Artists = t.TrackArtists.Select(ta => new SimpleArtistDto(ta.Artist.Id, ta.Artist.Name))
             })
             .ToListAsync(cancellationToken);
         
-        return rawTracks.Select(t => new ArtistTopTrackDto(
+        var dtos = rawTracks.Select(t => new ArtistTopTrackDto(
             t.Id,
             t.Title,
             t.DurationMs,
@@ -68,7 +76,16 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
             t.PlayCount,
             t.AlbumId,
             t.AlbumTitle,
-            t.Artists
+            t.Artists,
+            false 
         )).ToList();
+
+        return await dtos.EnrichWithCacheAsync(
+            _cache, 
+            _currentUser.UserId, 
+            "saved_tracks", 
+            x => x.Id, 
+            (x, saved) => x with { IsSaved = saved }, 
+            cancellationToken);
     }
 }

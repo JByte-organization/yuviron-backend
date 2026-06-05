@@ -5,5 +5,6 @@ public record TopArtistDto(
     Guid Id,
     string Name,
     string? AvatarUrl,
-    int FollowersCount
+    int FollowersCount, 
+    bool IsFollowed = false
 );

@@ -38,6 +38,10 @@ public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, A
                 a.VerificationStatus,
                 a.AlbumArtists.Count(), 
                 a.TrackArtists.Count(), 
+                
+                a.SocialLinks.Select(sl => new AdminSocialLinkDto(sl.Type, sl.Url)).ToList(),
+                a.Pins.OrderBy(p => p.Position).Select(p => new AdminArtistPinDto(p.EntityType, p.EntityId, p.Position)).ToList(),
+                
                 a.CreatedAt,
                 a.UpdatedAt
             ))

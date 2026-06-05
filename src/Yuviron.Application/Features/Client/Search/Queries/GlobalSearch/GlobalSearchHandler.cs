@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Common.Utilities;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Search.Queries.SearchGenres;
@@ -11,11 +13,19 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ICacheService _cache; 
+    private readonly ICurrentUserService _currentUser; 
 
-    public GlobalSearchHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GlobalSearchHandler(
+        IApplicationDbContext context, 
+        TimeProvider timeProvider,
+        ICacheService cache,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
+        _currentUser = currentUser;
     }
 
     public async Task<GlobalSearchResponse> Handle(GlobalSearchQuery request, CancellationToken cancellationToken)
@@ -29,6 +39,20 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         var playlistResult = await SearchPlaylistsAsync(searchTerm, utcNow, request.Limit, cancellationToken);
         var genreResult = await SearchGenresAsync(searchTerm, utcNow, request.Limit, cancellationToken);
 
+        var userId = _currentUser.UserId;
+        
+        var enrichedTracks = await trackResult.Items.EnrichWithCacheAsync(
+            _cache, userId, "saved_tracks", x => x.Id, (x, saved) => x with { IsSaved = saved }, cancellationToken);
+            
+        var enrichedArtists = await artistResult.Items.EnrichWithCacheAsync(
+            _cache, userId, "followed_artists", x => x.Id, (x, followed) => x with { IsFollowed = followed }, cancellationToken);
+            
+        var enrichedAlbums = await albumResult.Items.EnrichWithCacheAsync(
+            _cache, userId, "saved_albums", x => x.Id, (x, saved) => x with { IsSaved = saved }, cancellationToken);
+            
+        var enrichedPlaylists = await playlistResult.Items.EnrichWithCacheAsync(
+            _cache, userId, "saved_playlists", x => x.Id, (x, saved) => x with { IsSaved = saved }, cancellationToken);
+        
         var total = trackResult.TotalCount +
                     artistResult.TotalCount +
                     albumResult.TotalCount +

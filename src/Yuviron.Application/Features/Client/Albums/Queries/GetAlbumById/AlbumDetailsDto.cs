@@ -8,5 +8,6 @@ public record AlbumDetailsDto(
     string? CoverUrl,
     DateTime ReleaseDate,
     int TracksCount,
-    IEnumerable<TrackArtistDto> Artists
+    IEnumerable<TrackArtistDto> Artists, 
+    bool IsSaved = false
 );
