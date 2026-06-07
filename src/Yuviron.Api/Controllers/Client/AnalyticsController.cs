@@ -32,7 +32,8 @@ public class AnalyticsController : ApiControllerBase
             request.DeviceType,
             request.SourceType,
             request.SourceId,
-            countryCode
+            countryCode,
+            request.Chunks 
         );
 
         await Mediator.Send(command, ct);

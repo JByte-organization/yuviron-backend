@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq; // Добавь LINQ
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,7 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
         {
             var playedAt = _timeProvider.GetUtcNow().UtcDateTime;
             
+            // 1. Старый код (для счетчиков и роялти)
             var listeningEvent = ListeningEvent.Create(
                 request.UserId,
                 request.TrackId,
@@ -57,6 +59,26 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
                 playedAt, Activity.Current?.Id);
 
             _context.OutboxMessages.Add(message);
+            
+            if (request.Chunks != null && request.Chunks.Any())
+            {
+                var chEvent = new TrackChunksListenedEvent(
+                    request.UserId,
+                    request.TrackId,
+                    request.CountryCode,
+                    request.DeviceType.ToString(),
+                    playedAt,
+                    request.Chunks.Select(c => c.StartSecond).ToList(), 
+                    request.Chunks.Select(c => c.EndSecond).ToList()   
+                );
+
+                var chMessage = OutboxMessage.Create(
+                    typeof(TrackChunksListenedEvent).AssemblyQualifiedName!,
+                    JsonSerializer.Serialize(chEvent),
+                    playedAt, Activity.Current?.Id);
+
+                _context.OutboxMessages.Add(chMessage);
+            }
             
             await _context.SaveChangesAsync(ct);
         }
