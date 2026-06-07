@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -47,6 +49,17 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
         bool isPremium = user.HasActivePremiumSubscription(utcNow);
         var settings = user.Settings ?? UserSettings.Create(userId, utcNow);
 
+        var managedArtists = await _context.ArtistTeamMembers
+            .AsNoTracking()
+            .Where(tm => tm.UserId == userId)
+            .Select(tm => new UserManagedArtistDto(
+                tm.ArtistId,
+                tm.Artist.Name,
+                tm.Artist.AvatarUrl,
+                tm.Role.ToString()
+            ))
+            .ToListAsync(cancellationToken);
+
         return new CurrentUserDto(
             user.Id,
             user.Email,
@@ -73,7 +86,9 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
                 settings.ShowFollowers,
                 settings.ShowActivity,
                 settings.PrivateSession
-            )
+            ),
+            
+            managedArtists 
         );
     }
 }

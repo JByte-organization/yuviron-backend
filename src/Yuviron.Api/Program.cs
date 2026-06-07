@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using OpenTelemetry.Logs;
@@ -124,7 +125,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiBackgroundServices(builder.Configuration);
 
 // 1.2 Controllers and Swagger
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -165,18 +170,15 @@ builder.Services.AddSwaggerGen(c =>
 
     c.DocInclusionPredicate((docName, apiDesc) =>
     {
-        if (!string.IsNullOrEmpty(apiDesc.GroupName))
-        {
-            return apiDesc.GroupName == docName;
-        }
-
         var relativePath = apiDesc.RelativePath;
         if (string.IsNullOrEmpty(relativePath)) return false;
 
         bool isAdminRoute = relativePath.StartsWith("api/admin", StringComparison.OrdinalIgnoreCase);
+        bool isArtistRoute = relativePath.StartsWith("api/studio-artist", StringComparison.OrdinalIgnoreCase);
 
         if (docName == "admin") return isAdminRoute;
-        if (docName == "client") return !isAdminRoute;
+        if (docName == "artist") return isArtistRoute; 
+        if (docName == "client") return !isAdminRoute && !isArtistRoute;
 
         return false;
     });
@@ -219,7 +221,9 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
+                               ForwardedHeaders.XForwardedProto | 
+                               ForwardedHeaders.XForwardedHost;
     
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear(); 
