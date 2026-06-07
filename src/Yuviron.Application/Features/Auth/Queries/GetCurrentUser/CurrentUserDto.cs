@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
 
@@ -7,7 +8,15 @@ public sealed record CurrentUserDto(
     string Email,
     bool IsPremium,
     CurrentUserProfileDto Profile,
-    CurrentUserSettingsDto Settings
+    CurrentUserSettingsDto Settings,
+    List<UserManagedArtistDto> ManagedArtists 
+);
+
+public sealed record UserManagedArtistDto(
+    Guid ArtistId,
+    string Name,
+    string? AvatarUrl,
+    string Role 
 );
 
 public sealed record CurrentUserProfileDto(

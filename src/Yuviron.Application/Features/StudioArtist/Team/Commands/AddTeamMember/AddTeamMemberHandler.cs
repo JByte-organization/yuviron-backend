@@ -45,16 +45,15 @@ public sealed class AddTeamMemberHandler : IRequestHandler<AddTeamMemberCommand,
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        // Генеруємо унікальний токен для листа
         var inviteToken = Guid.NewGuid().ToString("N");
         
         var inviteData = new TeamInvitationData(request.ArtistId, request.UserEmail, request.Role);
         
-        // Зберігаємо в Redis на 48 годин
         await _cache.SetAsync($"team_invite:{inviteToken}", inviteData, TimeSpan.FromHours(48), cancellationToken);
 
         await _eventBus.PublishAsync(new SendTeamInviteEmailEvent(
             request.UserEmail,
+            request.ArtistId, 
             artist.Name,
             request.Role.ToString(),
             inviteToken

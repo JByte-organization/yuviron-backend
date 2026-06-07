@@ -33,7 +33,8 @@ public class SendTeamInviteEmailConsumer : IConsumer<SendTeamInviteEmailEvent>
         var msg = context.Message;
 
         var frontendUrl = _configuration["FrontendUrl"] ?? "https://yuviron.com";
-        var inviteLink = $"{frontendUrl}/studio/invite?token={msg.InviteToken}";
+        
+        var inviteLink = $"{frontendUrl}/studio/invite?token={msg.InviteToken}&artistId={msg.ArtistId}";
 
         var htmlBody = await _templateService.RenderTemplateAsync("TeamInvite", 
             new TeamInviteEmailModel(msg.ArtistName, msg.RoleName, inviteLink));
