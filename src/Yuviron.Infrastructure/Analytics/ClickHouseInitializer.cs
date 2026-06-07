@@ -14,10 +14,11 @@ public class ClickHouseInitializer : IHostedService
 
     public ClickHouseInitializer(IConfiguration configuration, ILogger<ClickHouseInitializer> logger)
     {
-        var rawConn = configuration.GetConnectionString("ClickHouse") 
-            ?? throw new InvalidOperationException("ClickHouse connection string missing.");
-            
-        _connectionString = rawConn.Replace("Database=yuviron_analytics;", ""); 
+        // С Database в строке подключения: yuviron_api_user не имеет грантов
+        // CREATE DATABASE (см. 01-init.sh — только SELECT/INSERT/CREATE TABLE
+        // на yuviron_analytics.*), поэтому база должна быть создана заранее
+        // инфраструктурой, а не этим инициализатором.
+        _connectionString = ClickHouseConnectionStringFactory.Build(configuration);
         _logger = logger;
     }
 
@@ -29,12 +30,6 @@ public class ClickHouseInitializer : IHostedService
             await connection.OpenAsync(cancellationToken);
 
             using var command = connection.CreateCommand();
-            
-            command.CommandText = "CREATE DATABASE IF NOT EXISTS yuviron_analytics";
-            await command.ExecuteNonQueryAsync(cancellationToken);
-
-            command.CommandText = "USE yuviron_analytics";
-            await command.ExecuteNonQueryAsync(cancellationToken);
 
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS listening_chunks (
