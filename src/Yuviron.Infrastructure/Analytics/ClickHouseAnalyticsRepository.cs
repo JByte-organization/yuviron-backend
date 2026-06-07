@@ -21,8 +21,7 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
 
     public ClickHouseAnalyticsRepository(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("ClickHouse") 
-            ?? throw new InvalidOperationException("ClickHouse connection string is missing.");
+        _connectionString = ClickHouseConnectionStringFactory.Build(configuration);
     }
 
     public async Task<List<TrackRetentionPointDto>> GetTrackRetentionAsync(Guid trackId, CancellationToken ct)
