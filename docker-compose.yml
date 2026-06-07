@@ -22,6 +22,21 @@ services:
     volumes:
       - yuviron_mysql_data:/var/lib/mysql
 
+  yuviron-clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: yuviron_clickhouse
+    restart: always
+    environment:
+      CLICKHOUSE_USER: yuviron_user
+      CLICKHOUSE_PASSWORD: supersecret123
+      CLICKHOUSE_DB: yuviron_analytics
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123" 
+      - "9000:9000" 
+    volumes:
+      - yuviron_clickhouse_data:/var/lib/clickhouse
+
   yuviron-seq:
     image: datalust/seq:latest
     container_name: yuviron_seq
@@ -45,9 +60,9 @@ services:
       - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
       - DOTNET_DASHBOARD_OTLP_ENDPOINT_URL=http://0.0.0.0:4317
     ports:
-      - "18888:18888" 
-      - "4317:4317"  
-        
+      - "18888:18888"
+      - "4317:4317"
+  
   yuviron-rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: yuviron_rabbitmq
@@ -62,3 +77,4 @@ services:
 volumes:
   yuviron_mysql_data:
   yuviron_seq_data_new:
+  yuviron_clickhouse_data:

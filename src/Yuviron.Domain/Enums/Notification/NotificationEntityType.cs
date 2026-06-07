@@ -9,5 +9,7 @@ public enum NotificationEntityType
     Track = 1, 
     Album = 2, 
     Artist = 3, 
+    User = 4,
+    Playlist = 5,
     System = 99 
 }

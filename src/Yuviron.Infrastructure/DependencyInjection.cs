@@ -10,6 +10,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RabbitMQ.Client;
 using StackExchange.Redis;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Analytics;
 using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Identity;
@@ -20,11 +21,13 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Admin.Tracks.Consumers;
 using Yuviron.Application.Policies;
+using Yuviron.Infrastructure.Analytics;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Configuration;
 using Yuviron.Infrastructure.Consumers;
+using Yuviron.Infrastructure.Consumers.Analytics;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
@@ -123,6 +126,7 @@ public static class DependencyInjection
         services.AddScoped<IAudioMetadataService, AudioMetadataService>();
         services.AddScoped<IHlsTranscodingService, HlsTranscodingService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IAnalyticsRepository, ClickHouseAnalyticsRepository>();
         services.AddScoped<IPaymentService, StripePaymentService>();
         services.AddScoped<IStripeWebhookParser, StripeWebhookParser>();
         services.AddHttpClient<IJamendoApiService, JamendoApiService>();
@@ -210,7 +214,7 @@ public static class DependencyInjection
             x.AddConsumer<SendEmailConfirmationConsumer>();
             x.AddConsumer<SendPasswordResetEmailConsumer>();
             x.AddConsumer<TrackSuccessfullyPlayedConsumer>();
-            
+            x.AddConsumer<TrackChunksListenedConsumer>();
             
             x.AddConsumer<TrackPlayedFallbackConsumer>();
             
@@ -251,6 +255,7 @@ public static class DependencyInjection
         
 
         // Background tasks that only the API runs
+        services.AddHostedService<ClickHouseInitializer>();
         services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<TempFilesCleanupJob>();
