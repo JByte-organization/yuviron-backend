@@ -8,7 +8,6 @@ public sealed record GetAudioStreamQuery(
     int Quality,  
     string FileName, 
     long Exp, 
-    Guid Uid,        
-    string Sig,
-    string IpAddress 
+    Guid Uid,
+    string Sig
 ) : IRequest<GetAudioStreamResponse>;
