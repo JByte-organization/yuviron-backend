@@ -27,7 +27,9 @@ using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Configuration;
 using Yuviron.Infrastructure.Consumers;
+using Yuviron.Infrastructure.Consumers.Content;
 using Yuviron.Infrastructure.Consumers.Analytics;
+using Yuviron.Infrastructure.Consumers.Monetization;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
@@ -225,13 +227,39 @@ public static class DependencyInjection
             
             x.AddConsumer<NotifyOwnersOnPayoutApprovedConsumer>();
             x.AddConsumer<NotifyOwnersOnPayoutRejectedConsumer>();
+            x.AddConsumer<NotifyOwnersOnArtistSubscriptionActivatedConsumer>();
+            x.AddConsumer<NotifyOwnersOnArtistFollowersMilestoneConsumer>();
+            x.AddConsumer<NotifyOwnersOnTrackPlayMilestoneConsumer>();
             
             x.AddConsumer<NotifyOwnersOnFirstRoyaltiesConsumer>();
             
             x.AddConsumer<NotifyStudioTeamOnTrackProcessedConsumer>();
             x.AddConsumer<NotifyStudioTeamOnPlaylistAdditionConsumer>();
+            x.AddConsumer<NotifyTeamOnTrackLyricsUpdatedConsumer>();
+            x.AddConsumer<NotifyTeamOnStudioPlaylistTrackChangedConsumer>();
             x.AddConsumer<NotifyOwnersOnTeamMemberJoinedConsumer>();
             x.AddConsumer<NotifyUserOnTeamRoleChangedConsumer>();
+            x.AddConsumer<NotifyOwnersOnModeratedTrackDeletedConsumer>();
+            x.AddConsumer<NotifyOwnersOnModeratedAlbumDeletedConsumer>();
+            x.AddConsumer<NotifyUserOnModeratedPlaylistDeletedConsumer>();
+            x.AddConsumer<NotifyUserOnBannerRequestApprovedConsumer>();
+            x.AddConsumer<NotifyUserOnBannerRequestRejectedConsumer>();
+            x.AddConsumer<NotifyUserOnBannerRequestPaidConsumer>();
+            x.AddConsumer<NotifyUserOnSubscriptionActivatedConsumer>();
+            x.AddConsumer<NotifyUserOnSubscriptionRenewedConsumer>();
+            x.AddConsumer<NotifyUserOnSubscriptionCanceledConsumer>();
+            x.AddConsumer<NotifyUserOnSubscriptionPaymentFailedConsumer>();
+            x.AddConsumer<NotifyOwnersOnArtistSubscriptionPaymentFailedConsumer>();
+            x.AddConsumer<NotifyUserOnComplaintApprovedConsumer>();
+            x.AddConsumer<NotifyUserOnComplaintRejectedConsumer>();
+            x.AddConsumer<NotifyOwnersOnBannerStartedConsumer>();
+            x.AddConsumer<NotifyOwnersOnTrackTrendingConsumer>();
+            x.AddConsumer<NotifyOwnersOnTrackEnteredTopChartConsumer>();
+            x.AddConsumer<NotifyTeamOnTrackProcessingFailedConsumer>();
+            x.AddConsumer<NotifyUserOnPasswordChangedConsumer>();
+            x.AddConsumer<SendUserOnPasswordResetCompletedConsumer>();
+            x.AddConsumer<SendUserBlockedEmailConsumer>();
+            x.AddConsumer<SendUserUnblockedEmailConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -262,6 +290,9 @@ public static class DependencyInjection
         services.AddHostedService<SyncPlayCountsJob>();
         services.AddHostedService<SyncArtistMonthlyListenersJob>();
         services.AddHostedService<DailyRoyaltyJob>();
+        services.AddHostedService<BannerStartNotificationJob>();
+        services.AddHostedService<TrackTrendDetectionJob>();
+        services.AddHostedService<TrackTopChartNotificationJob>();
 
         return services;
     }

@@ -4,6 +4,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Infrastructure.BackgroundJobs;
 
@@ -48,6 +51,7 @@ public class SyncPlayCountsJob : BackgroundService
 
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var eventBus = scope.ServiceProvider.GetRequiredService<IEventBus>();
 
         var tracksToSync = new Dictionary<Guid, long>();
         var artistsToSync = new Dictionary<Guid, long>();
@@ -71,8 +75,21 @@ public class SyncPlayCountsJob : BackgroundService
         if (tracksToSync.Any())
         {
             var trackIds = tracksToSync.Keys.ToList();
-            var tracks = await context.Tracks.Where(t => trackIds.Contains(t.Id)).ToListAsync(ct);
-            foreach (var track in tracks) track.AddPlays(tracksToSync[track.Id]);
+            var tracks = await context.Tracks
+                .Include(t => t.TrackArtists)
+                .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
+                .Where(t => trackIds.Contains(t.Id))
+                .ToListAsync(ct);
+
+            foreach (var track in tracks)
+            {
+                if (!tracksToSync.TryGetValue(track.Id, out var increment) || increment <= 0)
+                {
+                    continue;
+                }
+
+                track.AddPlays(increment);
+            }
         }
 
         if (artistsToSync.Any())
@@ -83,6 +100,49 @@ public class SyncPlayCountsJob : BackgroundService
         }
 
         await context.SaveChangesAsync(ct);
+
+        if (tracksToSync.Any())
+        {
+            var trackIds = tracksToSync.Keys.ToList();
+            var tracks = await context.Tracks
+                .Include(t => t.TrackArtists)
+                .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
+                .Where(t => trackIds.Contains(t.Id))
+                .ToListAsync(ct);
+
+            var milestoneEvents = new List<TrackPlayMilestoneReachedEvent>();
+            foreach (var track in tracks)
+            {
+                if (!tracksToSync.TryGetValue(track.Id, out var increment) || increment <= 0)
+                {
+                    continue;
+                }
+
+                var oldCount = track.PlayCount - increment;
+                var newCount = track.PlayCount;
+                var artistId = track.TrackArtists.FirstOrDefault(ta => ta.Role == ArtistRole.Main)?.ArtistId
+                               ?? track.Album!.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId
+                               ?? track.Album!.AlbumArtists.First().ArtistId;
+
+                foreach (var milestone in new[] { 10_000L, 100_000L, 1_000_000L })
+                {
+                    if (oldCount < milestone && newCount >= milestone)
+                    {
+                        milestoneEvents.Add(new TrackPlayMilestoneReachedEvent(
+                            artistId,
+                            track.Id,
+                            track.Title,
+                            newCount,
+                            milestone));
+                    }
+                }
+            }
+
+            foreach (var milestoneEvent in milestoneEvents)
+            {
+                await eventBus.PublishAsync(milestoneEvent, ct);
+            }
+        }
 
         foreach (var kvp in tracksToSync)
         {

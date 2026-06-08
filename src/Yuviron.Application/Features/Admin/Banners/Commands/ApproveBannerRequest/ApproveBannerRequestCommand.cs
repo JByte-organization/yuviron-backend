@@ -8,7 +8,8 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.ApproveBannerReque
 public sealed record ApproveBannerRequestCommand(
     Guid RequestId,
     int SortOrder,
-    bool IsActive = true
+    bool IsActive = true,
+    DateTime? StartsAtUtc = null
 ) : IRequest<Guid>, ISecuredRequest 
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

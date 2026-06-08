@@ -5,8 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Webhooks.Commands.FulfillArtistSubscription;
 
@@ -15,15 +17,18 @@ public sealed class FulfillArtistSubscriptionHandler : IRequestHandler<FulfillAr
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
+    private readonly IEventBus _eventBus;
 
     public FulfillArtistSubscriptionHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IEventBus eventBus)
     {
         _context = context;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
+        _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(FulfillArtistSubscriptionCommand request, CancellationToken cancellationToken)
@@ -54,6 +59,15 @@ public sealed class FulfillArtistSubscriptionHandler : IRequestHandler<FulfillAr
         await _context.SaveChangesAsync(cancellationToken);
 
         await _permissionService.InvalidatePermissionsAsync(request.PayerUserId, cancellationToken);
+
+        await _eventBus.PublishAsync(
+            new ArtistSubscriptionActivatedEvent(
+                request.ArtistId,
+                request.PayerUserId,
+                plan.Id,
+                plan.Name,
+                endAt),
+            cancellationToken);
 
         return Unit.Value;
     }

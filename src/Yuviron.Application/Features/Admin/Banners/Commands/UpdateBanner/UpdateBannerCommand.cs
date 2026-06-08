@@ -10,7 +10,9 @@ public sealed record UpdateBannerCommand(
     Guid? BannerFileId,
     string TargetUrl,
     int SortOrder,
-    bool IsActive
+    bool IsActive,
+    Guid? ArtistId = null,
+    DateTime? StartsAtUtc = null
 ) : IRequest<Unit>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

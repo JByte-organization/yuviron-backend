@@ -19,4 +19,5 @@ public interface IAnalyticsRepository
     
     Task<List<AudienceGeographyDto>> GetArtistGeographyAsync(IEnumerable<Guid> trackIds, DateTime minDate, CancellationToken ct);
     Task<List<AudienceDeviceDto>> GetArtistDevicesAsync(IEnumerable<Guid> trackIds, DateTime minDate, CancellationToken ct);
+    Task<List<TrackTrendCandidateDto>> GetTrendingTracksAsync(DateTime currentWindowFromUtc, DateTime previousWindowFromUtc, CancellationToken ct);
 }

@@ -35,6 +35,15 @@ public class BannerConfiguration : IEntityTypeConfiguration<Banner>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(b => b.ArtistId)
+            .HasColumnType("char(36)");
+
+        builder.Property(b => b.StartsAtUtc)
+            .HasColumnType("datetime(6)");
+
+        builder.Property(b => b.StartNotificationSentAtUtc)
+            .HasColumnType("datetime(6)");
+
         builder.Property(b => b.CreatedAt)
             .IsRequired();
 
@@ -42,5 +51,11 @@ public class BannerConfiguration : IEntityTypeConfiguration<Banner>
             .IsRequired();
 
         builder.HasIndex(b => new { b.IsActive, b.SortOrder });
+        builder.HasIndex(b => new { b.IsActive, b.StartsAtUtc, b.StartNotificationSentAtUtc });
+
+        builder.HasOne(b => b.Artist)
+            .WithMany()
+            .HasForeignKey(b => b.ArtistId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

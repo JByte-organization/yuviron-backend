@@ -32,7 +32,14 @@ public abstract class NotifyArtistOwnersConsumerBase<TEvent> : IConsumer<TEvent>
         if (!ownerIds.Any()) return;
 
         await SendNotificationAsync(msg, ownerIds, context.CancellationToken);
+        
+        // Вызываем хук для наследников
+        await AfterNotificationSentAsync(msg, ownerIds, context.CancellationToken);
     }
 
     protected abstract Task SendNotificationAsync(TEvent msg, List<Guid> ownerIds, CancellationToken ct);
+
+    // Хук по умолчанию пуст
+    protected virtual Task AfterNotificationSentAsync(TEvent msg, List<Guid> ownerIds, CancellationToken ct) 
+        => Task.CompletedTask;
 }

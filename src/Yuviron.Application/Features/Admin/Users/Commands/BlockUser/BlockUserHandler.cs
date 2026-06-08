@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services; 
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Users.Commands.BlockUser;
@@ -13,15 +15,18 @@ public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEventBus _eventBus;
 
     public BlockUserHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IEventBus eventBus)
     {
         _context = context;
         _timeProvider = timeProvider;
         _currentUserService = currentUserService;
+        _eventBus = eventBus;
     }
 
     public async Task<Guid> Handle(BlockUserCommand request, CancellationToken cancellationToken)
@@ -58,6 +63,10 @@ public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _eventBus.PublishAsync(
+            new UserBlockedEvent(user.Id, request.ReasonCode, request.Description, request.EndsAt),
+            cancellationToken);
 
         return block.Id;
     }

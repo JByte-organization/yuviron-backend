@@ -50,7 +50,9 @@ public sealed class CreateBannerHandler : IRequestHandler<CreateBannerCommand, G
             request.TargetUrl,
             request.SortOrder,
             request.IsActive,
-            utcNow
+            utcNow,
+            request.ArtistId,
+            request.StartsAtUtc
         );
 
         banner.RegisterFileSwapEvents(bannerClaim);

@@ -191,4 +191,40 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
 
         return result;
     }
+
+    public async Task<List<TrackTrendCandidateDto>> GetTrendingTracksAsync(DateTime currentWindowFromUtc, DateTime previousWindowFromUtc, CancellationToken ct)
+    {
+        using var connection = new ClickHouseConnection(_connectionString);
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            SELECT
+                TrackId,
+                CAST(countIf(PlayedAt >= {currentFrom:DateTime}) AS Int64) AS CurrentPlays,
+                CAST(countIf(PlayedAt < {currentFrom:DateTime} AND PlayedAt >= {previousFrom:DateTime}) AS Int64) AS PreviousPlays
+            FROM yuviron_analytics.listening_chunks
+            WHERE PlayedAt >= {previousFrom:DateTime}
+            GROUP BY TrackId
+            HAVING CurrentPlays >= 100
+               AND CurrentPlays >= greatest(PreviousPlays * 2, PreviousPlays + 50)
+            ORDER BY (CurrentPlays - PreviousPlays) DESC
+            LIMIT 100;";
+
+        command.AddParameter("currentFrom", currentWindowFromUtc);
+        command.AddParameter("previousFrom", previousWindowFromUtc);
+
+        var result = new List<TrackTrendCandidateDto>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            result.Add(new TrackTrendCandidateDto(
+                reader.GetGuid(0),
+                reader.GetInt64(1),
+                reader.GetInt64(2)
+            ));
+        }
+
+        return result;
+    }
 }
