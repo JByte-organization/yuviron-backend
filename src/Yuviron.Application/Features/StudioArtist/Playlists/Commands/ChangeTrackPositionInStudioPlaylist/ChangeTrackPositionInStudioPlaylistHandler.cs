@@ -5,8 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.ChangeTrackPositionInStudioPlaylist;
@@ -17,11 +19,12 @@ public sealed class ChangeTrackPositionInStudioPlaylistHandler : IRequestHandler
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
+    private readonly IEventBus _eventBus;
 
     public ChangeTrackPositionInStudioPlaylistHandler(
-        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
+        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache;
+        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(ChangeTrackPositionInStudioPlaylistCommand request, CancellationToken cancellationToken)
@@ -41,6 +44,7 @@ public sealed class ChangeTrackPositionInStudioPlaylistHandler : IRequestHandler
         if (!hasPermission) throw new ForbiddenException("No access to manage this playlist.");
 
         var trackToMove = await _context.PlaylistTracks
+            .Include(t => t.Track)
             .FirstOrDefaultAsync(t => t.PlaylistId == request.PlaylistId && t.TrackId == request.TrackId, cancellationToken)
             ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
 
@@ -50,6 +54,17 @@ public sealed class ChangeTrackPositionInStudioPlaylistHandler : IRequestHandler
         await _context.SaveChangesAsync(cancellationToken);
 
         await _cache.SortedSetAddAsync($"playlist:{request.PlaylistId}:tracks", request.TrackId.ToString(), request.NewPosition, cancellationToken);
+
+        await _eventBus.PublishAsync(
+            new StudioPlaylistTrackChangedEvent(
+                playlist.ArtistId.Value,
+                playlist.Id,
+                playlist.Title,
+                trackToMove.TrackId,
+                trackToMove.Track.Title,
+                userId,
+                "position_changed"),
+            cancellationToken);
 
         return Unit.Value;
     }

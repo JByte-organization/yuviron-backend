@@ -13,6 +13,7 @@ using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Webhooks.Commands.FulfillSubscription;
 using Yuviron.Application.Features.Webhooks.Commands.FulfillArtistSubscription;
 using Yuviron.Application.Features.Webhooks.Commands.FulfillBannerPayment;
+using Yuviron.Application.Features.Webhooks.Commands.MarkSubscriptionPaymentFailed;
 using Yuviron.Application.Features.Webhooks.Commands.RenewSubscription;
 
 namespace Yuviron.Infrastructure.Services.Payment;
@@ -105,6 +106,25 @@ public class StripeWebhookParser : IStripeWebhookParser
                     }
                 }
             }
+            else if (stripeEvent.Type == "invoice.payment_failed")
+            {
+                using var jsonDoc = JsonDocument.Parse(jsonPayload);
+                var stripeObject = jsonDoc.RootElement.GetProperty("data").GetProperty("object");
+
+                if (stripeObject.TryGetProperty("subscription", out var subProp))
+                {
+                    var stripeSubId = subProp.GetString();
+                    if (!string.IsNullOrEmpty(stripeSubId))
+                    {
+                        var failureReason = TryGetString(stripeObject, "billing_reason")
+                            ?? TryGetNestedString(stripeObject, "last_payment_error", "message")
+                            ?? TryGetNestedString(stripeObject, "payment_intent", "last_payment_error", "message");
+
+                        _logger.LogInformation("Subscription payment failed for Stripe Sub: {SubId}", stripeSubId);
+                        await _mediator.Send(new MarkSubscriptionPaymentFailedCommand(stripeSubId, failureReason), cancellationToken);
+                    }
+                }
+            }
 
             var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7) };
             await _cache.SetStringAsync(cacheKey, "processed", cacheOptions, cancellationToken);
@@ -114,5 +134,27 @@ public class StripeWebhookParser : IStripeWebhookParser
             _logger.LogWarning(e, "Invalid Stripe webhook signature.");
             throw new UnauthorizedAccessException("Invalid signature."); 
         }
+    }
+
+    private static string? TryGetString(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var property) ? property.GetString() : null;
+    }
+
+    private static string? TryGetNestedString(JsonElement element, params string[] path)
+    {
+        var current = element;
+
+        foreach (var segment in path)
+        {
+            if (!current.TryGetProperty(segment, out var next))
+            {
+                return null;
+            }
+
+            current = next;
+        }
+
+        return current.ValueKind == JsonValueKind.String ? current.GetString() : null;
     }
 }

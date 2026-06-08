@@ -65,7 +65,9 @@ public sealed class UpdateBannerHandler : IRequestHandler<UpdateBannerCommand, U
             request.TargetUrl, 
             request.SortOrder, 
             request.IsActive, 
-            utcNow);
+            utcNow,
+            request.ArtistId,
+            request.StartsAtUtc);
 
         await _context.SaveChangesAsync(cancellationToken);
 

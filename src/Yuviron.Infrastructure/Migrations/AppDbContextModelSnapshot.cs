@@ -501,6 +501,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("ArtistId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("BannerUrl")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -519,6 +522,12 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<DateTime?>("StartNotificationSentAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("StartsAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("TargetUrl")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -534,7 +543,11 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ArtistId");
+
                     b.HasIndex("IsActive", "SortOrder");
+
+                    b.HasIndex("IsActive", "StartsAtUtc", "StartNotificationSentAtUtc");
 
                     b.ToTable("banners", (string)null);
                 });
@@ -2424,6 +2437,16 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasForeignKey("Yuviron.Domain.Entities.ArtistWallet", "ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Artist");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.Banner", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
+                        .WithMany()
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Artist");
                 });

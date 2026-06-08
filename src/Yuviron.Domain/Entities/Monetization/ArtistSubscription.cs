@@ -69,6 +69,17 @@ public class ArtistSubscription : Entity
         UpdatedAt = utcNow;
     }
 
+    public void MarkAsPastDue(DateTime utcNow)
+    {
+        if (Status == SubscriptionStatus.Cancelled || Status == SubscriptionStatus.Expired)
+        {
+            return;
+        }
+
+        Status = SubscriptionStatus.PastDue;
+        UpdatedAt = utcNow;
+    }
+
     public void Renew(DateTime newEndDate, DateTime utcNow)
     {
         EndAt = newEndDate;

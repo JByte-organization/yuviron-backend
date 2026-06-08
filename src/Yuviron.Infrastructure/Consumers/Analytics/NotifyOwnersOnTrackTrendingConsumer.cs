@@ -1,0 +1,27 @@
+using MassTransit;
+using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
+using Yuviron.Infrastructure.Consumers.Bases;
+
+namespace Yuviron.Infrastructure.Consumers.Analytics;
+
+public sealed class NotifyOwnersOnTrackTrendingConsumer : NotifyArtistOwnersConsumerBase<TrackTrendingEvent>
+{
+    public NotifyOwnersOnTrackTrendingConsumer(IApplicationDbContext context, INotificationService notificationService)
+        : base(context, notificationService)
+    {
+    }
+
+    protected override Task SendNotificationAsync(TrackTrendingEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
+        NotificationService.SendToUsersAsync(
+            ownerIds,
+            NotificationCategory.Music,
+            "track_trending",
+            "Трек у тренді",
+            $"Трек «{msg.TrackTitle}» різко виріс за прослуховуваннями: {msg.Current24hPlays:N0} за останні 24 години проти {msg.Previous24hPlays:N0} у попередній добі.",
+            NotificationEntityType.Track,
+            msg.TrackId,
+            ct);
+}

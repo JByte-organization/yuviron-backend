@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Webhooks.Commands.RenewSubscription;
 
@@ -9,11 +11,13 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventBus _eventBus;
 
-    public RenewSubscriptionHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public RenewSubscriptionHandler(IApplicationDbContext context, TimeProvider timeProvider, IEventBus eventBus)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(RenewSubscriptionCommand request, CancellationToken cancellationToken)
@@ -28,9 +32,18 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
         if (listenerSub != null)
         {
             var months = listenerSub.Plan.Period == PlanPeriod.Month ? 1 : 12;
-            listenerSub.Renew(listenerSub.EndAt.AddMonths(months), utcNow);
+            var newEndAt = listenerSub.EndAt.AddMonths(months);
+            listenerSub.Renew(newEndAt, utcNow);
             
             await _context.SaveChangesAsync(cancellationToken);
+
+            await _eventBus.PublishAsync(
+                new SubscriptionRenewedEvent(
+                    listenerSub.UserId,
+                    listenerSub.PlanId,
+                    listenerSub.Plan.Name,
+                    newEndAt),
+                cancellationToken);
             return Unit.Value; 
         }
 

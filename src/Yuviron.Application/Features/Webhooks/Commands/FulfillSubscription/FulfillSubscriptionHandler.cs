@@ -2,8 +2,10 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Authentication;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
+using Yuviron.Domain.Events;
 
 namespace Yuviron.Application.Features.Webhooks.Commands.FulfillSubscription;
 
@@ -12,15 +14,18 @@ public sealed class FulfillSubscriptionHandler : IRequestHandler<FulfillSubscrip
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService; 
+    private readonly IEventBus _eventBus;
 
     public FulfillSubscriptionHandler(
         IApplicationDbContext context, 
         TimeProvider timeProvider,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IEventBus eventBus)
     {
         _context = context;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
+        _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(FulfillSubscriptionCommand request, CancellationToken cancellationToken)
@@ -50,6 +55,10 @@ public sealed class FulfillSubscriptionHandler : IRequestHandler<FulfillSubscrip
         await _context.SaveChangesAsync(cancellationToken);
 
         await _permissionService.InvalidatePermissionsAsync(request.UserId, cancellationToken);
+
+        await _eventBus.PublishAsync(
+            new SubscriptionActivatedEvent(request.UserId, plan.Id, plan.Name, endAt),
+            cancellationToken);
 
         return Unit.Value;
     }

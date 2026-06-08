@@ -9,7 +9,9 @@ public record CreateBannerCommand(
     Guid BannerFileId,
     string TargetUrl,
     int SortOrder,
-    bool IsActive
+    bool IsActive,
+    Guid? ArtistId = null,
+    DateTime? StartsAtUtc = null
 ) : IRequest<Guid>, ISecuredRequest
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

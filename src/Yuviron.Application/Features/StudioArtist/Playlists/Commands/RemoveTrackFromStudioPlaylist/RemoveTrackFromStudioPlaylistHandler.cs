@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Caching;
+using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
+using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.RemoveTrackFromStudioPlaylist;
@@ -18,11 +20,12 @@ public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<Remov
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
+    private readonly IEventBus _eventBus;
 
     public RemoveTrackFromStudioPlaylistHandler(
-        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
+        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache;
+        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(RemoveTrackFromStudioPlaylistCommand request, CancellationToken cancellationToken)
@@ -32,7 +35,7 @@ public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<Remov
         var playlistInfo = await _context.Playlists
             .AsNoTracking()
             .Where(p => p.Id == request.PlaylistId)
-            .Select(p => new { p.Id, p.ArtistId })
+            .Select(p => new { p.Id, p.ArtistId, p.Title })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Playlist", request.PlaylistId);
 
@@ -43,6 +46,12 @@ public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<Remov
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage this playlist.");
+
+        var trackTitle = await _context.Tracks
+            .AsNoTracking()
+            .Where(t => t.Id == request.TrackId)
+            .Select(t => t.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var deletedRows = await _context.PlaylistTracks
             .Where(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId)
@@ -55,6 +64,17 @@ public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<Remov
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UpdatedAt, _timeProvider.GetUtcNow().UtcDateTime), cancellationToken);
 
             await _cache.SortedSetRemoveAsync($"playlist:{request.PlaylistId}:tracks", request.TrackId.ToString(), cancellationToken);
+
+            await _eventBus.PublishAsync(
+                new StudioPlaylistTrackChangedEvent(
+                    playlistInfo.ArtistId.Value,
+                    playlistInfo.Id,
+                    playlistInfo.Title,
+                    request.TrackId,
+                    trackTitle ?? string.Empty,
+                    userId,
+                    "removed"),
+                cancellationToken);
         }
 
         return Unit.Value;
