@@ -25,7 +25,7 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
 
     public async Task<GetAudioStreamResponse> Handle(GetAudioStreamQuery request, CancellationToken cancellationToken)
     {
-        if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Uid, request.IpAddress, request.Sig))
+        if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Uid, request.Sig))
         {
             throw new UnauthorizedAccessException("Invalid, expired, or stolen stream token.");
         }

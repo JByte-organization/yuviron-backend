@@ -22,9 +22,7 @@ public class StreamController : ApiControllerBase
         [FromQuery] string sig, 
         CancellationToken ct = default)
     {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
-
-        var query = new GetAudioStreamQuery(trackId, quality, fileName, exp, uid, sig, ipAddress);
+        var query = new GetAudioStreamQuery(trackId, quality, fileName, exp, uid, sig);
         var result = await Mediator.Send(query, ct);
 
         return File(result.Stream, result.ContentType, enableRangeProcessing: true);

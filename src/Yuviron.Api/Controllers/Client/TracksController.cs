@@ -46,9 +46,7 @@ public class TracksController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTrackStreamUrl([FromRoute] Guid id, CancellationToken ct = default)
     {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
-
-        var result = await Mediator.Send(new GetTrackStreamUrlQuery(id, ipAddress), ct);
+        var result = await Mediator.Send(new GetTrackStreamUrlQuery(id), ct);
         return Ok(result);
     }
 
