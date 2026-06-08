@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Exceptions;
@@ -14,21 +15,34 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
 {
     private readonly IFileStorageService _fileStorage;
     private readonly IStreamTokenService _tokenService;
+    private readonly ILogger<GetAudioStreamHandler> _logger;
 
     private static readonly string[] AllowedExtensions = { ".m3u8", ".ts", ".key", ".mp3", ".wav", ".flac", "" };
 
-    public GetAudioStreamHandler(IFileStorageService fileStorage, IStreamTokenService tokenService)
+    public GetAudioStreamHandler(IFileStorageService fileStorage, IStreamTokenService tokenService, ILogger<GetAudioStreamHandler> logger)
     {
         _fileStorage = fileStorage;
         _tokenService = tokenService;
+        _logger = logger;
     }
 
     public async Task<GetAudioStreamResponse> Handle(GetAudioStreamQuery request, CancellationToken cancellationToken)
     {
         if (!_tokenService.ValidateToken(request.TrackId, request.Quality, request.Exp, request.Uid, request.Sig))
         {
+            _logger.LogWarning(
+                "Stream token rejected: sig={Sig} trackId={TrackId} uid={Uid} ip={IpAddress} userAgent={UserAgent}",
+                request.Sig, request.TrackId, request.Uid, request.IpAddress, request.UserAgent);
+
             throw new UnauthorizedAccessException("Invalid, expired, or stolen stream token.");
         }
+
+        // Not used for authorization (signed URLs are intentionally short-lived and
+        // client-identifier-agnostic, see PR #118) — logged so that piracy detection
+        // can flag a single sig fanning out across an unusual number of distinct IPs/UAs.
+        _logger.LogInformation(
+            "Stream segment served: sig={Sig} trackId={TrackId} uid={Uid} ip={IpAddress} userAgent={UserAgent}",
+            request.Sig, request.TrackId, request.Uid, request.IpAddress, request.UserAgent);
 
         var sanitizedFileName = Path.GetFileName(request.FileName);
         var actualFileName = sanitizedFileName.Equals("key", StringComparison.OrdinalIgnoreCase) 

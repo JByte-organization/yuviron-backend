@@ -2,7 +2,10 @@ using Yuviron.Application.Abstractions.Security;
 
 public static class StreamTokenServiceExtensions
 {
-    private const int TokenLifetimeHours = 6;
+    // Short-lived on purpose: the link itself can't be bound to a stable client
+    // identifier (IP/JTI churn breaks legitimate playback), so anti-sharing relies
+    // on a small exposure window plus background anomaly detection (see GetAudioStreamHandler).
+    private const int TokenLifetimeMinutes = 60;
 
     public static string? GenerateAudioUrl(
         this IStreamTokenService streamTokenService,
@@ -16,7 +19,7 @@ public static class StreamTokenServiceExtensions
         if (!isAuthenticated || string.IsNullOrWhiteSpace(fileKey))
             return null;
 
-        var expiration = timeProvider.GetUtcNow().AddHours(TokenLifetimeHours);
+        var expiration = timeProvider.GetUtcNow().AddMinutes(TokenLifetimeMinutes);
         var signature = streamTokenService.GenerateToken(trackId, quality, expiration, userId);
         var expUnix = expiration.ToUnixTimeSeconds();
 
