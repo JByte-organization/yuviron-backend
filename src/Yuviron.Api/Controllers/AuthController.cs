@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Antiforgery; 
+using Microsoft.AspNetCore.Antiforgery; 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Yuviron.Application.Features.Auth.Commands.ChangePassword;
 using Yuviron.Application.Features.Auth.Commands.ConfirmEmail;
 using Yuviron.Application.Features.Auth.Commands.ForgotPassword;
 using Yuviron.Application.Features.Auth.Commands.Login;
@@ -133,16 +132,6 @@ public class AuthController : ApiControllerBase
         return NoContent(); 
     }
 
-    [HttpPost("change-password")]
-    [Authorize] 
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
-    {
-        await Mediator.Send(command, ct);
-        return NoContent();
-    }
-
     private void SetRefreshTokenCookie(string token)
     {
         var cookieOptions = new CookieOptions
@@ -187,4 +176,5 @@ public class AuthController : ApiControllerBase
         await Mediator.Send(command, ct);
         return Ok();
     }
+
 }

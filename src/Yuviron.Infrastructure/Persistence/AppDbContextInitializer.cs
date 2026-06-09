@@ -148,6 +148,20 @@ public class AppDbContextInitializer
             );
             await _context.SaveChangesAsync();
         }
+
+        if (!await _context.Themes.AnyAsync())
+        {
+            await _context.Themes.AddRangeAsync(
+                Theme.Create("Ocean", "#2DD4BF", "#0F766E", "#042F2E", isSystem: true, isPremiumOnly: false),
+                Theme.Create("Midnight", "#60A5FA", "#1D4ED8", "#020617", isSystem: true, isPremiumOnly: false),
+                Theme.Create("Aurora", "#A78BFA", "#14B8A6", "#0F172A", isSystem: false, isPremiumOnly: true),
+                Theme.Create("Sunset", "#FB7185", "#F97316", "#2A0A0A", isSystem: false, isPremiumOnly: true),
+                Theme.Create("Neon Pulse", "#22C55E", "#EC4899", "#09090B", isSystem: false, isPremiumOnly: true),
+                Theme.Create("Velvet Gradient", "#F472B6", "#8B5CF6", "#1E1B4B", isSystem: false, isPremiumOnly: true)
+            );
+
+            await _context.SaveChangesAsync();
+        }
     }
 
     private async Task SeedUserFromConfigAsync(string roleName, string configSection, string firstName, Gender gender, int ageOffset, bool isPremium)

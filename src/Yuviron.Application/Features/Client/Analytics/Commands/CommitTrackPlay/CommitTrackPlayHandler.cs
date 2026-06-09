@@ -3,6 +3,7 @@ using System.Linq; // Добавь LINQ
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
@@ -35,8 +36,17 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
         if (msPlayed > 0)
         {
             var playedAt = _timeProvider.GetUtcNow().UtcDateTime;
-            
-            // 1. Старый код (для счетчиков и роялти)
+
+            bool isPrivate = false;
+            if (request.UserId != System.Guid.Empty)
+            {
+                var settings = await _context.UserSettings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Id == request.UserId, ct);
+                
+                isPrivate = settings?.PrivateSession ?? false;
+            }
+
             var listeningEvent = ListeningEvent.Create(
                 request.UserId,
                 request.TrackId,
@@ -45,7 +55,8 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
                 request.CountryCode,
                 request.SourceType,
                 request.SourceId,
-                playedAt
+                playedAt,
+                isPrivate
             );
             _context.ListeningEvents.Add(listeningEvent);
 
@@ -86,3 +97,5 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
         return Unit.Value;
     }
 }
+
+

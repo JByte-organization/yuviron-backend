@@ -8,6 +8,7 @@ using Yuviron.Application.Features.Client.Playlists.Commands.AddTrackToPlaylist;
 using Yuviron.Application.Features.Client.Playlists.Commands.RemoveTrackFromPlaylist;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.Playlists.Commands.ChangeTrackPosition;
+using Yuviron.Application.Features.Client.Playlists.Commands.RecoverPlaylist;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -71,6 +72,14 @@ public class MePlaylistsController : ApiControllerBase
     public async Task<IActionResult> ChangeTrackPosition([FromRoute] Guid id, [FromRoute] Guid trackId, [FromBody] ChangeTrackPositionRequest request, CancellationToken ct)
     {
         await Mediator.Send(new ChangeTrackPositionCommand(id, trackId, request.NewPosition), ct);
+        return Ok();
+    }
+
+    [HttpPost("{id:guid}/recover")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RecoverPlaylist([FromRoute] Guid id, CancellationToken ct)
+    {
+        await Mediator.Send(new RecoverPlaylistCommand(id), ct);
         return Ok();
     }
 }

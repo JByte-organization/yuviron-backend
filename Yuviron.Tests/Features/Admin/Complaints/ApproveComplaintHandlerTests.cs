@@ -33,7 +33,7 @@ public class ApproveComplaintHandlerTests
 
         dbContext.Artists.Add(artist);
         dbContext.Users.Add(user);
-        var complaint = Complaint.Create(user.Id, ComplaintTargetType.Artist, artist.Id, "spam", "bad content", utcNow);
+        var complaint = Complaint.Create(user.Id, ComplaintTargetType.Artist, artist.Id, ComplaintReasonCode.Spam, "bad content", utcNow);
         dbContext.Complaints.Add(complaint);
         dbContext.ComplaintCounters.Add(ComplaintCounter.Create(ComplaintTargetType.Artist, artist.Id, utcNow));
         await dbContext.SaveChangesAsync();
@@ -78,7 +78,7 @@ public class ApproveComplaintHandlerTests
         dbContext.Users.Add(reporter);
         dbContext.Users.Add(targetUser);
         dbContext.UserProfiles.Add(UserProfile.Create(targetUser.Id, "Target User", null, null, null, null, null, utcNow, Gender.Male, utcNow));
-        dbContext.Complaints.Add(Complaint.Create(reporter.Id, ComplaintTargetType.User, targetUser.Id, "abuse", "bad behavior", utcNow));
+        dbContext.Complaints.Add(Complaint.Create(reporter.Id, ComplaintTargetType.User, targetUser.Id, ComplaintReasonCode.Abuse, "bad behavior", utcNow));
         dbContext.ComplaintCounters.Add(ComplaintCounter.Create(ComplaintTargetType.User, targetUser.Id, utcNow));
         await dbContext.SaveChangesAsync();
 

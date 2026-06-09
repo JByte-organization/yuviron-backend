@@ -64,6 +64,7 @@ public sealed class CreateComplaintHandler : IRequestHandler<CreateComplaintComm
             ComplaintTargetType.Album => await _context.Albums.AnyAsync(x => x.Id == targetId, cancellationToken),
             ComplaintTargetType.Artist => await _context.Artists.AnyAsync(x => x.Id == targetId, cancellationToken),
             ComplaintTargetType.User => await _context.Users.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.Playlist => await _context.Playlists.AnyAsync(x => x.Id == targetId, cancellationToken),
             _ => false
         };
 

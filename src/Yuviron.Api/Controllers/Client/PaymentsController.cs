@@ -5,6 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Features.Client.Payments.Commands.CreateCheckoutSession;
+using Yuviron.Application.Features.Client.Payments.Queries.GetBillingHistory;
+using Yuviron.Application.Abstractions.Payment;
+using System.Collections.Generic;
 using Yuviron.Application.Features.StudioArtist.Payments.Commands.CancelSubscription;
 
 namespace Yuviron.Api.Controllers.Client;
@@ -30,6 +33,14 @@ public class PaymentsController : ApiControllerBase
     {
         await Mediator.Send(new CancelSubscriptionCommand(), ct);
         return Ok(new { message = "Subscription will not auto-renew. You keep Premium until the end of your billing period." });
+    }
+
+    [HttpGet("history")]
+    [ProducesResponseType(typeof(List<BillingInvoiceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<BillingInvoiceDto>>> GetBillingHistory(CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetBillingHistoryQuery(), ct);
+        return Ok(result);
     }
 }
 

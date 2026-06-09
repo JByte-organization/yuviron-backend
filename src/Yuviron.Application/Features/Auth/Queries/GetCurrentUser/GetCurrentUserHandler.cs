@@ -84,7 +84,6 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
                 settings.CrossfadeMs,
                 settings.MakePlaylistsPublicByDefault,
                 settings.ShowFollowers,
-                settings.ShowActivity,
                 settings.PrivateSession
             ),
             

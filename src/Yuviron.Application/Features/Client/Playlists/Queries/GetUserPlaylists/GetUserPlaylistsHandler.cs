@@ -10,7 +10,7 @@ using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 
-namespace Yuviron.Application.Features.Client.PLaylist.Queries.GetUserPlaylists;
+namespace Yuviron.Application.Features.Client.Playlists.Queries.GetUserPlaylists;
 
 public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
@@ -27,6 +27,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
     {
         var userId = _currentUserService.UserId
                      ?? throw new UnauthorizedAccessException("User is not authenticated.");
+        var trackId = request.TrackId;
 
         var query = _context.Playlists
             .AsNoTracking()
@@ -51,7 +52,8 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
             p.CreatedAt,
             p.UpdatedAt,
             false,
-            false
+            false,
+            trackId.HasValue && p.PlaylistTracks.Any(pt => pt.TrackId == trackId.Value)
         ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

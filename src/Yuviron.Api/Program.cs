@@ -205,7 +205,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("YuvironCorsPolicy", policy =>
     {
         policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
+            .WithHeaders("Content-Type", "Authorization", "X-CSRF-TOKEN", "X-Requested-With")
             .AllowAnyMethod()
             .AllowCredentials();
     });

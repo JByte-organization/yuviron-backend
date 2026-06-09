@@ -6,7 +6,8 @@ using Yuviron.Domain.Enums;
 namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylists;
 
 public sealed record GetPlaylistsQuery(
-    string? SearchTerm,
+    Guid? TrackId = null,
+    string? SearchTerm = null,
     string? SortBy = null,  
     string? SortOrder = null, 
     int Page = 1,

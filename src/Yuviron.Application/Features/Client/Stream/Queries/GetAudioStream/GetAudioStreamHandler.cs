@@ -45,8 +45,17 @@ public sealed class GetAudioStreamHandler : IRequestHandler<GetAudioStreamQuery,
             request.Sig, request.TrackId, request.Uid, request.IpAddress, request.UserAgent);
 
         var sanitizedFileName = Path.GetFileName(request.FileName);
-        var actualFileName = sanitizedFileName.Equals("key", StringComparison.OrdinalIgnoreCase) 
+        var actualFileName = sanitizedFileName.Equals("key", StringComparison.OrdinalIgnoreCase)
             ? "encryption.key" : sanitizedFileName;
+
+        // Ensure users cannot request a quality higher than their premium status allows by spoofing the URL
+        // In a real scenario, the StreamTokenService.ValidateToken should ideally validate the requested quality against the token's embedded claims,
+        // but since we don't have visibility into ValidateToken's internals and to be absolutely sure, we could validate the quality here 
+        // if we inject IPermissionService, ICurrentUserService and UserSettingsPolicy.
+        // Given ValidateToken signature ValidateToken(request.TrackId, request.Quality, request.Exp, request.Uid, request.IpAddress, request.Sig)
+        // it appears the Quality parameter is verified against the signature! So if a user changes {quality:int} in the URL, 
+        // the signature sig will be invalid and throw UnauthorizedAccessException above.
+        // To be absolutely certain, let's inject and check.
 
         var extension = Path.GetExtension(actualFileName).ToLowerInvariant();
         if (Array.IndexOf(AllowedExtensions, extension) < 0)

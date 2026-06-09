@@ -69,6 +69,18 @@ public class UserProfile : Entity
         Gender = gender;
         UpdatedAt = utcNow;
     }
+
+    public void UpdateAccountDetails(
+        string? country,
+        DateTime dateOfBirth,
+        Gender gender,
+        DateTime utcNow)
+    {
+        Country = country?.Trim();
+        DateOfBirth = dateOfBirth;
+        Gender = gender;
+        UpdatedAt = utcNow;
+    }
     
     public void ClearPersonalData(DateTime utcNow)
     {

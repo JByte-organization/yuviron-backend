@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Options;
 using Yuviron.Application.Configuration;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Policies;
 
@@ -47,6 +48,11 @@ public class UserSettingsPolicy
 
     public bool CanUseCustomTheme(bool hasCustomThemePermission) 
         => hasCustomThemePermission;
+
+    public bool CanUseThemeMode(bool hasCustomThemePermission, ThemeMode themeMode)
+    {
+        return true;
+    }
 
     public bool CanUsePresetTheme(bool hasCustomThemePermission, bool isThemePremiumOnly)
     {

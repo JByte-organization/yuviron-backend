@@ -33,7 +33,7 @@ public class CreateComplaintHandlerTests
 
         var handler = new CreateComplaintHandler(dbContext, currentUserMock.Object, TimeProvider.System);
 
-        var command = new CreateComplaintCommand(ComplaintTargetType.Artist, artist.Id, "spam", "Looks bad");
+        var command = new CreateComplaintCommand(ComplaintTargetType.Artist, artist.Id, ComplaintReasonCode.Spam, "Looks bad");
 
         var complaintId = await handler.Handle(command, CancellationToken.None);
 
@@ -69,7 +69,7 @@ public class CreateComplaintHandlerTests
 
         var handler = new CreateComplaintHandler(dbContext, currentUserMock.Object, TimeProvider.System);
 
-        var command = new CreateComplaintCommand(ComplaintTargetType.User, targetUser.Id, "abuse", "Offensive profile");
+        var command = new CreateComplaintCommand(ComplaintTargetType.User, targetUser.Id, ComplaintReasonCode.Abuse, "Offensive profile");
 
         var complaintId = await handler.Handle(command, CancellationToken.None);
 

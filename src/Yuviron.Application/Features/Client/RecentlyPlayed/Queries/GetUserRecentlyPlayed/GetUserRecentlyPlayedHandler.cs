@@ -30,7 +30,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
 
         var recentTracksData = await _context.ListeningEvents
             .AsNoTracking()
-            .Where(le => le.UserId == userId)
+            .Where(le => le.UserId == userId && !le.IsPrivate)
             .GroupBy(le => le.TrackId)
             .Select(g => new
             {
@@ -78,3 +78,4 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
             .ToList();
     }
 }
+

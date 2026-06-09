@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Yuviron.Application.Common.Models;
+using Yuviron.Application.Features.Client.Notifications.Preferences;
+using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Infrastructure.Persistence;
 using Yuviron.Infrastructure.Services;
@@ -72,5 +74,47 @@ public class NotificationServiceTests
             dto.Title == title &&
             dto.IsRead == false
         )), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_Should_Skip_DisabledCategory()
+    {
+        var dbContext = new AppDbContext(_dbOptions);
+        var userId = Guid.NewGuid();
+        dbContext.UserNotificationPreferences.Add(UserNotificationPreference.Create(
+            userId,
+            NotificationCategory.Social,
+            NotificationPreferenceCatalog.CategoryAllCode,
+            false,
+            DateTime.UtcNow));
+        await dbContext.SaveChangesAsync();
+
+        var clientProxyMock = new Mock<IYuvironClient>();
+        var hubClientsMock = new Mock<IHubClients<IYuvironClient>>();
+        hubClientsMock.Setup(x => x.Users(It.IsAny<IReadOnlyList<string>>())).Returns(clientProxyMock.Object);
+
+        var hubContextMock = new Mock<IHubContext<AppHub, IYuvironClient>>();
+        hubContextMock.Setup(x => x.Clients).Returns(hubClientsMock.Object);
+
+        var loggerMock = new Mock<ILogger<NotificationService>>();
+
+        var service = new NotificationService(
+            dbContext,
+            TimeProvider.System,
+            hubContextMock.Object,
+            loggerMock.Object);
+
+        await service.SendToUserAsync(
+            userId,
+            NotificationCategory.Social,
+            "new_follower",
+            "New follower",
+            "Someone started following you.",
+            NotificationEntityType.User,
+            Guid.NewGuid(),
+            CancellationToken.None);
+
+        (await dbContext.Notifications.CountAsync()).Should().Be(0);
+        clientProxyMock.Verify(x => x.ReceiveNotification(It.IsAny<NotificationDto>()), Times.Never);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Yuviron.Domain.Common;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Domain.Entities;
@@ -16,6 +16,8 @@ public sealed class ListeningEvent : Entity
     public PlaybackSourceType SourceType { get; private set; } 
     public Guid? SourceId { get; private set; }
 
+    public bool IsPrivate { get; private set; }
+
     public User? User { get; private set; }
     public Track Track { get; private set; } = null!;
 
@@ -29,7 +31,7 @@ public sealed class ListeningEvent : Entity
         string? countryCode,
         PlaybackSourceType sourceType, 
         Guid? sourceId,
-        DateTime utcNow) 
+        DateTime utcNow, bool isPrivate = false) 
     {
         if (trackId == Guid.Empty) throw new ArgumentException("TrackId cannot be empty");
         if (msPlayed < 0) throw new ArgumentException("Cannot play negative time");
@@ -44,7 +46,8 @@ public sealed class ListeningEvent : Entity
             DeviceType = deviceType, 
             CountryCode = countryCode?.Trim().ToUpper(), 
             SourceType = sourceType,
-            SourceId = sourceId
+            SourceId = sourceId,
+            IsPrivate = isPrivate
         };
     }
 }

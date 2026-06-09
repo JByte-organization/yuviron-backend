@@ -732,10 +732,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(7)")
                         .IsFixedLength();
 
-                    b.Property<string>("BackgroundImageUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("varchar(2048)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -881,6 +877,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<int>("DeviceType")
                         .HasMaxLength(50)
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("MsPlayed")
                         .HasColumnType("int");
@@ -1673,6 +1672,11 @@ namespace Yuviron.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("BackgroundColor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<bool>("IsPremiumOnly")
                         .HasColumnType("tinyint(1)");
 
@@ -1684,9 +1688,22 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("varchar(64)");
 
+                    b.Property<string>("PrimaryColor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("SecondaryColor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("UserId", "Name")
                         .IsUnique();
 
                     b.ToTable("themes", (string)null);
@@ -2057,6 +2074,39 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("user_follow_user", (string)null);
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserNotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<bool>("Enabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Category", "Code")
+                        .IsUnique();
+
+                    b.ToTable("user_notification_preferences", (string)null);
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2191,9 +2241,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("PrivateSession")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("ShowActivity")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("ShowFollowers")
@@ -2820,6 +2867,16 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Yuviron.Domain.Entities.Theme", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Yuviron.Domain.Entities.Track", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Album", "Album")
@@ -3003,6 +3060,17 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Followee");
 
                     b.Navigation("Follower");
+                });
+
+            modelBuilder.Entity("Yuviron.Domain.Entities.UserNotificationPreference", b =>
+                {
+                    b.HasOne("Yuviron.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserProfile", b =>
