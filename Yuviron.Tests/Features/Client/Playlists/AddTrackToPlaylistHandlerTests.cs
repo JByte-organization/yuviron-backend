@@ -67,6 +67,32 @@ public class AddTrackToPlaylistHandlerTests
         playlistTracks[1].TrackId.Should().Be(track2Id);
         playlistTracks[1].Position.Should().BeGreaterThan(playlistTracks[0].Position);
     }
+
+    [Fact]
+    public async Task Handle_Should_NotDuplicateTrack_When_AddedTwice()
+    {
+        var dbContext = new AppDbContext(_dbOptions);
+        var currentUserId = Guid.NewGuid();
+        _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
+
+        var playlist = Playlist.Create(currentUserId, null, "My List", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
+        var trackId = Guid.NewGuid();
+        dbContext.Playlists.Add(playlist);
+        dbContext.Tracks.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Track 1", 200000, false, null, "key1", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        await dbContext.SaveChangesAsync();
+
+        var handler = new AddTrackToPlaylistHandler(dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
+
+        await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, trackId), CancellationToken.None);
+        await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, trackId), CancellationToken.None);
+
+        var playlistTracks = await dbContext.PlaylistTracks
+            .Where(pt => pt.PlaylistId == playlist.Id)
+            .ToListAsync();
+
+        playlistTracks.Should().HaveCount(1);
+        playlistTracks[0].TrackId.Should().Be(trackId);
+    }
     
     [Fact]
     public async Task Handle_Should_ThrowForbidden_When_AddingToSomeoneElsesPlaylist()

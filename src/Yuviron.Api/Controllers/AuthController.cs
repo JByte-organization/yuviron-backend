@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Yuviron.Application.Features.Auth.Commands.ChangePassword;
 using Yuviron.Application.Features.Auth.Commands.ConfirmEmail;
 using Yuviron.Application.Features.Auth.Commands.ForgotPassword;
 using Yuviron.Application.Features.Auth.Commands.Login;
@@ -13,8 +12,6 @@ using Yuviron.Application.Features.Auth.Commands.Register;
 using Yuviron.Application.Features.Auth.Commands.ResetPassword;
 using Yuviron.Application.Features.Auth.Commands.SendLoginCode;
 using Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
-using Yuviron.Application.Features.Auth.Commands.DeleteAccount;
-using Yuviron.Application.Features.Auth.Commands.LogoutEverywhere;
 
 namespace Yuviron.Api.Controllers;
 
@@ -135,16 +132,6 @@ public class AuthController : ApiControllerBase
         return NoContent(); 
     }
 
-    [HttpPost("change-password")]
-    [Authorize] 
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
-    {
-        await Mediator.Send(command, ct);
-        return NoContent();
-    }
-
     private void SetRefreshTokenCookie(string token)
     {
         var cookieOptions = new CookieOptions
@@ -190,37 +177,4 @@ public class AuthController : ApiControllerBase
         return Ok();
     }
 
-    [HttpDelete("account")]
-    [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> DeleteAccount(CancellationToken ct)
-    {
-        await Mediator.Send(new DeleteAccountCommand(), ct);
-        
-        Response.Cookies.Delete("refreshToken", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None
-        });
-        
-        return NoContent();
-    }
-
-    [HttpPost("logout-everywhere")]
-    [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> LogoutEverywhere(CancellationToken ct)
-    {
-        await Mediator.Send(new LogoutEverywhereCommand(), ct);
-        
-        Response.Cookies.Delete("refreshToken", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None
-        });
-        
-        return NoContent();
-    }
 }

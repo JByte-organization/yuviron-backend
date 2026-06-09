@@ -48,6 +48,7 @@ public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPubli
             p.CreatedAt,
             p.UpdatedAt,
             false, 
+            false,
             false  
         ));
 

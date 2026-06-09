@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Features.Client.Complaints.Commands.CreateComplaint;
+using Yuviron.Application.Features.Client.Complaints.Queries.GetComplaintReasons;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -19,6 +20,12 @@ public class ComplaintsController : ApiControllerBase
         var complaintId = await Mediator.Send(command, ct);
         return Ok(new CreateComplaintResponse(complaintId));
     }
+
+    [HttpGet("reasons")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<ComplaintReasonDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ComplaintReasonDto>>> GetReasons(CancellationToken ct)
+        => Ok(await Mediator.Send(new GetComplaintReasonsQuery(), ct));
 }
 
 public record CreateComplaintResponse(Guid ComplaintId);

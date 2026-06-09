@@ -6,6 +6,6 @@ namespace Yuviron.Application.Features.Client.Complaints.Commands.CreateComplain
 public sealed record CreateComplaintCommand(
     ComplaintTargetType TargetType,
     Guid TargetId,
-    string ReasonCode,
+    ComplaintReasonCode ReasonCode,
     string? Comment
 ) : IRequest<Guid>;

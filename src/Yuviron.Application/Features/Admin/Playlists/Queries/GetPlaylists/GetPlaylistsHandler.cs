@@ -16,6 +16,7 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
 
     public async Task<PaginatedList<PlaylistDto>> Handle(GetPlaylistsQuery request, CancellationToken cancellationToken)
     {
+        var trackId = request.TrackId;
         var query = _context.Playlists.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -47,7 +48,8 @@ public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, Pag
                 (p.User != null && p.User.Profile != null ? p.User.Profile.FirstName : "Unknown"),
             p.PlaylistTracks.Count(),
             p.CreatedAt,
-            p.UpdatedAt
+            p.UpdatedAt,
+            trackId.HasValue && p.PlaylistTracks.Any(pt => pt.TrackId == trackId.Value)
         ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

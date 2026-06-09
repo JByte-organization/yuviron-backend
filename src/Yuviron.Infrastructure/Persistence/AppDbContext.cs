@@ -69,6 +69,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Theme> Themes => Set<Theme>();
     public DbSet<CustomTheme> CustomThemes => Set<CustomTheme>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
+    public DbSet<UserNotificationPreference> UserNotificationPreferences => Set<UserNotificationPreference>();
     public DbSet<Artist> Artists => Set<Artist>();
     public DbSet<ArtistSocialLink> ArtistSocialLinks => Set<ArtistSocialLink>();
     public DbSet<ArtistPin> ArtistPins => Set<ArtistPin>();

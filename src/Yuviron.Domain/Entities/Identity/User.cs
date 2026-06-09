@@ -1,4 +1,4 @@
-﻿using Yuviron.Domain.Common;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 
@@ -134,5 +134,17 @@ public class User : Entity
         PasswordHash = "deleted_account_hash_invalidated";
 
         AddDomainEvent(new UserDeletedEvent(this.Id));
+    }
+    public void UpdateMarketingPreferences(bool acceptMarketing, DateTime utcNow)
+    {
+        AcceptMarketing = acceptMarketing;
+        UpdatedAt = utcNow;
+    }
+
+    public void UpdateAccountDetails(string email, bool acceptMarketing, DateTime utcNow)
+    {
+        Email = EmailNormalizer.Normalize(email);
+        AcceptMarketing = acceptMarketing;
+        UpdatedAt = utcNow;
     }
 }

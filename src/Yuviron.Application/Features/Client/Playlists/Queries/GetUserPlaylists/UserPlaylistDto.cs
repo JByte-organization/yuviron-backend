@@ -11,5 +11,6 @@ public sealed record UserPlaylistDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     bool IsSystem = false,
-    bool IsSaved = false
+    bool IsSaved = false,
+    bool ContainsTrack = false
 );

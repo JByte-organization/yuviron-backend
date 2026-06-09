@@ -38,6 +38,5 @@ public sealed record CurrentUserSettingsDto(
     int CrossfadeMs,
     bool MakePlaylistsPublicByDefault,
     bool ShowFollowers,
-    bool ShowActivity,
     bool PrivateSession
 );

@@ -11,5 +11,6 @@ public sealed record PlaylistDto(
     string CreatorName,
     int TracksCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    bool ContainsTrack = false
 );

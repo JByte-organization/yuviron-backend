@@ -7,5 +7,6 @@ public record StudioPlaylistListItemDto(
     string Title,
     string? CoverUrl,
     PlaylistVisibility Visibility,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool ContainsTrack = false
 );

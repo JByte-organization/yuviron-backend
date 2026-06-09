@@ -25,18 +25,16 @@ public class Complaint : Entity
     private Complaint() { }
 
     public static Complaint Create(
-        Guid userId, ComplaintTargetType targetType, Guid targetId, 
-        string reasonCode, string? comment, DateTime utcNow)
+        Guid userId, ComplaintTargetType targetType, Guid targetId,
+        ComplaintReasonCode reasonCode, string? comment, DateTime utcNow)
     {
-        if (string.IsNullOrWhiteSpace(reasonCode)) throw new ArgumentException("Reason code is required");
-
         return new Complaint
         {
             Id = Guid.NewGuid(),
             CreatedByUserId = userId,
             TargetType = targetType,
             TargetId = targetId,
-            ReasonCode = reasonCode.Trim(),
+            ReasonCode = reasonCode.ToString(),
             Comment = comment?.Trim(),
             Status = ComplaintStatus.New,
             CreatedAt = utcNow,

@@ -4,10 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Yuviron.Application.Features.Client.Settings.Queries.Commands.RevokeDevice;
-using Yuviron.Application.Features.Client.Settings.Queries.GetMyDevices;
+using Yuviron.Application.Features.Client.Settings.Commands.TogglePrivateSession;
+using Yuviron.Application.Features.Client.Settings.Commands.UpdateAudioQuality;
+using Yuviron.Application.Features.Client.Settings.Commands.UpdateCrossfade;
+using Yuviron.Application.Features.Client.Settings.Commands.UpdatePrivacyToggles;
+using Yuviron.Application.Features.Client.Settings.Commands.UpdateTheme;
 using Yuviron.Application.Features.Client.Settings.Queries.GetUserSettings;
-using Yuviron.Application.Features.Client.Settings.Commands.UpdateUserSettings;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -15,25 +17,48 @@ namespace Yuviron.Api.Controllers.Client;
 [Authorize]
 public class SettingsController : ApiControllerBase
 {
-    [HttpGet("devices")]
-    public async Task<ActionResult<List<UserDeviceDto>>> GetDevices(CancellationToken ct) 
-        => Ok(await Mediator.Send(new GetMyDevicesQuery(), ct));
-
-    [HttpDelete("devices/{id:guid}")]
-    public async Task<IActionResult> RevokeDevice(Guid id, CancellationToken ct)
-    {
-        await Mediator.Send(new RevokeDeviceCommand(id), ct);
-        return NoContent();
-    }
-
     [HttpGet("preferences")]
     public async Task<ActionResult<UserSettingsDto>> GetUserSettings(CancellationToken ct)
         => Ok(await Mediator.Send(new GetUserSettingsQuery(), ct));
 
-    [HttpPut("preferences")]
-    public async Task<IActionResult> UpdateUserSettings([FromBody] UpdateUserSettingsCommand command, CancellationToken ct)
+    [HttpPut("theme")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateTheme([FromBody] UpdateThemeCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPut("audio/quality")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateAudioQuality([FromBody] UpdateAudioQualityCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPut("audio/crossfade")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateCrossfade([FromBody] UpdateCrossfadeCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPut("privacy")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdatePrivacyToggles([FromBody] UpdatePrivacyTogglesCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPut("private-session")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> TogglePrivateSession([FromBody] TogglePrivateSessionCommand command, CancellationToken ct)
     {
         await Mediator.Send(command, ct);
         return NoContent();
     }
 }
+

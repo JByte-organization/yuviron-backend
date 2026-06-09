@@ -26,6 +26,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Theme> Themes { get; }
     DbSet<CustomTheme> CustomThemes { get; }
     DbSet<UserSettings> UserSettings { get; }
+    DbSet<UserNotificationPreference> UserNotificationPreferences { get; }
 
     // --- Catalog ---
     DbSet<Artist> Artists { get; }

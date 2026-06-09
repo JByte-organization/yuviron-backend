@@ -8,6 +8,7 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Queries.GetStudioP
 
 public sealed record GetStudioPlaylistsQuery(
     Guid ArtistId,
+    Guid? TrackId = null,
     string? SearchTerm = null,
     string? SortBy = null,    
     string? SortOrder = null,

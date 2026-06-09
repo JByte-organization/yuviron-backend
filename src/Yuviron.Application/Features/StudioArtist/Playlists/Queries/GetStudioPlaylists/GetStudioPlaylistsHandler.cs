@@ -26,6 +26,7 @@ public sealed class GetStudioPlaylistsHandler : IRequestHandler<GetStudioPlaylis
     public async Task<PaginatedList<StudioPlaylistListItemDto>> Handle(GetStudioPlaylistsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+        var trackId = request.TrackId;
 
         var hasPermission = await _context.ArtistTeamMembers
             .HasManagementAccess(request.ArtistId, userId)
@@ -51,7 +52,8 @@ public sealed class GetStudioPlaylistsHandler : IRequestHandler<GetStudioPlaylis
             p.Title,
             p.CoverUrl,
             p.Visibility,
-            p.CreatedAt
+            p.CreatedAt,
+            trackId.HasValue && p.PlaylistTracks.Any(pt => pt.TrackId == trackId.Value)
         ));
 
         return await projectedQuery.ToPaginatedListAsync(request.Page, request.PageSize, cancellationToken);

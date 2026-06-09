@@ -11,6 +11,5 @@ public class UserSettingsDto
     public int CrossfadeMs { get; set; }
     public bool MakePlaylistsPublicByDefault { get; set; }
     public bool ShowFollowers { get; set; }
-    public bool ShowActivity { get; set; }
     public bool PrivateSession { get; set; }
 }

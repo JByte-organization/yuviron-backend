@@ -42,7 +42,6 @@ public class GetUserSettingsQueryHandler : IRequestHandler<GetUserSettingsQuery,
             CrossfadeMs = settings.CrossfadeMs,
             MakePlaylistsPublicByDefault = settings.MakePlaylistsPublicByDefault,
             ShowFollowers = settings.ShowFollowers,
-            ShowActivity = settings.ShowActivity,
             PrivateSession = settings.PrivateSession
         };
     }
