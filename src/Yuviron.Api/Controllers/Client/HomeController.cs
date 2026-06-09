@@ -5,7 +5,8 @@ using Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 using Yuviron.Application.Features.Client.Home.Queries.GetSystemTopArtists; 
 using Yuviron.Application.Features.Client.Home.Queries.GetSystemTopTracks;  
 using Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists; 
-using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks; 
+using Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
+using Yuviron.Application.Features.Client.Home.Queries.GetPersonalizedRecommendations; 
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -48,4 +49,12 @@ public class HomeController : ApiControllerBase
         var result = await Mediator.Send(new GetSystemTopArtistsQuery(limit), ct);
         return Ok(result);
     }  
+
+    [HttpGet("recommendations")]
+    [ProducesResponseType(typeof(List<RecommendationTrackDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RecommendationTrackDto>>> GetPersonalizedRecommendations([FromQuery] int limit = 20, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetPersonalizedRecommendationsQuery(limit), ct);
+        return Ok(result);
+    }
 }

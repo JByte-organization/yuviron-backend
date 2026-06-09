@@ -143,4 +143,43 @@ public class StripePaymentService : IPaymentService
         var service = new RefundService();
         await service.CreateAsync(options, cancellationToken: cancellationToken);
     }
+
+    public async Task<List<BillingInvoiceDto>> GetBillingHistoryAsync(string customerEmail, CancellationToken cancellationToken = default)
+    {
+        var customerService = new CustomerService();
+        var customers = await customerService.ListAsync(new CustomerListOptions
+        {
+            Email = customerEmail,
+            Limit = 1
+        }, cancellationToken: cancellationToken);
+
+        if (!customers.Any())
+        {
+            return new List<BillingInvoiceDto>();
+        }
+
+        var customerId = customers.First().Id;
+
+        var invoiceService = new InvoiceService();
+        var invoices = await invoiceService.ListAsync(new InvoiceListOptions
+        {
+            Customer = customerId,
+            Limit = 100
+        }, cancellationToken: cancellationToken);
+
+        var history = new List<BillingInvoiceDto>();
+        foreach (var inv in invoices)
+        {
+            history.Add(new BillingInvoiceDto(
+                inv.Id,
+                inv.AmountPaid / 100m,
+                inv.Currency,
+                inv.Status,
+                inv.Created,
+                inv.HostedInvoiceUrl
+            ));
+        }
+
+        return history;
+    }
 }

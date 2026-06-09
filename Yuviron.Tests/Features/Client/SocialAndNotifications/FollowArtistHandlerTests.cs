@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
@@ -12,6 +12,7 @@ using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Caching;
 
 namespace Yuviron.Tests.Features.Client.SocialAndNotifications;
 
@@ -45,7 +46,8 @@ public class FollowArtistHandlerTests
         dbContext.Artists.Add(artist);
         await dbContext.SaveChangesAsync();
 
-        var handler = new FollowArtistHandler(dbContext, _currentUserMock.Object, _eventBusMock.Object, _timeProvider);
+        var cacheServiceMock = new Mock<ICacheService>();
+        var handler = new FollowArtistHandler(dbContext, _currentUserMock.Object, _eventBusMock.Object, _timeProvider, cacheServiceMock.Object);
     
         // Act
         await handler.Handle(new FollowArtistCommand(artist.Id), CancellationToken.None);
@@ -56,3 +58,5 @@ public class FollowArtistHandlerTests
         _eventBusMock.Verify(x => x.PublishAsync(It.IsAny<UserFollowedArtistEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+
+
