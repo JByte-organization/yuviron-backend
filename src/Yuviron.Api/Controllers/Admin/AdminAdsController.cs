@@ -5,7 +5,8 @@ using Yuviron.Application.Features.Admin.Ads.Commands.ToggleAdStatus;
 using Yuviron.Application.Features.Admin.Ads.Commands.DeleteAd;
 using Yuviron.Application.Features.Admin.Ads.Commands.UpdateAd;
 using Yuviron.Application.Features.Admin.Ads.Queries.GetAds; 
-using Yuviron.Application.Features.Admin.Ads.Queries.GetAdById; 
+using Yuviron.Application.Features.Admin.Ads.Queries.GetAdById;
+using Yuviron.Application.Features.Admin.Ads.Queries.GetAdAnalytics; 
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -62,5 +63,18 @@ public class AdminAdsController : AdminApiControllerBase
     {
         await Mediator.Send(new DeleteAdCommand(id), ct);
         return NoContent();
+    }
+
+    [HttpGet("{id:guid}/analytics")]
+    [ProducesResponseType(typeof(List<AdAnalyticsPointDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<AdAnalyticsPointDto>>> GetAdAnalytics(
+        Guid id, 
+        [FromQuery] string interval = "day", 
+        [FromQuery] DateTime? minDate = null, 
+        CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetAdAnalyticsQuery(id, interval, minDate ?? DateTime.UtcNow.AddDays(-30)), ct);
+        return Ok(result);
     }
 }

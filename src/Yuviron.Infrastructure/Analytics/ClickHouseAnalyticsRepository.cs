@@ -12,6 +12,7 @@ using Yuviron.Application.Abstractions.Analytics;
 using Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetArtistAudience;
 using Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetTrackRetention;
 using Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetTrackPlaysOverTime;
+using Yuviron.Application.Features.Admin.Ads.Queries.GetAdAnalytics;
 
 namespace Yuviron.Infrastructure.Analytics;
 
@@ -222,6 +223,48 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
                 reader.GetGuid(0),
                 reader.GetInt64(1),
                 reader.GetInt64(2)
+            ));
+        }
+
+        return result;
+    }
+
+    public async Task<List<AdAnalyticsPointDto>> GetAdAnalyticsAsync(Guid adId, string interval, DateTime minDate, CancellationToken ct)
+    {
+        using var connection = new ClickHouseConnection(_connectionString);
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        
+        string dateGrouping = interval.ToLower() switch
+        {
+            "hour" => "toStartOfHour(Timestamp)",
+            "week" => "toStartOfWeek(Timestamp)",
+            _ => "toDate(Timestamp)"
+        };
+
+        command.CommandText = $@"
+            SELECT 
+                {dateGrouping} AS Date,
+                CAST(COUNT() AS Int32) AS Impressions,
+                CAST(SUM(IsClicked) AS Int32) AS Clicks
+            FROM yuviron_analytics.ad_impressions_log
+            WHERE AdId = {{adId:UUID}} AND Timestamp >= {{minDate:DateTime}}
+            GROUP BY Date
+            ORDER BY Date ASC;";
+
+        command.AddParameter("adId", adId);
+        command.AddParameter("minDate", minDate);
+
+        var result = new List<AdAnalyticsPointDto>();
+
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            result.Add(new AdAnalyticsPointDto(
+                Date: reader.GetDateTime(0).ToString(interval.ToLower() == "hour" ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"),
+                Impressions: reader.GetInt32(1),
+                Clicks: reader.GetInt32(2)
             ));
         }
 
