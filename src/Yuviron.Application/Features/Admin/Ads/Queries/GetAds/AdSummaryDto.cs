@@ -5,6 +5,7 @@ namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAds;
 public sealed record AdSummaryDto(
     Guid Id,
     string AdvertiserName,
+    string ImageUrl,
     string Title,
     bool IsActive,
     int ImpressionsCount,

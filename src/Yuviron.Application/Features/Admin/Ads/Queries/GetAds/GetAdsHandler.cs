@@ -25,7 +25,6 @@ public sealed class GetAdsHandler : IRequestHandler<GetAdsQuery, PaginatedList<A
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            // Поиск сразу по имени рекламодателя и по заголовку
             query = query.Where(a => a.AdvertiserName.StartsWith(request.SearchTerm) || a.Title.StartsWith(request.SearchTerm));
         }
 
@@ -43,6 +42,7 @@ public sealed class GetAdsHandler : IRequestHandler<GetAdsQuery, PaginatedList<A
         var projectedQuery = sortedQuery.Select(a => new AdSummaryDto(
             a.Id,
             a.AdvertiserName,
+            a.ImageUrl,
             a.Title,
             a.IsActive,
             a.Impressions.Count, 

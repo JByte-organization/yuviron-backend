@@ -48,11 +48,26 @@ public class Ad : Entity
         };
     }
 
-    public void UpdateDetails(string advertiserName, string title, string? clickUrl, DateTime utcNow)
+    public void Update(
+        string advertiserName, 
+        string title, 
+        string audioUrl, 
+        string imageUrl, 
+        string? clickUrl, 
+        bool isActive, 
+        DateTime utcNow)
     {
+        if (string.IsNullOrWhiteSpace(advertiserName)) throw new ArgumentException("Advertiser name is required");
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required");
+        if (string.IsNullOrWhiteSpace(audioUrl)) throw new ArgumentException("Audio URL is required");
+        if (string.IsNullOrWhiteSpace(imageUrl)) throw new ArgumentException("Image URL is required");
+
         AdvertiserName = advertiserName.Trim();
         Title = title.Trim();
+        AudioUrl = audioUrl;
+        ImageUrl = imageUrl;
         ClickUrl = clickUrl?.Trim();
+        IsActive = isActive;
         UpdatedAt = utcNow;
     }
 
