@@ -30,17 +30,17 @@ public sealed class ActivateThemePresetCommandHandler : IRequestHandler<Activate
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var hasCustomThemePermission = await _permissionService.HasPermissionAsync(userId, AppPermission.CustomTheme, cancellationToken);
 
-        if (!hasCustomThemePermission)
-        {
-            throw new ForbiddenException("Theme presets are a premium feature.");
-        }
-
         var settings = await _context.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new NotFoundException(nameof(UserSettings), userId);
 
         var theme = await _context.Themes
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.Id);
+
+        if (theme.IsPremiumOnly && !hasCustomThemePermission)
+        {
+            throw new ForbiddenException("Theme presets are a premium feature.");
+        }
 
         if (!theme.IsSystem && theme.UserId.HasValue && theme.UserId.Value != userId)
         {
