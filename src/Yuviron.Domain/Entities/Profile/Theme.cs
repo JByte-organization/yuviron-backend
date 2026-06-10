@@ -50,7 +50,8 @@ public class Theme : Entity
         string secondaryColor,
         string backgroundColor,
         bool isSystem,
-        bool isPremiumOnly)
+        bool isPremiumOnly,
+        Guid? userId = null)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Theme name is required");
         if (string.IsNullOrWhiteSpace(primaryColor)) throw new ArgumentException("Primary color is required");
@@ -63,5 +64,6 @@ public class Theme : Entity
         BackgroundColor = backgroundColor.Trim();
         IsSystem = isSystem;
         IsPremiumOnly = isPremiumOnly;
+        UserId = userId;
     }
 }

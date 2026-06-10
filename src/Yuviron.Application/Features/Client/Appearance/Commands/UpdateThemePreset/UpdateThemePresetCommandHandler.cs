@@ -53,7 +53,8 @@ public sealed class UpdateThemePresetCommandHandler : IRequestHandler<UpdateThem
             request.SecondaryColor,
             request.BackgroundColor,
             isSystem: false,
-            isPremiumOnly: true);
+            isPremiumOnly: true,
+            userId: userId);
 
         settings.ApplyDesign(theme.Id, null, DateTime.UtcNow);
         await _context.SaveChangesAsync(cancellationToken);

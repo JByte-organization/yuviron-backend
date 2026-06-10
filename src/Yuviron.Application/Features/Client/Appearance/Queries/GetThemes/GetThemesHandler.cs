@@ -33,11 +33,6 @@ public sealed class GetThemesHandler : IRequestHandler<GetThemesQuery, List<Them
             AppPermission.CustomTheme,
             cancellationToken);
 
-        if (!hasCustomThemePermission)
-        {
-            throw new ForbiddenException("Theme catalog is a premium feature.");
-        }
-
         var settings = await _context.UserSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
