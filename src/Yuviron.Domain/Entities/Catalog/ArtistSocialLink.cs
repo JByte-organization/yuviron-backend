@@ -12,9 +12,16 @@ public class ArtistSocialLink : Entity
 
     private ArtistSocialLink() { }
 
-    public static ArtistSocialLink Create(Guid artistId, string type, string url)
+    public static ArtistSocialLink Create(Guid artistId, string type, string url, DateTime utcNow)
     {
         if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("URL is required");
-        return new ArtistSocialLink { Id = Guid.NewGuid(), ArtistId = artistId, Type = type, Url = url };
+        return new ArtistSocialLink
+        {
+            Id = Guid.NewGuid(),
+            ArtistId = artistId,
+            Type = type,
+            Url = url,
+            CreatedAt = utcNow
+        };
     }
 }

@@ -224,12 +224,18 @@ public static class DependencyInjection
             x.AddConsumer<CreateArtistClaimRejectedNotificationConsumer>();
             x.AddConsumer<SendArtistClaimApprovedEmailConsumer>();
             x.AddConsumer<SendArtistClaimRejectedEmailConsumer>();
+            x.AddConsumer<SendTeamInviteEmailConsumer>();
+            x.AddConsumer<NotifyFollowersOnNewReleaseConsumer>();
             
             x.AddConsumer<NotifyOwnersOnPayoutApprovedConsumer>();
             x.AddConsumer<NotifyOwnersOnPayoutRejectedConsumer>();
+            x.AddConsumer<NotifyOwnersOnPayoutRequestedConsumer>();
+            x.AddConsumer<NotifyOwnersOnPayoutSettingsChangedConsumer>();
             x.AddConsumer<NotifyOwnersOnArtistSubscriptionActivatedConsumer>();
+            x.AddConsumer<NotifyOwnersOnArtistSubscriptionCanceledConsumer>();
             x.AddConsumer<NotifyOwnersOnArtistFollowersMilestoneConsumer>();
             x.AddConsumer<NotifyOwnersOnTrackPlayMilestoneConsumer>();
+            x.AddConsumer<NotifyUserOnPlaylistFavoritedConsumer>();
             
             x.AddConsumer<NotifyOwnersOnFirstRoyaltiesConsumer>();
             
@@ -238,6 +244,7 @@ public static class DependencyInjection
             x.AddConsumer<NotifyTeamOnTrackLyricsUpdatedConsumer>();
             x.AddConsumer<NotifyTeamOnStudioPlaylistTrackChangedConsumer>();
             x.AddConsumer<NotifyOwnersOnTeamMemberJoinedConsumer>();
+            x.AddConsumer<NotifyUserOnTeamMemberRemovedConsumer>();
             x.AddConsumer<NotifyUserOnTeamRoleChangedConsumer>();
             x.AddConsumer<NotifyOwnersOnModeratedTrackDeletedConsumer>();
             x.AddConsumer<NotifyOwnersOnModeratedAlbumDeletedConsumer>();
@@ -260,6 +267,8 @@ public static class DependencyInjection
             x.AddConsumer<SendUserOnPasswordResetCompletedConsumer>();
             x.AddConsumer<SendUserBlockedEmailConsumer>();
             x.AddConsumer<SendUserUnblockedEmailConsumer>();
+            x.AddConsumer<NotifyUserOnNewFollowerConsumer>();
+            x.AddConsumer<NotifyUsersOnSecurityEventsConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

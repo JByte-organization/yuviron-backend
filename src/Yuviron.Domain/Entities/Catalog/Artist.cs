@@ -167,7 +167,7 @@ public class Artist : Entity
 
         foreach (var link in newLinks)
         {
-            SocialLinks.Add(ArtistSocialLink.Create(this.Id, link.Type, link.Url));
+            SocialLinks.Add(ArtistSocialLink.Create(this.Id, link.Type, link.Url, utcNow));
         }
 
         UpdatedAt = utcNow;
