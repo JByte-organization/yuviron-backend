@@ -1,6 +1,7 @@
 ﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Domain.Entities;
 
@@ -161,16 +162,32 @@ public class Artist : Entity
             s.EndAt > currentDate);
     }
     
-    public void UpdateSocialLinks(IEnumerable<(string Type, string Url)> newLinks, DateTime utcNow)
+    public void AddSocialLink(SocialLinkType type, string url, DateTime utcNow)
     {
-        SocialLinks.Clear();
-
-        foreach (var link in newLinks)
+        // Проверка на дубликаты осталась
+        if (SocialLinks.Any(l => l.Type == type))
         {
-            SocialLinks.Add(ArtistSocialLink.Create(this.Id, link.Type, link.Url, utcNow));
+            throw new SocialLinkAlreadyExistsException(type);
         }
 
-        UpdatedAt = utcNow;
+        // Просто добавляем новую связь
+        SocialLinks.Add(ArtistSocialLink.Create(this.Id, type, url, utcNow));
+    
+        // МЫ ПОЛНОСТЬЮ УБРАЛИ UpdatedAt = utcNow;
+        // Теперь EF Core даже не попытается обновить таблицу artists,
+        // а значит, MySQL не сможет выдать ошибку "0 строк".
+    }
+
+    public void RemoveSocialLink(SocialLinkType type, DateTime utcNow)
+    {
+        var link = SocialLinks.FirstOrDefault(l => l.Type == type);
+        if (link != null)
+        {
+            // Просто удаляем связь
+            SocialLinks.Remove(link);
+        
+            // МЫ ПОЛНОСТЬЮ УБРАЛИ UpdatedAt = utcNow;
+        }
     }
 
     public void SetPin(ArtistPinType type, Guid entityId, int position, DateTime utcNow)

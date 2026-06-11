@@ -370,7 +370,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ArtistId");
+                    b.HasIndex("ArtistId", "Type")
+                        .IsUnique();
 
                     b.ToTable("artist_social_links", (string)null);
                 });
