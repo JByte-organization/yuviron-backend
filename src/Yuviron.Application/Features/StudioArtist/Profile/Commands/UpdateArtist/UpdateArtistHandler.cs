@@ -9,8 +9,6 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
-using Yuviron.Domain.Events;
-
 namespace Yuviron.Application.Features.StudioArtist.Artists.Commands.UpdateArtist;
 
 public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
@@ -47,10 +45,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
         {
             var avatarClaim = await _context.ClaimFileAsync(
                 request.AvatarFileId.Value, userId, "image/", "artists/avatars", cancellationToken);
-            
-            if (!string.IsNullOrEmpty(artist.AvatarUrl)) 
-                artist.AddDomainEvent(new FileNeedsDeletionEvent(artist.AvatarUrl));
-                
+            artist.RegisterFileSwapEvents(avatarClaim, artist.AvatarUrl);
             finalAvatarUrl = avatarClaim.FinalPath;
         }
 
@@ -59,10 +54,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
         {
             var bannerClaim = await _context.ClaimFileAsync(
                 request.BannerFileId.Value, userId, "image/", "artists/banners", cancellationToken);
-                
-            if (!string.IsNullOrEmpty(artist.BannerUrl))
-                artist.AddDomainEvent(new FileNeedsDeletionEvent(artist.BannerUrl));
-                
+            artist.RegisterFileSwapEvents(bannerClaim, artist.BannerUrl);
             finalBannerUrl = bannerClaim.FinalPath;
         }
 
