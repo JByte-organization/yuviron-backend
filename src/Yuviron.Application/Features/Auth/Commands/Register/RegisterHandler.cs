@@ -69,7 +69,10 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
             utcNow: utcNow);
 
         user.SetProfile(profile);
-        
+
+        var settings = UserSettings.Create(user.Id, utcNow);
+        user.SetSettings(settings);
+
         foreach (var role in rolesToAssign)
         {
             user.UserRoles.Add(new UserRole(user.Id, role.Id));

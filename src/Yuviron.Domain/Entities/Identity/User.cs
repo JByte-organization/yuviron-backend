@@ -94,6 +94,8 @@ public class User : Entity
 
     public void SetProfile(UserProfile profile) => Profile = profile;
 
+    public void SetSettings(UserSettings settings) => Settings = settings;
+
     public void UpdateAdminDetails(string email, bool acceptMarketing, AccountState accountState, DateTime utcNow)
     {
         Email = EmailNormalizer.Normalize(email);
