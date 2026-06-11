@@ -12,10 +12,12 @@ using Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 using Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Queries.DTOs;
+using Yuviron.Application.Features.Admin.Tracks.Queries.GetAdminTrackPreviewUrl;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackLyrics;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
 using Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplete;
+using Yuviron.Application.Features.Admin.Tracks.Queries.StreamAdminTrackAudio;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -69,6 +71,30 @@ public class AdminTracksController : AdminApiControllerBase
     {
         var result = await Mediator.Send(new GetTracksAutocompleteQuery(searchTerm, limit), ct);
         return Ok(result);
+    }
+
+    // --- PREVIEW ---
+
+    [HttpGet("{id:guid}/preview-url")]
+    [ProducesResponseType(typeof(AdminTrackPreviewUrlResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminTrackPreviewUrlResponse>> GetPreviewUrl(Guid id, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetAdminTrackPreviewUrlQuery(id), ct);
+        return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/audio")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> StreamTrackAudio(
+        Guid id,
+        [FromQuery] long exp,
+        [FromQuery] Guid uid,
+        [FromQuery] string sig,
+        CancellationToken ct)
+    {
+        var result = await Mediator.Send(new StreamAdminTrackAudioQuery(id, exp, uid, sig), ct);
+        return File(result.Stream, result.ContentType, enableRangeProcessing: true);
     }
 
     // --- LYRICS ---
