@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.StudioArtist.Profile.Queries.GetStudioArtistProfile;
 
@@ -50,6 +51,6 @@ public sealed record StudioTeamMemberDto(
 );
 
 public sealed record StudioSocialLinkDto(
-    string Type, 
+    SocialLinkType Type, 
     string Url
 );

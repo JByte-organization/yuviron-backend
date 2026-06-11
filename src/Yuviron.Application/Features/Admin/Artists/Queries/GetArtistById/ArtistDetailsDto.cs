@@ -10,7 +10,7 @@ public record ArtistOwnerDto(
     string FirstName
 );
 
-public record AdminSocialLinkDto(string Type, string Url);
+public record AdminSocialLinkDto(SocialLinkType Type, string Url);
 public record AdminArtistPinDto(ArtistPinType EntityType, Guid EntityId, int Position);
 
 public record ArtistDetailsDto(

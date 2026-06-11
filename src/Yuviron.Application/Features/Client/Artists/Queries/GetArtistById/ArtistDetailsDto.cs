@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+using System;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistById;
 
 public sealed record ClientSocialLinkDto(
-    string Type, 
+    SocialLinkType Type, 
     string Url
 );
 
