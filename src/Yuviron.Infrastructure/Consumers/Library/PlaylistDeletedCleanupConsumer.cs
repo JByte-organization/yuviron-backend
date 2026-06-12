@@ -18,10 +18,8 @@ public class PlaylistDeletedCleanupConsumer : IConsumer<PlaylistDeletedEvent>
     {
         var playlistId = context.Message.PlaylistId;
 
-        // Hard delete playlist tracks
-        await _context.PlaylistTracks.Where(pt => pt.PlaylistId == playlistId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.PlaylistTracks.IgnoreQueryFilters().Where(pt => pt.PlaylistId == playlistId).ExecuteDeleteAsync(context.CancellationToken);
         
-        // Hard delete user saves
-        await _context.UserSavedPlaylists.Where(usp => usp.PlaylistId == playlistId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.UserSavedPlaylists.IgnoreQueryFilters().Where(usp => usp.PlaylistId == playlistId).ExecuteDeleteAsync(context.CancellationToken);
     }
 }
