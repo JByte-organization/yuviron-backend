@@ -296,7 +296,7 @@ public static class DependencyInjection
         // Background tasks that only the API runs
         services.AddHostedService<ClickHouseInitializer>();
         services.AddHostedService<ProcessOutboxMessagesJob>();
-        services.AddHostedService<TokenCleanupJob>();
+        services.AddHostedService<ExpiredDataCleanupJob>();
         services.AddHostedService<TempFilesCleanupJob>();
         services.AddHostedService<Yuviron.Infrastructure.BackgroundJobs.Cleanup.OrphanedDataCleanupJob>();
         services.AddHostedService<SyncPlayCountsJob>();
@@ -309,6 +309,7 @@ public static class DependencyInjection
         return services;
     }
 }
+
 
 
 

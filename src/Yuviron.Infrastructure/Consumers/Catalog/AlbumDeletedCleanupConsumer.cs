@@ -22,6 +22,7 @@ public class AlbumDeletedCleanupConsumer : IConsumer<AlbumDeletedEvent>
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var tracks = await _context.Tracks
+            .IgnoreQueryFilters()
             .Where(t => t.AlbumId == albumId) 
             .ToListAsync(context.CancellationToken);
 
@@ -30,7 +31,7 @@ public class AlbumDeletedCleanupConsumer : IConsumer<AlbumDeletedEvent>
             track.Delete(utcNow); 
         }
 
-        await _context.UserSavedAlbums.Where(ua => ua.AlbumId == albumId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.UserSavedAlbums.IgnoreQueryFilters().Where(ua => ua.AlbumId == albumId).ExecuteDeleteAsync(context.CancellationToken);
         
         await _context.SaveChangesAsync(context.CancellationToken);
     }
