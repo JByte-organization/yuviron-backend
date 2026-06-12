@@ -37,13 +37,13 @@ public class JamendoEntityResolver : IJamendoEntityResolver
         var newArtist = Artist.Create(null, name, "Imported from Jamendo", null, null, default, _timeProvider.GetUtcNow().UtcDateTime);
         _context.Artists.Add(newArtist);
         _context.ExternalMappings.Add(ExternalMapping.Create(newArtist.Id, nameof(Artist), ExternalProvider.Jamendo, jamendoId));
-        
+
         await _context.SaveChangesAsync(cancellationToken);
         _artistCache[jamendoId] = newArtist;
         return newArtist;
     }
 
-    public async Task<Album> ResolveAlbumAsync(string title, string jamendoId, Guid artistId, Guid? coverFileId, Guid adminId, CancellationToken cancellationToken)
+    public async Task<Album> ResolveAlbumAsync(string title, string jamendoId, Guid artistId, Guid adminId, CancellationToken cancellationToken)
     {
         if (_albumCache.TryGetValue(jamendoId, out var cachedAlbum)) return cachedAlbum;
 
@@ -60,18 +60,9 @@ public class JamendoEntityResolver : IJamendoEntityResolver
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        ClaimedFileResult? coverClaim = null;
-        
-        if (coverFileId.HasValue)
-        {
-            coverClaim = await _context.ClaimFileAsync(coverFileId.Value, adminId, "image/", "covers", cancellationToken);
-        }
-
         var releaseType = string.Equals(safeTitle, "Singles", StringComparison.OrdinalIgnoreCase) ? ReleaseType.Single : ReleaseType.Album;
 
-        var newAlbum = Album.Create(safeTitle, "Imported from Jamendo", coverClaim?.FinalPath, utcNow, releaseType, VisibilityStatus.Published, null, new[] { artistId }, utcNow);
-        
-        if (coverClaim != null) newAlbum.RegisterFileSwapEvents(coverClaim);
+        var newAlbum = Album.Create(safeTitle, "Imported from Jamendo", null, utcNow, releaseType, VisibilityStatus.Draft, null, new[] { artistId }, utcNow);
 
         _context.Albums.Add(newAlbum);
         _context.ExternalMappings.Add(ExternalMapping.Create(newAlbum.Id, nameof(Album), ExternalProvider.Jamendo, jamendoId));
@@ -90,3 +81,4 @@ public class JamendoEntityResolver : IJamendoEntityResolver
         return maxPos + 1;
     }
 }
+

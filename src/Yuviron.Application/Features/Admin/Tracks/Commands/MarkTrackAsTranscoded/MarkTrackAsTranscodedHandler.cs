@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -51,6 +51,9 @@ public sealed class MarkTrackAsTranscodedHandler : IRequestHandler<MarkTrackAsTr
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         track.MarkAsReady(request.HlsUrl, request.FinalAudioKey, utcNow);
+
+        if (track.VisibilityStatus == VisibilityStatus.Draft) track.Publish(utcNow);
+        if (track.Album?.VisibilityStatus == VisibilityStatus.Draft) track.Album.Publish(utcNow);
 
         var mainArtistId = track.TrackArtists.FirstOrDefault(ta => ta.Role == ArtistRole.Main)?.ArtistId 
                            ?? track.Album!.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId 

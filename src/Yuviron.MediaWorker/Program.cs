@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -28,6 +28,7 @@ try
     builder.Services.AddMassTransit(x =>
     {
         x.AddConsumer<AudioTranscodingConsumer>();
+        x.AddConsumer<JamendoTrackSyncConsumer>();
 
         x.UsingRabbitMq((context, cfg) =>
         {
@@ -48,6 +49,12 @@ try
             {
                 e.ConfigureConsumer<AudioTranscodingConsumer>(context);
                 e.PrefetchCount = 1;
+            });
+
+            cfg.ReceiveEndpoint("jamendo_sync_queue", e =>
+            {
+                e.ConfigureConsumer<JamendoTrackSyncConsumer>(context);
+                e.PrefetchCount = 1; // Slow operations (downloads), process one by one
             });
         });
     });
