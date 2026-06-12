@@ -8,7 +8,7 @@ namespace Yuviron.Infrastructure.BackgroundJobs.Cleanup;
 
 public sealed class OrphanedDataCleanupJob : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromDays(2);
+    private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OrphanedDataCleanupJob> _logger;
 
@@ -20,7 +20,6 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Give the system 15 minutes after startup before running this heavy query
         await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
         
         using var timer = new PeriodicTimer(Interval);
@@ -33,19 +32,41 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
 
     private async Task CleanupAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Starting scheduled cleanup of orphaned data...");
+        _logger.LogInformation("Starting scheduled cleanup of orphaned and broken data...");
         
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var utcNow = DateTime.UtcNow;
 
-        // We use subqueries to fetch deleted roots
+        // --- PART 1: SANITY CHECKS (SOFT-DELETE BROKEN RECORDS) ---
+        // 1.1. Albums with 0 artists
+        int brokenAlbums = await context.Albums
+            .Where(a => !a.IsDeleted && !context.AlbumArtists.Any(aa => aa.AlbumId == a.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.IsDeleted, true)
+                .SetProperty(p => p.DeletedAt, utcNow)
+                .SetProperty(p => p.UpdatedAt, utcNow), ct);
+        
+        if (brokenAlbums > 0) _logger.LogInformation("Sanity Check: Marked {Count} artistless albums as deleted.", brokenAlbums);
+
+        // 1.2. Tracks with 0 artists
+        int brokenTracks = await context.Tracks
+            .Where(t => !t.IsDeleted && !context.TrackArtists.Any(ta => ta.TrackId == t.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.IsDeleted, true)
+                .SetProperty(p => p.DeletedAt, utcNow)
+                .SetProperty(p => p.UpdatedAt, utcNow), ct);
+
+        if (brokenTracks > 0) _logger.LogInformation("Sanity Check: Marked {Count} artistless tracks as deleted.", brokenTracks);
+
+        // --- PART 2: ORPHAN CLEANUP (HARD-DELETE DEPENDENCIES OF DELETED ROOTS) ---
         var deletedUserIds = context.Users.Where(u => u.IsDeleted).Select(u => u.Id);
         var deletedArtistIds = context.Artists.Where(a => a.IsDeleted).Select(a => a.Id);
         var deletedTrackIds = context.Tracks.Where(t => t.IsDeleted).Select(t => t.Id);
         var deletedAlbumIds = context.Albums.Where(a => a.IsDeleted).Select(a => a.Id);
         var deletedPlaylistIds = context.Playlists.Where(p => p.IsDeleted).Select(p => p.Id);
 
-        // --- 1. USER ORPHANS ---
+        // User Orphans
         await context.UserRoles.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         await context.RefreshTokens.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         await context.UserDevices.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
@@ -59,7 +80,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         await context.ArtistTeamMembers.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         await context.Playlists.Where(x => x.UserId.HasValue && deletedUserIds.Contains(x.UserId.Value)).ExecuteUpdateAsync(s => s.SetProperty(p => p.IsDeleted, true), ct);
 
-        // --- 2. ARTIST ORPHANS ---
+        // Artist Orphans
         await context.ArtistTeamMembers.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
         await context.ArtistSocialLinks.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
         await context.ArtistPins.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
@@ -70,24 +91,22 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         await context.VerificationRequests.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
         await context.AlbumArtists.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
         await context.TrackArtists.Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
-        
-        // Note: Financial records (Wallets, Transactions, Subscriptions, Royalties) are EXPLICITLY NOT DELETED 
-        // to maintain historical integrity and legal compliance.
 
-        // --- 3. TRACK ORPHANS ---
+        // Track Orphans
         await context.PlaylistTracks.Where(x => deletedTrackIds.Contains(x.TrackId)).ExecuteDeleteAsync(ct);
         await context.UserSavedTracks.Where(x => deletedTrackIds.Contains(x.TrackId)).ExecuteDeleteAsync(ct);
         await context.TrackGenres.Where(x => deletedTrackIds.Contains(x.TrackId)).ExecuteDeleteAsync(ct);
         await context.TrackMoods.Where(x => deletedTrackIds.Contains(x.TrackId)).ExecuteDeleteAsync(ct);
         await context.ExternalMappings.Where(x => x.EntityType == "Track" && deletedTrackIds.Contains(x.InternalId)).ExecuteDeleteAsync(ct);
 
-        // --- 4. ALBUM ORPHANS ---
+        // Album Orphans
         await context.UserSavedAlbums.Where(x => deletedAlbumIds.Contains(x.AlbumId)).ExecuteDeleteAsync(ct);
 
-        // --- 5. PLAYLIST ORPHANS ---
+        // Playlist Orphans
         await context.PlaylistTracks.Where(x => deletedPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
         await context.UserSavedPlaylists.Where(x => deletedPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
 
         _logger.LogInformation("Orphaned data cleanup completed successfully.");
     }
 }
+
