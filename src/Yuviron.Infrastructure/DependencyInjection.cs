@@ -165,35 +165,28 @@ public static class DependencyInjection
         
         
 
+        // Singleton connection reused by the health check — avoids opening a new TCP
+        // connection on every /health/ready probe (would leak hundreds of connections/hour).
+        services.AddSingleton<IConnection>(_ =>
+        {
+            var factory = new ConnectionFactory
+            {
+                HostName = configuration["RabbitMQ:Host"] ?? "127.0.0.1",
+                Port = int.TryParse(configuration["RabbitMQ:Port"], out var p) ? p : 5672,
+                UserName = configuration["RabbitMQ:Username"] ?? "guest",
+                Password = configuration["RabbitMQ:Password"] ?? "guest",
+                VirtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/",
+                AutomaticRecoveryEnabled = true,
+            };
+            return factory.CreateConnectionAsync("health-check").GetAwaiter().GetResult();
+        });
+
         // 6. HEALTH CHECKS
         services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" })
             .AddCheck<DatabaseHealthCheck>("mysql", tags: new[] { "ready" })
             .AddCheck<RedisHealthCheck>("redis", tags: new[] { "ready" })
-            .AddRabbitMQ(
-                async _ =>
-                {
-                    var host = configuration["RabbitMQ:Host"] ?? "127.0.0.1";
-                    var port = configuration["RabbitMQ:Port"] ?? "5672";
-                    var username = configuration["RabbitMQ:Username"] ?? "guest";
-                    var password = configuration["RabbitMQ:Password"] ?? "guest";
-                    var virtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/";
-
-                    var factory = new ConnectionFactory
-                    {
-                        HostName = host,
-                        Port = int.Parse(port),
-                        UserName = username,
-                        Password = password,
-                        VirtualHost = virtualHost
-                    };
-
-                    return await factory.CreateConnectionAsync();
-                },
-                "rabbitmq",
-                null,
-                new[] { "ready" }
-            );
+            .AddCheck<RabbitMqHealthCheck>("rabbitmq", null, new[] { "ready" });
 
         return services;
     }
