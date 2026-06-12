@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Messaging;
@@ -31,8 +31,8 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
         var artistId = track.TrackArtists.FirstOrDefault(ta => ta.Role == ArtistRole.Main)?.ArtistId
-                       ?? track.Album!.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId
-                       ?? track.Album!.AlbumArtists.First().ArtistId;
+                       ?? track.Album?.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId
+                       ?? track.Album?.AlbumArtists.FirstOrDefault()?.ArtistId ?? Guid.Empty;
 
         track.Delete(_timeProvider.GetUtcNow().UtcDateTime); 
 
@@ -45,3 +45,4 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
         return Unit.Value;
     }
 }
+

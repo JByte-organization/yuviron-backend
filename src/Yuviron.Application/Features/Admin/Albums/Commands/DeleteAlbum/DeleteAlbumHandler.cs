@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Messaging;
@@ -34,7 +34,7 @@ public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand, Uni
         await _context.SaveChangesAsync(cancellationToken);
 
         var mainArtistId = album.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId
-                           ?? album.AlbumArtists.First().ArtistId;
+                           ?? album.AlbumArtists.FirstOrDefault()?.ArtistId ?? Guid.Empty;
 
         await _eventBus.PublishAsync(
             new ModeratedAlbumDeletedEvent(album.Id, mainArtistId, album.Title),
@@ -43,3 +43,4 @@ public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand, Uni
         return Unit.Value;
     }
 }
+
