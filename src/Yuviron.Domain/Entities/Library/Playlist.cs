@@ -1,4 +1,4 @@
-using Yuviron.Domain.Common;
+п»їusing Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 
@@ -8,7 +8,7 @@ public class Playlist : Entity
 {
     public Guid? UserId { get; private set; } 
     
-    // ДОБАВЛЕНО: Привязка к профилю артиста (если плейлист кураторский)
+    // Р”РћР‘РђР’Р›Р•РќРћ: РџСЂРёРІСЏР·РєР° Рє РїСЂРѕС„РёР»СЋ Р°СЂС‚РёСЃС‚Р° (РµСЃР»Рё РїР»РµР№Р»РёСЃС‚ РєСѓСЂР°С‚РѕСЂСЃРєРёР№)
     public Guid? ArtistId { get; private set; } 
     
     public string Title { get; private set; } = string.Empty;
@@ -100,6 +100,7 @@ public class Playlist : Entity
 
         IsDeleted = true;
         UpdatedAt = utcNow;
+        AddDomainEvent(new PlaylistDeletedEvent(Id));
 
         if (!string.IsNullOrWhiteSpace(CoverUrl))
         {
@@ -113,5 +114,6 @@ public class Playlist : Entity
         UpdatedAt = utcNow;
     }
 }
+
 
 

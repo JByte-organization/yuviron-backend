@@ -83,15 +83,27 @@ public class MockDataService : IMockDataService
             } catch { /* ignore download errors */ }
         }
 
-        // 3. GENERATE 1000 USERS
-        _logger.LogInformation("Generating 1000 new social identities...");
+        // 3. GENERATE USERS
+        int usersToGenerate = Math.Min(monthsToGenerate * 15000, 100000); 
+        _logger.LogInformation("Generating {Count} new social identities...", usersToGenerate);
         var countries = new[] { "US", "GB", "UA", "DE", "FR", "CA", "BR", "JP", "AU", "IT" };
         var premiumUserIds = new HashSet<Guid>();
         
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < usersToGenerate; i++)
         {
             var person = faker.Person;
-            var userName = faker.Internet.UserName(person.FirstName, person.LastName) + i;
+            
+            // --- Realistic Username Generation ---
+            var usernameSuffixes = new[] { "_", ".", "", "x", "real", "official", "music" };
+            var suffix = usernameSuffixes[random.Next(usernameSuffixes.Length)];
+            var userName = random.Next(1, 4) switch
+            {
+                1 => $"{person.FirstName.ToLower()}{suffix}{person.LastName.ToLower()}",
+                2 => $"{faker.Internet.UserName(person.FirstName, person.LastName)}{random.Next(10, 99)}",
+                3 => $"{person.FirstName.ToLower()}{random.Next(1980, 2010)}",
+                _ => faker.Internet.UserName(person.FirstName, person.LastName) + Guid.NewGuid().ToString("N").Substring(0, 4)
+            };
+            
             var email = $"user_{Guid.NewGuid():N}@yuviron.com";
             
             var user = User.Create(email, hashedPassword, person.FirstName, true, true, utcNow);
@@ -100,7 +112,7 @@ public class MockDataService : IMockDataService
             
             // --- AVATAR UPLOAD (From Pool) ---
             string? finalAvatarUrl = null;
-            if (avatarPool.Any())
+            if (avatarPool.Any() && random.NextDouble() > 0.3)
             {
                 try {
                     var (data, contentType) = avatarPool[random.Next(avatarPool.Count)];
@@ -120,36 +132,17 @@ public class MockDataService : IMockDataService
             _context.UserProfiles.Add(profile);
             _context.UserSettings.Add(UserSettings.Create(user.Id, utcNow));
 
-            // Premium (20%)
-            if (plansIds.Any() && random.NextDouble() < 0.2)
+            // Premium (15%)
+            if (plansIds.Any() && random.NextDouble() < 0.15)
             {
                 _context.Subscriptions.Add(Subscription.Create(user.Id, plansIds[random.Next(plansIds.Count)], utcNow.AddDays(-30), utcNow.AddDays(30), SubscriptionStatus.Active, utcNow));
                 premiumUserIds.Add(user.Id);
             }
 
-            // Random Library (Fast) - Use tracks with popularity bias but ensure coverage
-            var userTracks = tracksIds
-                .OrderBy(_ => random.NextDouble() * trackWeights[_])
-                .Take(5)
-                .ToList();
-
-            foreach (var tid in userTracks)
+            if (i % 250 == 0)
             {
-                try {
-                    await dbContext.Database.ExecuteSqlRawAsync(
-                        "INSERT IGNORE INTO user_saved_tracks (UserId, TrackId, SavedAt) VALUES ({0}, {1}, {2})",
-                        user.Id, tid, utcNow);
-                } catch { /* ignore duplicates */ }
-            }
-
-            if (i % 50 == 0)
-            {
-                _logger.LogInformation("Users progress: {P}%", (i / 10.0));
-                try {
-                    await _context.SaveChangesAsync(cancellationToken);
-                } catch (Exception ex) {
-                    _logger.LogError(ex, "Error saving batch at {P}%", (i / 10.0));
-                }
+                _logger.LogInformation("Users progress: {P}% ({I}/{T})", Math.Round((double)i / usersToGenerate * 100, 1), i, usersToGenerate);
+                await _context.SaveChangesAsync(cancellationToken);
                 dbContext.ChangeTracker.Clear();
             }
         }
@@ -394,8 +387,16 @@ public class MockDataService : IMockDataService
                 totalEarned, utcNow, artistId);
 
             // 3. Update Artist stats
-            // Approximate monthly listeners as 30% of total plays for mock data realism
-            int monthlyListeners = (int)(totalPlays * 0.3); 
+            // Approximate monthly listeners realistically:
+            // A popular artist might have 10-40% of the total platform users listening in a month.
+            // We use the total users we just generated (or were already there) as the ceiling.
+            int totalUserCount = allUsersIds.Count;
+            double popularityFactor = 0.1 + (random.NextDouble() * 0.3); // 10% to 40%
+            int monthlyListeners = (int)(totalUserCount * popularityFactor);
+            
+            // If the artist is very small (low total plays), scale listeners down further
+            if (totalPlays < 1000) monthlyListeners = (int)(totalPlays * 0.5);
+
             await dbContext.Database.ExecuteSqlRawAsync(
                 "UPDATE artists SET TotalPlays = TotalPlays + {0}, MonthlyListenersCount = {1}, UpdatedAt = {2} WHERE Id = {3}",
                 totalPlays, monthlyListeners, utcNow, artistId);
