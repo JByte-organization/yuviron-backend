@@ -79,6 +79,14 @@ public class Album : Entity
         }
     }
 
+    public void Publish(DateTime utcNow)
+    {
+        if (VisibilityStatus == VisibilityStatus.Published) return;
+        VisibilityStatus = VisibilityStatus.Published;
+        ScheduledPublishAt = null;
+        UpdatedAt = utcNow;
+    }
+
     public void Delete(DateTime utcNow)
     {
         if (IsDeleted) return;
@@ -108,3 +116,4 @@ public class Album : Entity
         return null; 
     }
 }
+

@@ -78,6 +78,13 @@ public class Track : Entity
         return track;
     }
 
+    public void Publish(DateTime utcNow)
+    {
+        if (VisibilityStatus == VisibilityStatus.Published) return;
+        VisibilityStatus = VisibilityStatus.Published;
+        UpdatedAt = utcNow;
+    }
+
     public void MarkAsReady(string hlsPlaylistUrl, string finalAudioKey, DateTime utcNow)
     {
         HlsPlaylistUrl = hlsPlaylistUrl;
@@ -227,3 +234,4 @@ public class Track : Entity
         AddDomainEvent(new DirectoryNeedsDeletionEvent($"tracks/{Id}"));
     }
 }
+

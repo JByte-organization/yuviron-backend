@@ -9,6 +9,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Common.Models;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Entities;
 
@@ -19,18 +20,26 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
+    private readonly TimeProvider _timeProvider;
 
-    public GetPersonalizedRecommendationsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser, ICacheService cacheService)
+    public GetPersonalizedRecommendationsQueryHandler(
+        IApplicationDbContext context, 
+        ICurrentUserService currentUser, 
+        ICacheService cacheService,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
         _cacheService = cacheService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<List<RecommendationTrackDto>> Handle(GetPersonalizedRecommendationsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
         if (!userId.HasValue) return new List<RecommendationTrackDto>();
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         string cacheKey = $"Recommendations:{userId.Value}";
         var cachedRecs = await _cacheService.GetAsync<List<RecommendationTrackDto>>(cacheKey, cancellationToken);
@@ -75,9 +84,10 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
 
         var query = _context.Tracks
             .AsNoTracking()
+            .AvailableForPublic(utcNow)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
             .Include(t => t.TrackGenres)
-            .Where(t => t.VisibilityStatus == VisibilityStatus.Published && !t.IsDeleted && !seedTrackIds.Contains(t.Id));
+            .Where(t => !seedTrackIds.Contains(t.Id));
 
         if (seedArtists.Any() && seedGenres.Any())
         {
@@ -106,6 +116,4 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
         return finalTracks;
     }
 }
-
-
 
