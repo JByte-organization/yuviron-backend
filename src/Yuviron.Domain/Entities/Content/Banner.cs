@@ -48,7 +48,7 @@ public class Banner : Entity
             TargetUrl = targetUrl.Trim(),
             SortOrder = sortOrder,
             IsActive = isActive,
-            StartsAtUtc = startsAtUtc ?? utcNow,
+            StartsAtUtc = startsAtUtc,
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };

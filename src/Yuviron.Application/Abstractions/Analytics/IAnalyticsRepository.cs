@@ -22,4 +22,24 @@ public interface IAnalyticsRepository
     Task<List<AudienceDeviceDto>> GetArtistDevicesAsync(IEnumerable<Guid> trackIds, DateTime minDate, CancellationToken ct);
     Task<List<TrackTrendCandidateDto>> GetTrendingTracksAsync(DateTime currentWindowFromUtc, DateTime previousWindowFromUtc, CancellationToken ct);
     Task<List<AdAnalyticsPointDto>> GetAdAnalyticsAsync(Guid adId, string interval, DateTime minDate, CancellationToken ct);
+
+    // --- Seeding Methods (for Mock Data) ---
+    Task SeedListeningChunksAsync(IEnumerable<ListeningChunkSeedData> chunks, CancellationToken ct);
+    Task SeedAdImpressionsAsync(IEnumerable<AdImpressionSeedData> impressions, CancellationToken ct);
 }
+
+public record ListeningChunkSeedData(
+    Guid TrackId, 
+    Guid? UserId, 
+    DateTime PlayedAt, 
+    ushort StartSecond, 
+    ushort EndSecond, 
+    string CountryCode, 
+    string DeviceType);
+
+public record AdImpressionSeedData(
+    Guid AdId, 
+    Guid UserId, 
+    DateTime Timestamp, 
+    string Context, 
+    bool IsClicked);

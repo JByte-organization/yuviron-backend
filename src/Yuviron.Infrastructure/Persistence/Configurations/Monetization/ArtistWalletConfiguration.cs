@@ -8,6 +8,7 @@ public class ArtistWalletConfiguration : IEntityTypeConfiguration<ArtistWallet>
 {
     public void Configure(EntityTypeBuilder<ArtistWallet> builder)
     {
+        builder.ToTable("artist_wallets");
         builder.HasKey(x => x.Id);
 
         builder.HasOne(w => w.Artist)

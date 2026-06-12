@@ -1,3 +1,4 @@
+using ClickHouse.Client.Copy;
 using ClickHouse.Client.ADO;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -33,7 +34,7 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
         using var command = connection.CreateCommand();
         command.CommandText = @"
             SELECT 
-                arrayJoin(range(StartSecond, EndSecond)) AS SecondIndex, 
+                CAST(arrayJoin(range(StartSecond, EndSecond)) AS Int32) AS SecondIndex, 
                 CAST(COUNT() AS Int32) AS Plays
             FROM yuviron_analytics.listening_chunks
             WHERE TrackId = {trackId:UUID}
@@ -47,7 +48,7 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
         using var reader = await command.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
         {
-            data.Add((reader.GetInt32(0), reader.GetInt32(1)));
+            data.Add((Convert.ToInt32(reader.GetValue(0)), Convert.ToInt32(reader.GetValue(1))));
         }
 
         if (!data.Any()) return new List<TrackRetentionPointDto>();
@@ -269,5 +270,54 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
         }
 
         return result;
+    }
+    public async Task SeedListeningChunksAsync(IEnumerable<ListeningChunkSeedData> chunks, CancellationToken ct)
+    {
+        using var connection = new ClickHouseConnection(_connectionString);
+        await connection.OpenAsync(ct);
+        
+        using var bulkCopy = new ClickHouseBulkCopy(connection)
+        {
+            DestinationTableName = "yuviron_analytics.listening_chunks",
+            BatchSize = 10000
+        };
+
+        var rows = chunks.Select(c => new object[] 
+        { 
+            c.TrackId, 
+            c.UserId ?? (object)DBNull.Value, 
+            c.PlayedAt, 
+            c.StartSecond, 
+            c.EndSecond, 
+            c.CountryCode, 
+            c.DeviceType 
+        });
+
+        await bulkCopy.InitAsync();
+        await bulkCopy.WriteToServerAsync(rows, ct);
+    }
+
+    public async Task SeedAdImpressionsAsync(IEnumerable<AdImpressionSeedData> impressions, CancellationToken ct)
+    {
+        using var connection = new ClickHouseConnection(_connectionString);
+        await connection.OpenAsync(ct);
+
+        using var bulkCopy = new ClickHouseBulkCopy(connection)
+        {
+            DestinationTableName = "yuviron_analytics.ad_impressions_log",
+            BatchSize = 10000
+        };
+
+        var rows = impressions.Select(i => new object[] 
+        { 
+            i.AdId, 
+            i.UserId, 
+            i.Timestamp, 
+            i.Context, 
+            i.IsClicked ? (byte)1 : (byte)0 
+        });
+
+        await bulkCopy.InitAsync();
+        await bulkCopy.WriteToServerAsync(rows, ct);
     }
 }

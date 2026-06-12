@@ -8,7 +8,7 @@ public class FileMetadataConfiguration : IEntityTypeConfiguration<FileMetadata>
 {
     public void Configure(EntityTypeBuilder<FileMetadata> builder)
     {
-        builder.ToTable("FileMetadatas"); 
+        builder.ToTable("file_metadata"); 
 
         builder.HasKey(x => x.Id);
 

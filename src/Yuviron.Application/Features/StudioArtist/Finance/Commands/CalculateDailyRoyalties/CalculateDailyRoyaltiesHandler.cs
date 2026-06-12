@@ -63,10 +63,23 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
             .Where(w => artistIds.Contains(w.ArtistId))
             .ToDictionaryAsync(w => w.ArtistId, cancellationToken);
 
+        var existingAccruals = await _context.RoyaltyAccrualsDaily
+            .Where(a => artistIds.Contains(a.ArtistId) && a.Date == request.TargetDate)
+            .Select(a => a.ArtistId)
+            .ToListAsync(cancellationToken);
+            
+        var existingAccrualSet = new HashSet<Guid>(existingAccruals);
+
         var eventsToPublish = new List<FirstRoyaltiesEarnedEvent>();
 
         foreach (var stats in artistStreamCounts)
         {
+            if (existingAccrualSet.Contains(stats.ArtistId))
+            {
+                _logger.LogWarning("Accrual for artist {ArtistId} on {Date} already exists. Skipping.", stats.ArtistId, request.TargetDate);
+                continue;
+            }
+
             var settings = settingsDict.GetValueOrDefault(stats.ArtistId);
             var rate = settings?.CustomRatePerStream ?? GlobalRatePerStream;
             var platformPercent = settings?.PlatformPercent ?? 30;

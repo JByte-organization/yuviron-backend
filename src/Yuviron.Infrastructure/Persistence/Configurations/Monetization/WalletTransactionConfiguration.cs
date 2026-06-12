@@ -8,6 +8,7 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
 {
     public void Configure(EntityTypeBuilder<WalletTransaction> builder)
     {
+        builder.ToTable("wallet_transactions");
         builder.HasKey(x => x.Id);
 
         builder.HasOne(x => x.Wallet)
