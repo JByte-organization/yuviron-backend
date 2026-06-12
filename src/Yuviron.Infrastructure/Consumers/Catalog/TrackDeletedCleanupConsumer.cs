@@ -19,10 +19,10 @@ public sealed class TrackDeletedCleanupConsumer : IConsumer<TrackDeletedEvent>
     {
         var trackId = context.Message.TrackId;
 
-        await _context.PlaylistTracks.Where(pt => pt.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
-        await _context.UserSavedTracks.Where(ut => ut.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
-        await _context.TrackGenres.Where(tg => tg.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
-        await _context.TrackMoods.Where(tm => tm.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
-        await _context.ExternalMappings.Where(m => m.InternalId == trackId && m.EntityType == nameof(Track)).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.PlaylistTracks.IgnoreQueryFilters().Where(pt => pt.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.UserSavedTracks.IgnoreQueryFilters().Where(ut => ut.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.TrackGenres.IgnoreQueryFilters().Where(tg => tg.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.TrackMoods.IgnoreQueryFilters().Where(tm => tm.TrackId == trackId).ExecuteDeleteAsync(context.CancellationToken);
+        await _context.ExternalMappings.IgnoreQueryFilters().Where(m => m.InternalId == trackId && m.EntityType == nameof(Track)).ExecuteDeleteAsync(context.CancellationToken);
     }
 }
