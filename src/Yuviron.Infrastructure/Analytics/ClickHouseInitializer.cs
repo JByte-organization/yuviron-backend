@@ -43,8 +43,20 @@ public class ClickHouseInitializer : IHostedService
                 ) ENGINE = MergeTree()
                 ORDER BY (TrackId, PlayedAt)
                 PARTITION BY toYYYYMM(PlayedAt);";
-
             await command.ExecuteNonQueryAsync(cancellationToken);
+
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ad_impressions_log (
+                    AdId UUID,
+                    UserId UUID,
+                    Timestamp DateTime,
+                    Context String,
+                    IsClicked UInt8
+                ) ENGINE = MergeTree()
+                ORDER BY (AdId, Timestamp)
+                PARTITION BY toYYYYMM(Timestamp);";
+            await command.ExecuteNonQueryAsync(cancellationToken);
+
             _logger.LogInformation("ClickHouse database and tables initialized successfully.");
         }
         catch (Exception ex)

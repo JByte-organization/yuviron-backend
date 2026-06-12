@@ -8,6 +8,7 @@ public class ExternalMappingConfiguration : IEntityTypeConfiguration<ExternalMap
 {
     public void Configure(EntityTypeBuilder<ExternalMapping> builder)
     {
+        builder.ToTable("external_mappings");
         builder.HasKey(x => x.Id);
 
         builder.HasIndex(x => new { x.Provider, x.ExternalId, x.EntityType })

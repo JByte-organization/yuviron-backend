@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Data;
 using System.Threading.Tasks;
 using Yuviron.Domain.Events;
+using Yuviron.Infrastructure.Analytics;
 
 namespace Yuviron.Infrastructure.Consumers.Analytics;
 
@@ -16,7 +17,7 @@ public class TrackChunksListenedConsumer : IConsumer<TrackChunksListenedEvent>
 
     public TrackChunksListenedConsumer(IConfiguration configuration, ILogger<TrackChunksListenedConsumer> logger)
     {
-        _connectionString = configuration.GetConnectionString("ClickHouse")!;
+        _connectionString = ClickHouseConnectionStringFactory.Build(configuration);
         _logger = logger;
     }
 
@@ -63,6 +64,7 @@ public class TrackChunksListenedConsumer : IConsumer<TrackChunksListenedEvent>
 
             if (table.Rows.Count > 0)
             {
+                await bulkCopy.InitAsync();
                 await bulkCopy.WriteToServerAsync(table, context.CancellationToken);
             }
         }

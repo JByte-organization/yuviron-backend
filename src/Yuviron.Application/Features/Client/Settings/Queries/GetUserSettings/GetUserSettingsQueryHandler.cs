@@ -25,12 +25,13 @@ public class GetUserSettingsQueryHandler : IRequestHandler<GetUserSettingsQuery,
         var userId = _currentUser.UserId!.Value;
 
         var settings = await _context.UserSettings
-            .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
 
         if (settings == null)
         {
-            throw new NotFoundException(nameof(UserSettings), userId);
+            settings = UserSettings.Create(userId, DateTime.UtcNow);
+            _context.UserSettings.Add(settings);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return new UserSettingsDto

@@ -53,12 +53,15 @@ public class GetThemesHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ThrowForbidden_For_FreeUser()
+    public async Task Handle_Should_NotReturnPremiumThemes_For_FreeUser()
     {
         await using var dbContext = new AppDbContext(CreateOptions());
 
         var userId = Guid.NewGuid();
         dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        
+        dbContext.Themes.Add(Theme.Create("Free Theme", "#111111", "#222222", "#333333", false, false));
+        dbContext.Themes.Add(Theme.Create("Premium Theme", "#444444", "#555555", "#666666", false, true));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -71,9 +74,10 @@ public class GetThemesHandlerTests
 
         var handler = new GetThemesHandler(dbContext, currentUser.Object, permissionService.Object);
 
-        Func<Task> action = () => handler.Handle(new GetThemesQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetThemesQuery(), CancellationToken.None);
 
-        await action.Should().ThrowAsync<ForbiddenException>();
+        result.Should().ContainSingle();
+        result.Single().Name.Should().Be("Free Theme");
     }
 
     [Fact]

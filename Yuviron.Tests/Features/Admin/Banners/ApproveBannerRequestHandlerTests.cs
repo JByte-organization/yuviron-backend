@@ -33,6 +33,7 @@ public class ApproveBannerRequestHandlerTests
             "Promo Campaign",
             "https://cdn/banner.jpg",
             utcNow);
+        bannerRequest.MarkAsPaid("intent", utcNow);
 
         dbContext.Users.Add(user);
         dbContext.Artists.Add(artist);

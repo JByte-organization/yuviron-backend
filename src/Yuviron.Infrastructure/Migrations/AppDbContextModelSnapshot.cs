@@ -494,7 +494,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasIndex("ArtistId")
                         .IsUnique();
 
-                    b.ToTable("ArtistWallets");
+                    b.ToTable("artist_wallets", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Banner", b =>
@@ -785,7 +785,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasIndex("Provider", "ExternalId", "EntityType")
                         .IsUnique();
 
-                    b.ToTable("ExternalMappings");
+                    b.ToTable("external_mappings", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.FileMetadata", b =>
@@ -829,7 +829,7 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("FileMetadatas", (string)null);
+                    b.ToTable("file_metadata", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.Genre", b =>
@@ -2358,7 +2358,7 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasIndex("WalletId", "CreatedAt");
 
-                    b.ToTable("WalletTransactions");
+                    b.ToTable("wallet_transactions", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.AdImpression", b =>

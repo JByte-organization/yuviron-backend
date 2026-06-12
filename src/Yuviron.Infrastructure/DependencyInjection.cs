@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,6 +18,7 @@ using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Payment;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.MockData;
 using Yuviron.Application.Configuration;
 using Yuviron.Application.Features.Admin.Tracks.Consumers;
 using Yuviron.Application.Policies;
@@ -37,6 +38,7 @@ using Yuviron.Infrastructure.Services.Audio;
 using Yuviron.Infrastructure.HealthChecks;
 using Yuviron.Infrastructure.Services.Payment;
 using Yuviron.Infrastructure.Services.Security;
+using Yuviron.Infrastructure.MockData;
 
 namespace Yuviron.Infrastructure;
 
@@ -159,6 +161,7 @@ public static class DependencyInjection
         services.AddScoped<IEventBus, MassTransitEventBus>();
         services.AddScoped<IClientContextService, ClientContextService>();
         services.AddScoped<IUserDeviceTracker, UserDeviceTracker>();
+        services.AddScoped<IMockDataService, MockDataService>();
         
         
 
@@ -217,6 +220,7 @@ public static class DependencyInjection
             x.AddConsumer<SendPasswordResetEmailConsumer>();
             x.AddConsumer<TrackSuccessfullyPlayedConsumer>();
             x.AddConsumer<TrackChunksListenedConsumer>();
+            x.AddConsumer<AdImpressionRecordedConsumer>();
             
             x.AddConsumer<TrackPlayedFallbackConsumer>();
             
@@ -306,3 +310,4 @@ public static class DependencyInjection
         return services;
     }
 }
+
