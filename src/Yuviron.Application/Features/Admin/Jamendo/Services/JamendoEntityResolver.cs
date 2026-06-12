@@ -1,3 +1,4 @@
+﻿using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services.Jamendo;
@@ -11,8 +12,8 @@ public class JamendoEntityResolver : IJamendoEntityResolver
 {
     private readonly IApplicationDbContext _context;
     private readonly TimeProvider _timeProvider;
-    private readonly Dictionary<string, Artist> _artistCache = new();
-    private readonly Dictionary<string, Album> _albumCache = new();
+    private readonly ConcurrentDictionary<string, Artist> _artistCache = new();
+    private readonly ConcurrentDictionary<string, Album> _albumCache = new();
 
     public JamendoEntityResolver(IApplicationDbContext context, TimeProvider timeProvider)
     {
@@ -29,9 +30,17 @@ public class JamendoEntityResolver : IJamendoEntityResolver
 
         if (mapping != null)
         {
-            var artist = await _context.Artists.FirstAsync(a => a.Id == mapping.InternalId, cancellationToken);
-            _artistCache[jamendoId] = artist;
-            return artist;
+            var artist = await _context.Artists.FirstOrDefaultAsync(a => a.Id == mapping.InternalId, cancellationToken);
+            if (artist != null)
+            {
+                _artistCache[jamendoId] = artist;
+                return artist;
+            }
+            
+            // If mapping exists but artist is missing (deleted or failed cleanup), 
+            // remove the dead mapping and proceed to create a new one.
+            _context.ExternalMappings.Remove(mapping);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         var newArtist = Artist.Create(null, name, "Imported from Jamendo", null, null, default, _timeProvider.GetUtcNow().UtcDateTime);
@@ -54,9 +63,15 @@ public class JamendoEntityResolver : IJamendoEntityResolver
 
         if (mapping != null)
         {
-            var album = await _context.Albums.FirstAsync(a => a.Id == mapping.InternalId, cancellationToken);
-            _albumCache[jamendoId] = album;
-            return album;
+            var album = await _context.Albums.FirstOrDefaultAsync(a => a.Id == mapping.InternalId, cancellationToken);
+            if (album != null)
+            {
+                _albumCache[jamendoId] = album;
+                return album;
+            }
+
+            _context.ExternalMappings.Remove(mapping);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -75,10 +90,10 @@ public class JamendoEntityResolver : IJamendoEntityResolver
     public async Task<int> GetNextAlbumPositionAsync(Guid albumId, CancellationToken cancellationToken)
     {
         var maxPos = await _context.Tracks
+            .IgnoreQueryFilters() // See even deleted tracks for correct position increment
             .Where(t => t.AlbumId == albumId)
             .MaxAsync(t => (int?)t.AlbumPosition, cancellationToken) ?? 0;
             
         return maxPos + 1;
     }
 }
-
