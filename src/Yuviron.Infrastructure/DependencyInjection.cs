@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,7 +20,7 @@ using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Abstractions.MockData;
 using Yuviron.Application.Configuration;
-using Yuviron.Application.Features.Admin.Tracks.Consumers;
+
 using Yuviron.Application.Policies;
 using Yuviron.Infrastructure.Analytics;
 using Yuviron.Infrastructure.Authentication;
@@ -30,6 +30,9 @@ using Yuviron.Infrastructure.Configuration;
 using Yuviron.Infrastructure.Consumers;
 using Yuviron.Infrastructure.Consumers.Content;
 using Yuviron.Infrastructure.Consumers.Analytics;
+using Yuviron.Infrastructure.Consumers.Catalog;
+using Yuviron.Infrastructure.Consumers.Identity;
+using Yuviron.Infrastructure.Consumers.Library;
 using Yuviron.Infrastructure.Consumers.Monetization;
 using Yuviron.Infrastructure.Identity;
 using Yuviron.Infrastructure.Persistence;
@@ -59,6 +62,7 @@ public static class DependencyInjection
             {
                 builder.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
                 builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                builder.CommandTimeout((int)TimeSpan.FromMinutes(10).TotalSeconds);
             });
         });
         
@@ -199,13 +203,14 @@ public static class DependencyInjection
             x.AddConsumer<DeleteFileConsumer>();
             x.AddConsumer<DeleteDirectoryConsumer>();
             
-            x.AddConsumer<AlbumDeletedConsumer>();
-            x.AddConsumer<HideArtistAlbumsConsumer>();
-            x.AddConsumer<RemoveTrackFromPlaylistsConsumer>();
-            x.AddConsumer<TrackDeletedConsumer>();
+            
+            x.AddConsumer<AlbumDeletedCleanupConsumer>();
+            x.AddConsumer<ArtistDeletedCleanupConsumer>();
+            x.AddConsumer<TrackDeletedCleanupConsumer>();
+            x.AddConsumer<PlaylistDeletedCleanupConsumer>();
             
             x.AddConsumer<CancelUserSubscriptionsConsumer>();
-            x.AddConsumer<ClearUserProfileConsumer>();
+            x.AddConsumer<UserDeletedCleanupConsumer>();
             x.AddConsumer<UserPermissionsChangedConsumer>();
             x.AddConsumer<RevokeTokensOnPasswordChangedConsumer>();
             x.AddConsumer<SendWelcomeEmailConsumer>();
@@ -293,6 +298,7 @@ public static class DependencyInjection
         services.AddHostedService<ProcessOutboxMessagesJob>();
         services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<TempFilesCleanupJob>();
+        services.AddHostedService<Yuviron.Infrastructure.BackgroundJobs.Cleanup.OrphanedDataCleanupJob>();
         services.AddHostedService<SyncPlayCountsJob>();
         services.AddHostedService<SyncArtistMonthlyListenersJob>();
         services.AddHostedService<DailyRoyaltyJob>();
@@ -303,4 +309,11 @@ public static class DependencyInjection
         return services;
     }
 }
+
+
+
+
+
+
+
 

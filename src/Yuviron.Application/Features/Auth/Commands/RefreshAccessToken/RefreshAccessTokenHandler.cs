@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions;
@@ -65,7 +65,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
                     var lostTokens = await _context.RefreshTokens
                         .Where(t => t.UserId == existingToken.UserId 
                                  && t.CreatedAt >= existingToken.RevokedAt.Value 
-                                 && !t.IsRevoked)
+                                 && t.RevokedAt == null)
                         .ToListAsync(cancellationToken);
 
                     foreach (var lostToken in lostTokens)
