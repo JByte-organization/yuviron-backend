@@ -1,15 +1,23 @@
-using Fluid;
+﻿using Fluid;
+using Microsoft.Extensions.Options;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Application.Configuration;
+using System.Collections.Generic;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Yuviron.Infrastructure.Services;
 
 public class FluidTemplateService : ITemplateService
 {
     private readonly FluidParser _parser;
+    private readonly FrontendOptions _frontendOptions;
 
-    public FluidTemplateService()
+    public FluidTemplateService(IOptions<FrontendOptions> frontendOptions)
     {
         _parser = new FluidParser();
+        _frontendOptions = frontendOptions.Value;
     }
 
     public async Task<string> RenderTemplateAsync<T>(string templateName, T model)
@@ -27,6 +35,12 @@ public class FluidTemplateService : ITemplateService
             options.MemberAccessStrategy.Register(typeof(T)); 
             
             var context = new TemplateContext(model, options);
+            
+            var baseUrl = _frontendOptions.BaseUrl.TrimEnd('/');
+            context.SetValue("FrontendUrl", baseUrl);
+            
+            // Backwards compatibility for old templates using {{ BaseUrl }}
+            context.SetValue("BaseUrl", baseUrl);
             
             return await template.RenderAsync(context);
         }

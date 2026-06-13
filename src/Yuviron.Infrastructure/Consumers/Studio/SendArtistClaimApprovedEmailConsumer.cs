@@ -1,48 +1,56 @@
-using MassTransit;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+﻿using MassTransit;
 using Microsoft.Extensions.Logging;
-using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Events;
+using Yuviron.Application.Configuration;
+using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
+using Yuviron.Application.Abstractions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Yuviron.Infrastructure.Consumers;
 
-public record ArtistClaimApprovedEmailModel(string FirstName, string ArtistName, string StudioLink);
+public record ArtistClaimApprovedModel(string ArtistName, string StudioLink);
 
 public class SendArtistClaimApprovedEmailConsumer : IConsumer<ArtistClaimApprovedEvent>
 {
-    private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
-    private readonly IConfiguration _configuration;
+    private readonly FrontendOptions _frontendOptions;
+    private readonly IApplicationDbContext _context;
     private readonly ILogger<SendArtistClaimApprovedEmailConsumer> _logger;
 
     public SendArtistClaimApprovedEmailConsumer(
-        IApplicationDbContext context, 
-        IEmailService emailService, 
-        ITemplateService templateService, 
-        IConfiguration configuration,
+        IEmailService emailService,
+        ITemplateService templateService,
+        IOptions<FrontendOptions> frontendOptions,
+        IApplicationDbContext context,
         ILogger<SendArtistClaimApprovedEmailConsumer> logger)
     {
-        _context = context;
         _emailService = emailService;
         _templateService = templateService;
-        _configuration = configuration;
+        _frontendOptions = frontendOptions.Value;
+        _context = context;
         _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<ArtistClaimApprovedEvent> context)
     {
-        var msg = context.Message;
-        var user = await _context.Users.Include(u => u.Profile).FirstOrDefaultAsync(u => u.Id == msg.UserId);
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == context.Message.UserId, context.CancellationToken);
+
         if (user == null) return;
 
-        var frontendUrl = _configuration["FrontendUrl"] ?? "https://dev.yuviron.com";
-        var htmlBody = await _templateService.RenderTemplateAsync("ArtistClaimApproved", 
-            new ArtistClaimApprovedEmailModel(user.Profile?.FirstName ?? "Артист", msg.ArtistName, $"{frontendUrl}/studio"));
+        var frontendUrl = _frontendOptions.BaseUrl.TrimEnd('/');
+        var studioLink = $"{frontendUrl}/studio/artists/{context.Message.ArtistId}";
 
-        await _emailService.SendEmailAsync(user.Email, "Ваш профіль артиста підтверджено! 🚀 - Yuviron", htmlBody, context.CancellationToken);
-        _logger.LogInformation("Approval email sent to {Email}.", user.Email);
+        var htmlBody = await _templateService.RenderTemplateAsync("ArtistClaimApproved", 
+            new ArtistClaimApprovedModel(context.Message.ArtistName, studioLink));
+
+        await _emailService.SendEmailAsync(user.Email, "Вашу заявку на артиста схвалено! - Yuviron", htmlBody, context.CancellationToken);
+        
+        _logger.LogInformation("Artist claim approval email sent to {Email} for artist {ArtistName}.", user.Email, context.Message.ArtistName);
     }
 }

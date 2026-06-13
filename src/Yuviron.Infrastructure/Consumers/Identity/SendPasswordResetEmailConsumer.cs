@@ -1,40 +1,51 @@
-using MassTransit;
-using Microsoft.Extensions.Configuration;
+﻿using MassTransit;
 using Microsoft.Extensions.Logging;
+using Yuviron.Application.Abstractions.Authentication;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Events;
+using Yuviron.Application.Configuration;
+using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 
 namespace Yuviron.Infrastructure.Consumers;
 
-public record PasswordResetEmailModel(string FirstName, string ResetLink);
+public record ForgotPasswordModel(string FirstName, string ResetLink);
 
 public class SendPasswordResetEmailConsumer : IConsumer<ForgotPasswordRequestedEvent>
 {
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
-    private readonly IConfiguration _configuration;
+    private readonly IOtpService _otpService;
+    private readonly FrontendOptions _frontendOptions;
     private readonly ILogger<SendPasswordResetEmailConsumer> _logger;
 
     public SendPasswordResetEmailConsumer(
-        IEmailService emailService, ITemplateService templateService,
-        IConfiguration configuration, ILogger<SendPasswordResetEmailConsumer> logger)
+        IEmailService emailService,
+        ITemplateService templateService,
+        IOtpService otpService,
+        IOptions<FrontendOptions> frontendOptions,
+        ILogger<SendPasswordResetEmailConsumer> logger)
     {
         _emailService = emailService;
         _templateService = templateService;
-        _configuration = configuration;
+        _otpService = otpService;
+        _frontendOptions = frontendOptions.Value;
         _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<ForgotPasswordRequestedEvent> context)
     {
-        var message = context.Message;
-        var frontendUrl = _configuration["FrontendUrl"] ?? "https://dev.yuviron.com";
-        var resetLink = $"{frontendUrl}/reset-password?token={message.ResetToken}";
+        var token = context.Message.ResetToken;
+        await _otpService.SavePasswordResetTokenAsync(token, context.Message.Email, TimeSpan.FromHours(2), context.CancellationToken);
 
-        var htmlBody = await _templateService.RenderTemplateAsync("ForgotPassword", new PasswordResetEmailModel(message.FirstName, resetLink));
+        var frontendUrl = _frontendOptions.BaseUrl.TrimEnd('/');
+        var resetLink = $"{frontendUrl}/reset-password?token={token}";
 
-        await _emailService.SendEmailAsync(message.Email, "Скидання паролю - Yuviron 🎵", htmlBody, context.CancellationToken);
+        var htmlBody = await _templateService.RenderTemplateAsync("ForgotPassword", new ForgotPasswordModel(context.Message.FirstName, resetLink));
+
+        await _emailService.SendEmailAsync(context.Message.Email, "Скидання пароля - Yuviron", htmlBody, context.CancellationToken);
         
-        _logger.LogInformation("Password reset email sent to {Email}.", message.Email);
+        _logger.LogInformation("Password reset link sent to {Email}.", context.Message.Email);
     }
 }

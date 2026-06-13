@@ -1,50 +1,45 @@
-using MassTransit;
-using Microsoft.Extensions.Configuration;
+﻿using MassTransit;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Domain.Events;
+using Yuviron.Application.Configuration;
+using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 
 namespace Yuviron.Infrastructure.Consumers;
 
-public record TeamInviteEmailModel(string ArtistName, string RoleName, string InviteLink);
+public record TeamInviteModel(string ArtistName, string InviteLink);
 
 public class SendTeamInviteEmailConsumer : IConsumer<SendTeamInviteEmailEvent>
 {
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
-    private readonly IConfiguration _configuration;
+    private readonly FrontendOptions _frontendOptions;
     private readonly ILogger<SendTeamInviteEmailConsumer> _logger;
 
     public SendTeamInviteEmailConsumer(
-        IEmailService emailService, 
-        ITemplateService templateService, 
-        IConfiguration configuration,
+        IEmailService emailService,
+        ITemplateService templateService,
+        IOptions<FrontendOptions> frontendOptions,
         ILogger<SendTeamInviteEmailConsumer> logger)
     {
         _emailService = emailService;
         _templateService = templateService;
-        _configuration = configuration;
+        _frontendOptions = frontendOptions.Value;
         _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<SendTeamInviteEmailEvent> context)
     {
-        var msg = context.Message;
-
-        var frontendUrl = _configuration["FrontendUrl"] ?? "https://dev.yuviron.com";
-        
-        var inviteLink = $"{frontendUrl}/studio/invite?token={msg.InviteToken}&artistId={msg.ArtistId}";
+        var frontendUrl = _frontendOptions.BaseUrl.TrimEnd('/');
+        var inviteLink = $"{frontendUrl}/studio/invites?code={context.Message.InviteToken}";
 
         var htmlBody = await _templateService.RenderTemplateAsync("TeamInvite", 
-            new TeamInviteEmailModel(msg.ArtistName, msg.RoleName, inviteLink));
+            new TeamInviteModel(context.Message.ArtistName, inviteLink));
 
-        await _emailService.SendEmailAsync(
-            msg.Email, 
-            $"Запрошення в команду артиста {msg.ArtistName} 🎵 - Yuviron", 
-            htmlBody, 
-            context.CancellationToken);
-            
-        _logger.LogInformation("Team invite email sent to {Email} for artist {ArtistName}.", msg.Email, msg.ArtistName);
+        await _emailService.SendEmailAsync(context.Message.Email, $"Запрошення до команди {context.Message.ArtistName} - Yuviron", htmlBody, context.CancellationToken);
+        
+        _logger.LogInformation("Team invite email sent to {Email} for artist {ArtistName}.", context.Message.Email, context.Message.ArtistName);
     }
 }
