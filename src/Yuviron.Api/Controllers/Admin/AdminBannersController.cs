@@ -12,6 +12,7 @@ using Yuviron.Application.Features.Admin.Banners.Commands.UpdateBanner;
 using Yuviron.Application.Features.Admin.Banners.Commands.ApproveBannerRequest;
 using Yuviron.Application.Features.Admin.Banners.Commands.RejectBannerRequest;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequests;
+using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequestById;
 using Yuviron.Application.Features.Admin.Banners.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerById;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
@@ -27,6 +28,15 @@ public class AdminBannersController : AdminApiControllerBase
     public async Task<ActionResult<PaginatedList<BannerListItemDto>>> GetBanners([FromQuery] GetBannersQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("requests/{requestId:guid}")]
+    [ProducesResponseType(typeof(BannerRequestDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BannerRequestDetailsDto>> GetRequestById(Guid requestId, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetBannerRequestByIdQuery(requestId), ct);
         return Ok(result);
     }
 
