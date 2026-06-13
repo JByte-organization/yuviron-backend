@@ -37,12 +37,9 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var utcNow = DateTime.UtcNow;
+        var playlistRetentionCutoff = utcNow.AddDays(-30);
 
         // --- PART 1: SANITY CHECKS (SOFT-DELETE BROKEN RECORDS) ---
-        // We fetch and call .Delete() to ensure domain events (like physical file deletion) 
-        // are correctly added and then published via Outbox in SaveChangesAsync.
-        
-        // 1.1. Albums with 0 artists
         var brokenAlbums = await context.Albums
             .IgnoreQueryFilters()
             .Where(a => !a.IsDeleted && !context.AlbumArtists.IgnoreQueryFilters().Any(aa => aa.AlbumId == a.Id))
@@ -54,7 +51,6 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
             foreach (var album in brokenAlbums) album.Delete(utcNow);
         }
 
-        // 1.2. Tracks with 0 artists
         var brokenTracks = await context.Tracks
             .IgnoreQueryFilters()
             .Where(t => !t.IsDeleted && !context.TrackArtists.IgnoreQueryFilters().Any(ta => ta.TrackId == t.Id))
@@ -68,12 +64,28 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         
         await context.SaveChangesAsync(ct);
 
-        // --- PART 2: ORPHAN CLEANUP (HARD-DELETE DEPENDENCIES OF DELETED ROOTS) ---
+        // --- PART 2: HARD DELETE EXPIRED SOFT-DELETED DATA ---
+        
+        // Hard delete playlists deleted more than 30 days ago
+        var expiredPlaylistIds = await context.Playlists
+            .IgnoreQueryFilters()
+            .Where(p => p.IsDeleted && p.UpdatedAt < playlistRetentionCutoff)
+            .Select(p => p.Id)
+            .ToListAsync(ct);
+
+        if (expiredPlaylistIds.Any())
+        {
+            _logger.LogInformation("Cleanup: Hard deleting {Count} playlists expired for more than 30 days.", expiredPlaylistIds.Count);
+            await context.PlaylistTracks.IgnoreQueryFilters().Where(x => expiredPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
+            await context.UserSavedPlaylists.IgnoreQueryFilters().Where(x => expiredPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
+            await context.Playlists.IgnoreQueryFilters().Where(p => expiredPlaylistIds.Contains(p.Id)).ExecuteDeleteAsync(ct);
+        }
+
+        // --- PART 3: ORPHAN CLEANUP (HARD-DELETE DEPENDENCIES OF DELETED ROOTS) ---
         var deletedUserIds = context.Users.IgnoreQueryFilters().Where(u => u.IsDeleted).Select(u => u.Id);
         var deletedArtistIds = context.Artists.IgnoreQueryFilters().Where(a => a.IsDeleted).Select(a => a.Id);
         var deletedTrackIds = context.Tracks.IgnoreQueryFilters().Where(t => t.IsDeleted).Select(t => t.Id);
         var deletedAlbumIds = context.Albums.IgnoreQueryFilters().Where(a => a.IsDeleted).Select(a => a.Id);
-        var deletedPlaylistIds = context.Playlists.IgnoreQueryFilters().Where(p => p.IsDeleted).Select(p => p.Id);
 
         // User Orphans
         await context.UserRoles.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
@@ -88,7 +100,6 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         await context.UserFollowUsers.Where(x => deletedUserIds.Contains(x.FollowerId) || deletedUserIds.Contains(x.FolloweeId)).ExecuteDeleteAsync(ct);
         await context.ArtistTeamMembers.IgnoreQueryFilters().Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         
-        // Playlists of deleted users
         var userPlaylists = await context.Playlists
             .IgnoreQueryFilters()
             .Where(x => !x.IsDeleted && x.UserId.HasValue && deletedUserIds.Contains(x.UserId.Value))
@@ -118,12 +129,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         // Album Orphans
         await context.UserSavedAlbums.Where(x => deletedAlbumIds.Contains(x.AlbumId)).ExecuteDeleteAsync(ct);
 
-        // Playlist Orphans
-        await context.PlaylistTracks.IgnoreQueryFilters().Where(x => deletedPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
-        await context.UserSavedPlaylists.IgnoreQueryFilters().Where(x => deletedPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
-
         await context.SaveChangesAsync(ct);
         _logger.LogInformation("Orphaned data cleanup completed successfully.");
     }
 }
-
