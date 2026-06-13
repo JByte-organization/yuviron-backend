@@ -28,7 +28,7 @@ public sealed class GetActiveBannerRequestHandler : IRequestHandler<GetActiveBan
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this artist.");

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -51,7 +51,7 @@ public sealed class GetStudioPlaylistByIdHandler : IRequestHandler<GetStudioPlay
         if (playlistData.ArtistId == null) throw new ForbiddenException("Not an artist playlist.");
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(playlistData.ArtistId.Value, userId)
+            .HasViewerAccess(playlistData.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to view this playlist.");

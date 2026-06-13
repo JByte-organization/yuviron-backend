@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Caching;
@@ -6,6 +6,11 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetStudioArtistStats;
 
@@ -30,7 +35,7 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasAccess = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");

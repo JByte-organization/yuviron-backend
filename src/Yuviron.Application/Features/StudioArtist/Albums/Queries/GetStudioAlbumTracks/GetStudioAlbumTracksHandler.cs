@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -38,7 +38,7 @@ public sealed class GetStudioAlbumTracksHandler : IRequestHandler<GetStudioAlbum
         if (albumInfo == null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(albumInfo.ArtistIds, userId)
+            .Where(tm => albumInfo.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this album.");

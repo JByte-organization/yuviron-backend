@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Features.StudioArtist.Profile.Queries.GetStudioArtistProfile;
 using Yuviron.Application.Features.StudioArtist.Artists.Commands.UpdateArtist;
 using Yuviron.Application.Features.StudioArtist.Profile.Commands.AddSocialLink;
@@ -6,7 +6,12 @@ using Yuviron.Application.Features.StudioArtist.Profile.Commands.RemoveArtistPin
 using Yuviron.Application.Features.StudioArtist.Profile.Commands.RemoveSocialLink;
 using Yuviron.Application.Features.StudioArtist.Profile.Commands.RequestVerification;
 using Yuviron.Application.Features.StudioArtist.Profile.Commands.SetArtistPin;
+using Yuviron.Application.Features.StudioArtist.Profile.Commands.DeleteArtistAccount;
 using Yuviron.Domain.Enums;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Api.Controllers.StudioArtist;
 
@@ -29,6 +34,16 @@ public class StudioArtistProfileController : StudioArtistApiControllerBase
     public async Task<IActionResult> UpdateArtist(Guid id, [FromBody] UpdateArtistCommand command, CancellationToken ct)
     {
         await Mediator.Send(command with { ArtistId = id }, ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{artistId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteArtistAccount(Guid artistId, CancellationToken ct)
+    {
+        await Mediator.Send(new DeleteArtistAccountCommand(artistId), ct);
         return NoContent();
     }
     
@@ -73,3 +88,5 @@ public class StudioArtistProfileController : StudioArtistApiControllerBase
         return NoContent();
     }
 }
+
+public record AddSocialLinkRequest(SocialLinkType Type, string Url);

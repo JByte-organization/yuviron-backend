@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
@@ -9,6 +9,7 @@ using Yuviron.Application.Common;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using System;
 
 namespace Yuviron.Application.Features.StudioArtist.Playlists.Queries.GetStudioPlaylists;
 
@@ -29,7 +30,7 @@ public sealed class GetStudioPlaylistsHandler : IRequestHandler<GetStudioPlaylis
         var trackId = request.TrackId;
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to view this artist's playlists.");

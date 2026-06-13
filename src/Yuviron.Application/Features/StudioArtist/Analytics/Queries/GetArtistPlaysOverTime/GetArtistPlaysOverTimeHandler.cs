@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -42,7 +42,7 @@ public sealed class GetArtistPlaysOverTimeHandler : IRequestHandler<GetArtistPla
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasAccess = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");

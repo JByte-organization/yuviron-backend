@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
@@ -9,6 +9,11 @@ using Yuviron.Application.Features.Client.Playlists.Commands.RemoveTrackFromPlay
 using Yuviron.Application.Features.Client.Playlist.Queries.GetUserPlaylists;
 using Yuviron.Application.Features.Client.Playlists.Commands.ChangeTrackPosition;
 using Yuviron.Application.Features.Client.Playlists.Commands.RecoverPlaylist;
+using Yuviron.Application.Features.Client.Playlists.Queries.GetDeletedPlaylists;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Api.Controllers.Client;
 
@@ -20,6 +25,14 @@ public class MePlaylistsController : ApiControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<UserPlaylistDto>>> GetUserPlaylists([FromQuery] GetUserPlaylistsQuery query, CancellationToken ct)
+    {
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("deleted")]
+    [ProducesResponseType(typeof(PaginatedList<UserPlaylistDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedList<UserPlaylistDto>>> GetDeletedPlaylists([FromQuery] GetDeletedPlaylistsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
         return Ok(result);
@@ -83,3 +96,9 @@ public class MePlaylistsController : ApiControllerBase
         return Ok();
     }
 }
+
+public record CreatePlaylistRequest(string Title, Guid? CoverFileId, Yuviron.Domain.Enums.PlaylistVisibility Visibility);
+public record UpdatePlaylistRequest(string Title, Guid? CoverFileId, Yuviron.Domain.Enums.PlaylistVisibility Visibility);
+public record AddTrackRequest(Guid TrackId);
+public record ChangeTrackPositionRequest(int NewPosition);
+public record CreatePlaylistResponse(Guid PlaylistId);

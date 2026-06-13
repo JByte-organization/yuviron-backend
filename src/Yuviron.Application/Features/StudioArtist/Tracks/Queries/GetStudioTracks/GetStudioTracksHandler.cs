@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
@@ -10,6 +10,7 @@ using Yuviron.Application.Extensions;
 using Yuviron.Application.Features.StudioArtist.Tracks.Queries.DTOs;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using System;
 
 namespace Yuviron.Application.Features.StudioArtist.Tracks.Queries.GetStudioTracks;
 
@@ -29,7 +30,7 @@ public sealed class GetStudioTracksHandler : IRequestHandler<GetStudioTracksQuer
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this artist's tracks.");

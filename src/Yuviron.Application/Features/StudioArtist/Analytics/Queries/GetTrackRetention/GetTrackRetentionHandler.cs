@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ public sealed class GetTrackRetentionHandler : IRequestHandler<GetTrackRetention
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
-    private readonly IAnalyticsRepository _analyticsRepository; // <--- Використовуємо інтерфейс
+    private readonly IAnalyticsRepository _analyticsRepository; 
 
     public GetTrackRetentionHandler(
         IApplicationDbContext context, 
@@ -37,7 +37,7 @@ public sealed class GetTrackRetentionHandler : IRequestHandler<GetTrackRetention
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasAccess = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");
