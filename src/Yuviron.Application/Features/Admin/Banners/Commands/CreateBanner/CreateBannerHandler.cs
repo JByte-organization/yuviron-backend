@@ -1,10 +1,13 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Application.Features.Admin.Banners.Commands.CreateBanner;
 
@@ -27,18 +30,6 @@ public sealed class CreateBannerHandler : IRequestHandler<CreateBannerCommand, G
     public async Task<Guid> Handle(CreateBannerCommand request, CancellationToken cancellationToken)
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
-
-        if (request.IsActive)
-        {
-            var isPositionTaken = await _context.Banners
-                .AnyAsync(b => b.SortOrder == request.SortOrder && b.IsActive, cancellationToken);
-
-            if (isPositionTaken)
-            {
-                throw new PositionConflictException(request.SortOrder, "Banner");
-            }
-        }
-        
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var bannerClaim = await _context.ClaimFileAsync(
@@ -48,11 +39,13 @@ public sealed class CreateBannerHandler : IRequestHandler<CreateBannerCommand, G
             request.Title,
             bannerClaim.FinalPath, 
             request.TargetUrl,
-            request.SortOrder,
             request.IsActive,
             utcNow,
             request.ArtistId,
-            request.StartsAtUtc
+            request.StartsAtUtc,
+            request.EndsAtUtc,
+            request.TargetCountries,
+            request.TargetGenres
         );
 
         banner.RegisterFileSwapEvents(bannerClaim);

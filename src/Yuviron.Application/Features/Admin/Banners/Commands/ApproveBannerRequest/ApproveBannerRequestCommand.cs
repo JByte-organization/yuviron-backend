@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using System;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
@@ -7,9 +7,11 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.ApproveBannerReque
 
 public sealed record ApproveBannerRequestCommand(
     Guid RequestId,
-    int SortOrder,
     bool IsActive = true,
-    DateTime? StartsAtUtc = null
+    DateTime? StartsAtUtc = null,
+    DateTime? EndsAtUtc = null,
+    string? TargetCountries = null,
+    string? TargetGenres = null
 ) : IRequest<Guid>, ISecuredRequest 
 {
     public AppPermission RequiredPermission => AppPermission.ManageCatalog;

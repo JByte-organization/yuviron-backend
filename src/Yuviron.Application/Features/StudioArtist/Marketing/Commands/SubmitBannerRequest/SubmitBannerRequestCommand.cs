@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using System;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
@@ -12,6 +12,9 @@ public sealed record SubmitBannerRequestCommand(
     Guid AlbumId, 
     string Title,
     Guid BannerFileId,
+    int DurationDays,
+    string? TargetCountries,
+    string? TargetGenres,
     string SuccessUrl,
     string CancelUrl   
 ) : IRequest<SubmitBannerResponse>, ISecuredRequest

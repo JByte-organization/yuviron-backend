@@ -32,7 +32,7 @@ public class SendTeamInviteEmailConsumer : IConsumer<SendTeamInviteEmailEvent>
     {
         var msg = context.Message;
 
-        var frontendUrl = _configuration["FrontendUrl"] ?? "https://yuviron.com";
+        var frontendUrl = _configuration["FrontendUrl"] ?? "https://dev.yuviron.com";
         
         var inviteLink = $"{frontendUrl}/studio/invite?token={msg.InviteToken}&artistId={msg.ArtistId}";
 

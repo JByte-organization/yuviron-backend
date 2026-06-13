@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Yuviron.Application.Abstractions;
@@ -9,6 +9,9 @@ using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Application.Features.StudioArtist.Marketing.Commands.SubmitBannerRequest;
 
@@ -58,18 +61,29 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
         if (existingPendingRequest)
             throw new InvalidOperationException("You already have a pending banner request.");
 
+        if (request.DurationDays < 1) throw new InvalidOperationException("Duration must be at least 1 day.");
+
         var bannerClaim = await _context.ClaimFileAsync(
             request.BannerFileId, userId, "image/", "banners", cancellationToken);
 
         var bannerRequest = BannerRequest.Create(
-            artistId: request.ArtistId, userId: userId, albumId: request.AlbumId,
-            title: request.Title, bannerUrl: bannerClaim.FinalPath, utcNow: utcNow);
+            artistId: request.ArtistId, 
+            userId: userId, 
+            albumId: request.AlbumId,
+            title: request.Title, 
+            bannerUrl: bannerClaim.FinalPath,
+            durationDays: request.DurationDays,
+            targetCountries: request.TargetCountries,
+            targetGenres: request.TargetGenres,
+            utcNow: utcNow);
 
         bannerRequest.RegisterFileSwapEvents(bannerClaim);
         _context.BannerRequests.Add(bannerRequest);
 
+        decimal totalPrice = request.DurationDays * _options.BannerPricePerDay;
+
         var stripeSession = await _paymentService.CreateBannerCheckoutSessionAsync(
-            user, bannerRequest, _options.BannerPrice, _options.BannerCurrency, request.SuccessUrl, request.CancelUrl, cancellationToken);
+            user, bannerRequest, totalPrice, _options.BannerCurrency, request.SuccessUrl, request.CancelUrl, cancellationToken);
 
         bannerRequest.SetCheckoutSession(stripeSession.SessionId);
         

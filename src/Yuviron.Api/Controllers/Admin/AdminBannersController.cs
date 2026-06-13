@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -13,7 +13,6 @@ using Yuviron.Application.Features.Admin.Banners.Commands.ApproveBannerRequest;
 using Yuviron.Application.Features.Admin.Banners.Commands.RejectBannerRequest;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequests;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequestById;
-using Yuviron.Application.Features.Admin.Banners.Queries.DTOs;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBannerById;
 using Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
 

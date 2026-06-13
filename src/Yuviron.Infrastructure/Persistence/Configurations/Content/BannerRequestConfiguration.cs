@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -14,6 +14,15 @@ public class BannerRequestConfiguration : IEntityTypeConfiguration<BannerRequest
         builder.Property(x => x.Title).IsRequired().HasMaxLength(150);
         builder.Property(x => x.BannerUrl).HasMaxLength(2048);
         builder.Property(x => x.AdminNotes).HasMaxLength(1000);
+        
+        builder.Property(x => x.EndsAtUtc)
+            .HasColumnType("datetime(6)");
+
+        builder.Property(x => x.TargetCountries)
+            .HasMaxLength(1000);
+
+        builder.Property(x => x.TargetGenres)
+            .HasMaxLength(1000);
 
         builder.HasIndex(x => x.ArtistId);
         builder.HasIndex(x => x.SubmittedByUserId);

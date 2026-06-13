@@ -1,6 +1,3 @@
-using Yuviron.Domain.Entities;
-using Yuviron.Application.Extensions;
-using Yuviron.Application.Abstractions.Services;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -10,8 +7,11 @@ using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Payment;
 using Yuviron.Application.Configuration;
+using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
+using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.StudioArtist.Marketing.Commands.PayBannerRequest;
 
@@ -50,13 +50,15 @@ public sealed class PayBannerRequestHandler : IRequestHandler<PayBannerRequestCo
             .FirstOrDefaultAsync(br => br.Id == request.RequestId && br.ArtistId == request.ArtistId, cancellationToken);
 
         if (bannerRequest == null)
-            throw new NotFoundException(nameof(BannerRequest), request.RequestId);
+            throw new NotFoundException("BannerRequest", request.RequestId);
 
         if (bannerRequest.Status != BannerRequestStatus.AwaitingPayment)
             throw new InvalidOperationException("This banner request cannot be paid because it is not in AwaitingPayment status.");
 
+        decimal totalPrice = bannerRequest.DurationDays * _options.BannerPricePerDay;
+
         var stripeSession = await _paymentService.CreateBannerCheckoutSessionAsync(
-            user, bannerRequest, _options.BannerPrice, _options.BannerCurrency, request.SuccessUrl, request.CancelUrl, cancellationToken);
+            user, bannerRequest, totalPrice, _options.BannerCurrency, request.SuccessUrl, request.CancelUrl, cancellationToken);
 
         bannerRequest.SetCheckoutSession(stripeSession.SessionId);
         

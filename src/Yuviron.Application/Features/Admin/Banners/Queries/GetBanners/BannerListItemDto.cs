@@ -1,13 +1,12 @@
+﻿using System;
 
-namespace Yuviron.Application.Features.Admin.Banners.Queries.DTOs;
+namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
 
 public record BannerListItemDto(
     Guid Id,
     string Title,
     string BannerUrl,
-    string TargetUrl,
-    int SortOrder,
     bool IsActive,
-    DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime? StartsAtUtc,
+    DateTime? EndsAtUtc
 );

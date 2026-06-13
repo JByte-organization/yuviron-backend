@@ -43,18 +43,27 @@ public sealed class ExpiredDataCleanupJob : BackgroundService
         var utcNow = timeProvider.GetUtcNow().UtcDateTime;
         var staleRevocationCutoff = utcNow.AddDays(-7);
 
-        // 1. Refresh Tokens (Expired or Revoked long ago)
-        int bannersDeleted = await context.BannerRequests.Where(br => br.Status == Yuviron.Domain.Enums.BannerRequestStatus.AwaitingPayment && br.CreatedAt < utcNow.AddDays(-7)).ExecuteDeleteAsync(ct);
+        // 1. Unpaid Banner Requests (Older than 7 days)
+        int bannersDeleted = await context.BannerRequests
+            .Where(br => br.Status == Yuviron.Domain.Enums.BannerRequestStatus.AwaitingPayment && br.CreatedAt < utcNow.AddDays(-7))
+            .ExecuteDeleteAsync(ct);
 
+        // 2. Refresh Tokens (Expired or Revoked long ago)
         int tokensDeleted = await context.RefreshTokens
             .Where(t => t.ExpiresAt < utcNow || (t.RevokedAt != null && t.RevokedAt < staleRevocationCutoff))
             .ExecuteDeleteAsync(ct);
 
+        // 3. Expired Banners (Deactivate)
+        int bannersDeactivated = await context.Banners
+            .Where(b => b.IsActive && b.EndsAtUtc != null && b.EndsAtUtc < utcNow)
+            .ExecuteUpdateAsync(s => s.SetProperty(b => b.IsActive, false), ct);
+
         // Note: You can add other TTL data here, like expired OTPs or temp invite codes.
         
-        if (tokensDeleted > 0 || bannersDeleted > 0)
+        if (tokensDeleted > 0 || bannersDeleted > 0 || bannersDeactivated > 0)
         {
-            _logger.LogInformation("Cleanup: Removed {TokensCount} expired/stale tokens and {BannersCount} unpaid banner requests.", tokensDeleted, bannersDeleted);
+            _logger.LogInformation("Cleanup: Removed {TokensCount} tokens, {BannersCount} unpaid requests, and deactivated {DeactivatedCount} expired banners.", 
+                tokensDeleted, bannersDeleted, bannersDeactivated);
         }
     }
 }

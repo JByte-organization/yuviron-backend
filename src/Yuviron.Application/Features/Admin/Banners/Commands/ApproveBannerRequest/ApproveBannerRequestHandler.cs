@@ -1,11 +1,13 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Configuration;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
@@ -19,17 +21,20 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
+    private readonly MarketingOptions _options;
 
     public ApproveBannerRequestHandler(
         IApplicationDbContext context,
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
-        IEventBus eventBus)
+        IEventBus eventBus,
+        IOptions<MarketingOptions> options)
     {
         _context = context;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _eventBus = eventBus;
+        _options = options.Value;
     }
 
     public async Task<Guid> Handle(ApproveBannerRequestCommand request, CancellationToken cancellationToken)
@@ -42,14 +47,16 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
         if (bannerReq.Status != BannerRequestStatus.Pending || !bannerReq.IsPaid)
             throw new InvalidOperationException("Only paid and pending requests can be approved.");
 
-        if (request.IsActive)
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        
+        DateTime? endsAtUtc = request.EndsAtUtc;
+        if (endsAtUtc == null)
         {
-            var isPositionTaken = await _context.Banners.AnyAsync(b => b.SortOrder == request.SortOrder && b.IsActive, cancellationToken);
-            if (isPositionTaken) throw new PositionConflictException(request.SortOrder, "Banner");
+            var start = request.StartsAtUtc ?? utcNow;
+            endsAtUtc = start.AddDays(bannerReq.DurationDays > 0 ? bannerReq.DurationDays : _options.BannerDurationDays);
         }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        bannerReq.Approve(utcNow);
+        bannerReq.Approve(endsAtUtc, utcNow);
 
         string smartCode = Guid.NewGuid().ToString("N")[..8]; 
         
@@ -74,11 +81,13 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
             title: bannerReq.Title,
             bannerUrl: bannerReq.BannerUrl ?? string.Empty,
             targetUrl: targetUrl, 
-            sortOrder: request.SortOrder,
             isActive: request.IsActive,
             utcNow: utcNow,
             artistId: bannerReq.ArtistId,
-            startsAtUtc: request.StartsAtUtc
+            startsAtUtc: request.StartsAtUtc,
+            endsAtUtc: endsAtUtc,
+            targetCountries: request.TargetCountries ?? bannerReq.TargetCountries,
+            targetGenres: request.TargetGenres ?? bannerReq.TargetGenres
         );
 
         _context.Banners.Add(activeBanner);

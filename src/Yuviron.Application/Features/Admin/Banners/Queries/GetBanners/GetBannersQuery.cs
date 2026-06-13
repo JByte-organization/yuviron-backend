@@ -1,7 +1,6 @@
-using MediatR;
+﻿using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
-using Yuviron.Application.Features.Admin.Banners.Queries.DTOs;
 using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;

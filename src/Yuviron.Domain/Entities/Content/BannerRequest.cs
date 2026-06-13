@@ -1,4 +1,4 @@
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using System;
 
@@ -13,7 +13,12 @@ public class BannerRequest : Entity
     public string? BannerUrl { get; private set; }
     public BannerRequestStatus Status { get; private set; } 
     public string? AdminNotes { get; private set; }
+    public DateTime? EndsAtUtc { get; private set; }
     
+    public int DurationDays { get; private set; }
+    public string? TargetCountries { get; private set; }
+    public string? TargetGenres { get; private set; }
+
     public bool IsPaid { get; private set; }
     public string? StripeSessionId { get; private set; }
     public string? StripePaymentIntentId { get; private set; }
@@ -32,7 +37,10 @@ public class BannerRequest : Entity
         Guid userId, 
         Guid? albumId,
         string title, 
-        string? bannerUrl, 
+        string? bannerUrl,
+        int durationDays,
+        string? targetCountries,
+        string? targetGenres,
         DateTime utcNow)
     {
         return new BannerRequest
@@ -44,6 +52,9 @@ public class BannerRequest : Entity
             Title = title.Trim(),
             BannerUrl = bannerUrl,
             Status = BannerRequestStatus.AwaitingPayment, 
+            DurationDays = durationDays,
+            TargetCountries = targetCountries,
+            TargetGenres = targetGenres,
             IsPaid = false, 
             CreatedAt = utcNow,
             UpdatedAt = utcNow
@@ -63,9 +74,10 @@ public class BannerRequest : Entity
         UpdatedAt = utcNow;
     }
 
-    public void Approve(DateTime utcNow)
+    public void Approve(DateTime? endsAtUtc, DateTime utcNow)
     {
         Status = BannerRequestStatus.Approved;
+        EndsAtUtc = endsAtUtc;
         UpdatedAt = utcNow;
     }
 
