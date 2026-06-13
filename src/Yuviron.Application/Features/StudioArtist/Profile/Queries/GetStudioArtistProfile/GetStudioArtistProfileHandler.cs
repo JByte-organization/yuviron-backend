@@ -36,7 +36,8 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
 
         if (teamMember == null) throw new ForbiddenException("No access to this artist's profile.");
 
-        var isHighLevelAccess = teamMember.Role == ArtistTeamRole.Owner || teamMember.Role == ArtistTeamRole.Manager;
+        var currentRole = teamMember.Role;
+        var isHighLevelAccess = currentRole == ArtistTeamRole.Owner || currentRole == ArtistTeamRole.Manager;
 
         var artist = await _context.Artists
             .AsNoTracking()
@@ -76,6 +77,7 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
             artist.Name,
             artist.VerificationStatus.ToString(),
             artist.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
+            currentRole.ToString(), 
             new StudioArtistDetailsDto(artist.Bio, artist.AvatarUrl, artist.BannerUrl, artist.CreatedAt),
             new ProfileStatsDto(artist.TotalPlays, artist.MonthlyListenersCount),
             finance,

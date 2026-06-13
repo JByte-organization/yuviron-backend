@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Yuviron.Domain.Enums;
 
@@ -9,6 +9,7 @@ public sealed record StudioArtistProfileDto(
     string Name,
     string VerificationStatus,
     bool IsPremium,
+    string CurrentUserRole, 
     StudioArtistDetailsDto Details,
     ProfileStatsDto Stats,
     StudioArtistFinanceDto Finance,
