@@ -44,15 +44,17 @@ public sealed class ExpiredDataCleanupJob : BackgroundService
         var staleRevocationCutoff = utcNow.AddDays(-7);
 
         // 1. Refresh Tokens (Expired or Revoked long ago)
+        int bannersDeleted = await context.BannerRequests.Where(br => br.Status == Yuviron.Domain.Enums.BannerRequestStatus.AwaitingPayment && br.CreatedAt < utcNow.AddDays(-7)).ExecuteDeleteAsync(ct);
+
         int tokensDeleted = await context.RefreshTokens
             .Where(t => t.ExpiresAt < utcNow || (t.RevokedAt != null && t.RevokedAt < staleRevocationCutoff))
             .ExecuteDeleteAsync(ct);
 
         // Note: You can add other TTL data here, like expired OTPs or temp invite codes.
         
-        if (tokensDeleted > 0)
+        if (tokensDeleted > 0 || bannersDeleted > 0)
         {
-            _logger.LogInformation("Cleanup: Removed {Count} expired/stale tokens.", tokensDeleted);
+            _logger.LogInformation("Cleanup: Removed {TokensCount} expired/stale tokens and {BannersCount} unpaid banner requests.", tokensDeleted, bannersDeleted);
         }
     }
 }

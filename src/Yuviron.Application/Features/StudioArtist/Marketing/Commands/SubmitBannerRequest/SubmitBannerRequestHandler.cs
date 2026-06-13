@@ -53,7 +53,7 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
         if (!albumExists) throw new ForbiddenException("The selected album does not belong to this artist.");
 
         var existingPendingRequest = await _context.BannerRequests
-            .AnyAsync(br => br.ArtistId == request.ArtistId && br.Status == BannerRequestStatus.Pending, cancellationToken);
+            .AnyAsync(br => br.ArtistId == request.ArtistId && (br.Status == BannerRequestStatus.Pending || br.Status == BannerRequestStatus.AwaitingPayment), cancellationToken);
 
         if (existingPendingRequest)
             throw new InvalidOperationException("You already have a pending banner request.");

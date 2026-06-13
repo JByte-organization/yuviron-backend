@@ -43,7 +43,7 @@ public class BannerRequest : Entity
             AlbumId = albumId,
             Title = title.Trim(),
             BannerUrl = bannerUrl,
-            Status = BannerRequestStatus.Pending, 
+            Status = BannerRequestStatus.AwaitingPayment, 
             IsPaid = false, 
             CreatedAt = utcNow,
             UpdatedAt = utcNow
@@ -58,6 +58,7 @@ public class BannerRequest : Entity
     public void MarkAsPaid(string paymentIntentId, DateTime utcNow)
     {
         IsPaid = true;
+        Status = BannerRequestStatus.Pending;
         StripePaymentIntentId = paymentIntentId;
         UpdatedAt = utcNow;
     }
