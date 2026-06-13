@@ -1,10 +1,13 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
-using Yuviron.Application.Extensions; 
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Application.Features.Admin.Banners.Commands.UpdateBanner;
 
@@ -29,45 +32,33 @@ public sealed class UpdateBannerHandler : IRequestHandler<UpdateBannerCommand, U
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var banner = await _context.Banners
-            .FirstOrDefaultAsync(b => b.Id == request.BannerId, cancellationToken);
+            .FirstOrDefaultAsync(b => b.Id == request.BannerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Banner), request.BannerId);
 
-        if (banner == null)
-        {
-            throw new NotFoundException(nameof(Banner), request.BannerId);
-        }
-
-        if (request.IsActive)
-        {
-            var isPositionTaken = await _context.Banners
-                .AnyAsync(b => b.SortOrder == request.SortOrder && b.Id != request.BannerId && b.IsActive, cancellationToken);
-
-            if (isPositionTaken)
-            {
-                throw new PositionConflictException(request.SortOrder, "Banner");
-            }
-        }
-        
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        string finalBannerUrl = banner.BannerUrl; 
-        
+
+        string bannerUrl = banner.BannerUrl;
         if (request.BannerFileId.HasValue)
         {
             var bannerClaim = await _context.ClaimFileAsync(
                 request.BannerFileId.Value, adminId, "image/", "banners", cancellationToken);
             
             banner.RegisterFileSwapEvents(bannerClaim, banner.BannerUrl);
-            finalBannerUrl = bannerClaim.FinalPath;
+            bannerUrl = bannerClaim.FinalPath;
         }
-        
+
         banner.Update(
-            request.Title, 
-            finalBannerUrl, 
-            request.TargetUrl, 
-            request.SortOrder, 
-            request.IsActive, 
+            request.Title,
+            bannerUrl,
+            request.TargetUrl,
+            request.IsActive,
             utcNow,
             request.ArtistId,
-            request.StartsAtUtc);
+            request.StartsAtUtc,
+            request.EndsAtUtc,
+            request.TargetCountries,
+            request.TargetGenres
+        );
 
         await _context.SaveChangesAsync(cancellationToken);
 

@@ -1,6 +1,6 @@
-using Yuviron.Application.Extensions;
+﻿using Yuviron.Application.Extensions;
 using Yuviron.Application.Abstractions.Services;
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
+using System;
 
 namespace Yuviron.Application.Features.StudioArtist.Marketing.Queries.GetActiveBannerRequest;
 
@@ -46,6 +47,10 @@ public sealed class GetActiveBannerRequestHandler : IRequestHandler<GetActiveBan
                 br.Status,
                 br.AdminNotes,
                 br.IsPaid,
+                br.DurationDays,
+                br.TargetCountries,
+                br.TargetGenres,
+                br.EndsAtUtc,
                 br.CreatedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);

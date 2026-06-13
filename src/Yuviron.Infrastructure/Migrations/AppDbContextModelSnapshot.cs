@@ -513,21 +513,27 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("EndsAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
-
-                    b.Property<int>("SortOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
 
                     b.Property<DateTime?>("StartNotificationSentAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("StartsAtUtc")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TargetCountries")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("TargetGenres")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<string>("TargetUrl")
                         .IsRequired()
@@ -546,7 +552,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasIndex("ArtistId");
 
-                    b.HasIndex("IsActive", "SortOrder");
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsActive", "EndsAtUtc");
 
                     b.HasIndex("IsActive", "StartsAtUtc", "StartNotificationSentAtUtc");
 
@@ -576,6 +584,12 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndsAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("IsPaid")
                         .HasColumnType("tinyint(1)");
 
@@ -590,6 +604,14 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.Property<Guid>("SubmittedByUserId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("TargetCountries")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("TargetGenres")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<string>("Title")
                         .IsRequired()

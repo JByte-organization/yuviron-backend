@@ -1,4 +1,4 @@
-using Yuviron.Domain.Common;
+﻿using Yuviron.Domain.Common;
 using Yuviron.Domain.Events;
 
 namespace Yuviron.Domain.Entities;
@@ -12,11 +12,13 @@ public class Banner : Entity
     
     public string TargetUrl { get; private set; } = string.Empty;
     
-    public int SortOrder { get; private set; }
-    
     public bool IsActive { get; private set; }
     public DateTime? StartsAtUtc { get; private set; }
+    public DateTime? EndsAtUtc { get; private set; }
     public DateTime? StartNotificationSentAtUtc { get; private set; }
+
+    public string? TargetCountries { get; private set; }
+    public string? TargetGenres { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -29,11 +31,13 @@ public class Banner : Entity
         string title,
         string bannerUrl,
         string targetUrl,
-        int sortOrder,
         bool isActive,
         DateTime utcNow,
         Guid? artistId = null,
-        DateTime? startsAtUtc = null)
+        DateTime? startsAtUtc = null,
+        DateTime? endsAtUtc = null,
+        string? targetCountries = null,
+        string? targetGenres = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required");
         if (string.IsNullOrWhiteSpace(bannerUrl)) throw new ArgumentException("Banner image URL is required");
@@ -46,9 +50,11 @@ public class Banner : Entity
             Title = title.Trim(),
             BannerUrl = bannerUrl.Trim(),
             TargetUrl = targetUrl.Trim(),
-            SortOrder = sortOrder,
             IsActive = isActive,
             StartsAtUtc = startsAtUtc,
+            EndsAtUtc = endsAtUtc,
+            TargetCountries = targetCountries,
+            TargetGenres = targetGenres,
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };
@@ -58,11 +64,13 @@ public class Banner : Entity
         string title,
         string bannerUrl,
         string targetUrl,
-        int sortOrder,
         bool isActive,
         DateTime utcNow,
         Guid? artistId = null,
-        DateTime? startsAtUtc = null)
+        DateTime? startsAtUtc = null,
+        DateTime? endsAtUtc = null,
+        string? targetCountries = null,
+        string? targetGenres = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required");
         if (string.IsNullOrWhiteSpace(bannerUrl)) throw new ArgumentException("Banner image URL is required");
@@ -72,9 +80,11 @@ public class Banner : Entity
         Title = title.Trim();
         BannerUrl = bannerUrl.Trim();
         TargetUrl = targetUrl.Trim();
-        SortOrder = sortOrder;
         IsActive = isActive;
         StartsAtUtc = startsAtUtc ?? StartsAtUtc;
+        EndsAtUtc = endsAtUtc ?? EndsAtUtc;
+        TargetCountries = targetCountries;
+        TargetGenres = targetGenres;
         UpdatedAt = utcNow;
     }
 
@@ -87,6 +97,12 @@ public class Banner : Entity
     public void MarkStartNotificationSent(DateTime utcNow)
     {
         StartNotificationSentAtUtc = utcNow;
+        UpdatedAt = utcNow;
+    }
+
+    public void Deactivate(DateTime utcNow)
+    {
+        IsActive = false;
         UpdatedAt = utcNow;
     }
 

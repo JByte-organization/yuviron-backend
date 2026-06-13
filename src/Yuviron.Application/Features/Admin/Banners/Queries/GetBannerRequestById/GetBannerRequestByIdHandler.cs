@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
-using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Exceptions;
 
 namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequestById;
 
@@ -24,29 +24,27 @@ public sealed class GetBannerRequestByIdHandler : IRequestHandler<GetBannerReque
             .AsNoTracking()
             .Include(br => br.Artist)
             .Include(br => br.Album)
-            .Include(br => br.SubmittedByUser).ThenInclude(u => u.Profile)
             .Where(br => br.Id == request.RequestId)
             .Select(br => new BannerRequestDetailsDto(
                 br.Id,
                 br.ArtistId,
                 br.Artist.Name,
-                br.SubmittedByUserId,
-                br.SubmittedByUser.Profile.FirstName,
                 br.AlbumId,
                 br.Album != null ? br.Album.Title : null,
                 br.Title,
                 br.BannerUrl,
                 br.Status,
-                br.IsPaid,
-                br.StripePaymentIntentId,
                 br.AdminNotes,
+                br.IsPaid,
+                br.DurationDays,
+                br.TargetCountries,
+                br.TargetGenres,
+                br.EndsAtUtc,
                 br.CreatedAt,
                 br.UpdatedAt
             ))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (bannerReq == null)
-            throw new NotFoundException(nameof(BannerRequest), request.RequestId);
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException(nameof(BannerRequest), request.RequestId);
 
         return bannerReq;
     }

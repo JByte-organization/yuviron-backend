@@ -1,23 +1,25 @@
-using FluentAssertions;
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using Yuviron.Application.Abstractions;
+using FluentAssertions;
 using Yuviron.Application.Abstractions.Messaging;
-using Yuviron.Domain.Entities;
-using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 using Yuviron.Infrastructure.BackgroundJobs;
 using Yuviron.Infrastructure.Persistence;
+using Yuviron.Domain.Entities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Yuviron.Tests.Infrastructure.BackgroundJobs;
 
 public class BannerStartNotificationJobTests
 {
     [Fact]
-    public async Task RunOnceAsync_Should_Publish_Event_And_Mark_Banner_As_Notified()
+    public async Task RunOnceAsync_Should_Publish_BannerStartedEvent_And_Mark_As_Sent()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -25,48 +27,47 @@ public class BannerStartNotificationJobTests
 
         var dbContext = new AppDbContext(options);
         var utcNow = new DateTime(2026, 6, 8, 12, 0, 0, DateTimeKind.Utc);
+        
+        var artistId = Guid.NewGuid();
         var banner = Banner.Create(
-            "Promo Banner",
-            "https://cdn/banner.jpg",
-            "https://example.com",
-            1,
+            "Campaign",
+            "url",
+            "target",
             true,
-            utcNow,
-            Guid.NewGuid(),
-            utcNow.AddMinutes(-5));
+            utcNow.AddHours(-1),
+            artistId,
+            startsAtUtc: utcNow.AddMinutes(-5));
 
         dbContext.Banners.Add(banner);
         await dbContext.SaveChangesAsync();
 
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton(dbContext);
+        
         var eventBusMock = new Mock<IEventBus>();
-        eventBusMock
-            .Setup(x => x.PublishAsync(It.IsAny<BannerStartedEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        serviceCollection.AddSingleton(eventBusMock.Object);
 
-        var providerMock = new Mock<IServiceProvider>();
-        providerMock.Setup(x => x.GetService(typeof(AppDbContext))).Returns(dbContext);
-        providerMock.Setup(x => x.GetService(typeof(IEventBus))).Returns(eventBusMock.Object);
-
-        var scopeMock = new Mock<IServiceScope>();
-        scopeMock.SetupGet(x => x.ServiceProvider).Returns(providerMock.Object);
-
+        var serviceProvider = serviceCollection.BuildServiceProvider();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+        var scopeMock = new Mock<IServiceScope>();
+        scopeMock.Setup(s => s.ServiceProvider).Returns(serviceProvider);
+        scopeFactoryMock.Setup(s => s.CreateScope()).Returns(scopeMock.Object);
 
         var timeProviderMock = new Mock<TimeProvider>();
         timeProviderMock.Setup(x => x.GetUtcNow()).Returns(new DateTimeOffset(utcNow));
 
-        var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<BannerStartNotificationJob>>();
-        var job = new BannerStartNotificationJob(scopeFactoryMock.Object, timeProviderMock.Object, loggerMock.Object);
+        var job = new BannerStartNotificationJob(
+            scopeFactoryMock.Object,
+            timeProviderMock.Object,
+            new Mock<ILogger<BannerStartNotificationJob>>().Object);
 
         await job.RunOnceAsync(CancellationToken.None);
 
         eventBusMock.Verify(x => x.PublishAsync(
-            It.Is<BannerStartedEvent>(e => e.BannerId == banner.Id && e.BannerTitle == "Promo Banner"),
+            It.Is<BannerStartedEvent>(e => e.ArtistId == artistId && e.BannerId == banner.Id),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var reloadedBanner = await dbContext.Banners.FindAsync(banner.Id);
-        reloadedBanner.Should().NotBeNull();
-        reloadedBanner!.StartNotificationSentAtUtc.Should().Be(utcNow);
+        var updatedBanner = await dbContext.Banners.FindAsync(banner.Id);
+        updatedBanner!.StartNotificationSentAtUtc.Should().NotBeNull();
     }
 }

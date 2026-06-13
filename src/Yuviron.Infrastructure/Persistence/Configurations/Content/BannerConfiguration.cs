@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -27,10 +27,6 @@ public class BannerConfiguration : IEntityTypeConfiguration<Banner>
             .IsRequired()
             .HasMaxLength(1000);
 
-        builder.Property(b => b.SortOrder)
-            .IsRequired()
-            .HasDefaultValue(0);
-
         builder.Property(b => b.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
@@ -41,8 +37,17 @@ public class BannerConfiguration : IEntityTypeConfiguration<Banner>
         builder.Property(b => b.StartsAtUtc)
             .HasColumnType("datetime(6)");
 
+        builder.Property(b => b.EndsAtUtc)
+            .HasColumnType("datetime(6)");
+
         builder.Property(b => b.StartNotificationSentAtUtc)
             .HasColumnType("datetime(6)");
+
+        builder.Property(b => b.TargetCountries)
+            .HasMaxLength(1000);
+
+        builder.Property(b => b.TargetGenres)
+            .HasMaxLength(1000);
 
         builder.Property(b => b.CreatedAt)
             .IsRequired();
@@ -50,8 +55,9 @@ public class BannerConfiguration : IEntityTypeConfiguration<Banner>
         builder.Property(b => b.UpdatedAt)
             .IsRequired();
 
-        builder.HasIndex(b => new { b.IsActive, b.SortOrder });
+        builder.HasIndex(b => b.IsActive);
         builder.HasIndex(b => new { b.IsActive, b.StartsAtUtc, b.StartNotificationSentAtUtc });
+        builder.HasIndex(b => new { b.IsActive, b.EndsAtUtc });
 
         builder.HasOne(b => b.Artist)
             .WithMany()

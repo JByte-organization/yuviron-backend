@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace Yuviron.Application.Features.Admin.Banners.Commands.UpdateBanner;
 
@@ -7,17 +7,7 @@ public sealed class UpdateBannerValidator : AbstractValidator<UpdateBannerComman
     public UpdateBannerValidator()
     {
         RuleFor(x => x.BannerId).NotEmpty();
-
-        RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(200).WithMessage("Title cannot exceed 200 characters.");
-
-
-        RuleFor(x => x.TargetUrl)
-            .NotEmpty().WithMessage("Target URL is required.")
-            .MaximumLength(1000);
-
-        RuleFor(x => x.SortOrder)
-            .GreaterThanOrEqualTo(0).WithMessage("Sort order must be 0 or greater.");
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.TargetUrl).NotEmpty().MaximumLength(1000);
     }
 }

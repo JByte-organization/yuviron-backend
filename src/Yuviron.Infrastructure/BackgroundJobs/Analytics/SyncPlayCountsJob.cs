@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -81,36 +81,8 @@ public class SyncPlayCountsJob : BackgroundService
                 .Where(t => trackIds.Contains(t.Id))
                 .ToListAsync(ct);
 
-            foreach (var track in tracks)
-            {
-                if (!tracksToSync.TryGetValue(track.Id, out var increment) || increment <= 0)
-                {
-                    continue;
-                }
-
-                track.AddPlays(increment);
-            }
-        }
-
-        if (artistsToSync.Any())
-        {
-            var artistIds = artistsToSync.Keys.ToList();
-            var artists = await context.Artists.Where(a => artistIds.Contains(a.Id)).ToListAsync(ct);
-            foreach (var artist in artists) artist.AddPlays(artistsToSync[artist.Id]);
-        }
-
-        await context.SaveChangesAsync(ct);
-
-        if (tracksToSync.Any())
-        {
-            var trackIds = tracksToSync.Keys.ToList();
-            var tracks = await context.Tracks
-                .Include(t => t.TrackArtists)
-                .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
-                .Where(t => trackIds.Contains(t.Id))
-                .ToListAsync(ct);
-
             var milestoneEvents = new List<TrackPlayMilestoneReachedEvent>();
+
             foreach (var track in tracks)
             {
                 if (!tracksToSync.TryGetValue(track.Id, out var increment) || increment <= 0)
@@ -118,8 +90,10 @@ public class SyncPlayCountsJob : BackgroundService
                     continue;
                 }
 
-                var oldCount = track.PlayCount - increment;
+                var oldCount = track.PlayCount;
+                track.AddPlays(increment);
                 var newCount = track.PlayCount;
+
                 var artistId = track.TrackArtists.FirstOrDefault(ta => ta.Role == ArtistRole.Main)?.ArtistId
                                ?? track.Album!.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.ArtistId
                                ?? track.Album!.AlbumArtists.First().ArtistId;
@@ -143,6 +117,15 @@ public class SyncPlayCountsJob : BackgroundService
                 await eventBus.PublishAsync(milestoneEvent, ct);
             }
         }
+
+        if (artistsToSync.Any())
+        {
+            var artistIds = artistsToSync.Keys.ToList();
+            var artists = await context.Artists.Where(a => artistIds.Contains(a.Id)).ToListAsync(ct);
+            foreach (var artist in artists) artist.AddPlays(artistsToSync[artist.Id]);
+        }
+
+        await context.SaveChangesAsync(ct);
 
         foreach (var kvp in tracksToSync)
         {
