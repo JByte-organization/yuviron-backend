@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ public sealed class GetTrackPlaysOverTimeHandler : IRequestHandler<GetTrackPlays
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
-    private readonly IAnalyticsRepository _analyticsRepository; // <--- Використовуємо інтерфейс
+    private readonly IAnalyticsRepository _analyticsRepository; 
 
     public GetTrackPlaysOverTimeHandler(
         IApplicationDbContext context, 
@@ -40,7 +40,7 @@ public sealed class GetTrackPlaysOverTimeHandler : IRequestHandler<GetTrackPlays
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasAccess = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");

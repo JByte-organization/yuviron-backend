@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -57,7 +57,7 @@ public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumBy
         if (albumData is null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(albumData.ArtistIds, userId)
+            .Where(tm => albumData.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("You do not have permission to view this album.");

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Exceptions;
@@ -29,12 +30,14 @@ public sealed class SetArtistPinHandler : IRequestHandler<SetArtistPinCommand, U
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var artist = await _context.Artists
-            .Include(a => a.TeamMembers)
             .Include(a => a.Pins)
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var hasAccess = artist.TeamMembers.Any(tm => tm.UserId == userId);
+        var hasAccess = await _context.ArtistTeamMembers
+            .HasEditorAccess(request.ArtistId, userId)
+            .AnyAsync(cancellationToken);
+
         if (!hasAccess) throw new ForbiddenException("No access to manage this artist's profile.");
 
         bool entityExists = request.EntityType switch

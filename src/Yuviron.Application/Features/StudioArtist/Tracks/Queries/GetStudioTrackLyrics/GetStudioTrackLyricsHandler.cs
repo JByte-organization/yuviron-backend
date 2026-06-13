@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -39,7 +39,7 @@ public sealed class GetStudioTrackLyricsHandler : IRequestHandler<GetStudioTrack
                         ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
         var hasAccess = await _context.ArtistTeamMembers
-            .HasManagementAccess(trackData.ArtistIds, userId)
+            .Where(tm => trackData.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to this track.");

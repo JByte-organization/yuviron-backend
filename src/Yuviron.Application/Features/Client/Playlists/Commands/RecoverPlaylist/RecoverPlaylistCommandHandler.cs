@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading;
@@ -14,18 +14,21 @@ public class RecoverPlaylistCommandHandler : IRequestHandler<RecoverPlaylistComm
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly TimeProvider _timeProvider;
 
-    public RecoverPlaylistCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public RecoverPlaylistCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(RecoverPlaylistCommand request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId!.Value;
+        var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var playlist = await _context.Playlists
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && p.UserId == userId, cancellationToken);
 
         if (playlist == null)
@@ -33,11 +36,15 @@ public class RecoverPlaylistCommandHandler : IRequestHandler<RecoverPlaylistComm
             throw new NotFoundException(nameof(Playlist), request.PlaylistId);
         }
 
-        playlist.Recover(DateTime.UtcNow);
+        if (!playlist.IsDeleted)
+        {
+            return Unit.Value;
+        }
+
+        playlist.Recover(_timeProvider.GetUtcNow().UtcDateTime);
 
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }
 }
-

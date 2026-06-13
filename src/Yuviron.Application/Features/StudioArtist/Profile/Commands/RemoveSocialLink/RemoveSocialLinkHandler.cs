@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -32,18 +33,20 @@ public sealed class RemoveSocialLinkHandler : IRequestHandler<RemoveSocialLinkCo
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
-                         .Include(a => a.TeamMembers)
-                         .Include(a => a.SocialLinks)
-                         .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
-                     ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
+        var hasPermission = await _context.ArtistTeamMembers
+            .HasEditorAccess(request.ArtistId, userId)
+            .AnyAsync(cancellationToken);
 
-        if (!artist.TeamMembers.Any(tm => tm.UserId == userId))
-            throw new ForbiddenException("No access to manage this artist's profile.");
+        if (!hasPermission) throw new ForbiddenException("No access to manage this artist's profile.");
 
-        artist.RemoveSocialLink(request.Type, utcNow);
-        
-        await _context.SaveChangesAsync(cancellationToken);
+        var link = await _context.ArtistSocialLinks
+            .FirstOrDefaultAsync(l => l.ArtistId == request.ArtistId && l.Type == request.Type, cancellationToken);
+            
+        if (link != null)
+        {
+            _context.ArtistSocialLinks.Remove(link);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         return Unit.Value;
     }

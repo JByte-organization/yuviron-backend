@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
@@ -28,7 +28,7 @@ public sealed class GetStudioAlbumsHandler : IRequestHandler<GetStudioAlbumsQuer
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var hasPermission = await _context.ArtistTeamMembers
-            .HasManagementAccess(request.ArtistId, userId)
+            .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this artist's content.");

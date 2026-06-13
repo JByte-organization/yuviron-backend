@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
 
@@ -24,17 +25,23 @@ public sealed class AddSocialLinkHandler : IRequestHandler<AddSocialLinkCommand,
 
     public async Task<Unit> Handle(AddSocialLinkCommand request, CancellationToken cancellationToken)
     {
+        var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        // ВАЖНО: Мы не делаем .Include(a => a.SocialLinks)
-        // Мы не трогаем сущность Artist вообще, чтобы не провоцировать UPDATE
-    
-        // Сразу создаем запись в таблицу связей
+        var hasPermission = await _context.ArtistTeamMembers
+            .HasEditorAccess(request.ArtistId, userId)
+            .AnyAsync(cancellationToken);
+
+        if (!hasPermission) throw new ForbiddenException("No access to update this artist profile.");
+
+        var exists = await _context.ArtistSocialLinks
+            .AnyAsync(l => l.ArtistId == request.ArtistId && l.Type == request.Type, cancellationToken);
+            
+        if (exists) throw new SocialLinkAlreadyExistsException(request.Type);
+
         var newLink = ArtistSocialLink.Create(request.ArtistId, request.Type, request.Url, utcNow);
-    
         _context.ArtistSocialLinks.Add(newLink);
 
-        // Это сделает обычный INSERT, который не вызывает конфликтов параллелизма
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
