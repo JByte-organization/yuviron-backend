@@ -22,8 +22,9 @@ public class SmartLinkConfiguration : IEntityTypeConfiguration<SmartLink>
         builder.HasOne(x => x.CreatedByUser)
             .WithMany()
             .HasForeignKey(x => x.CreatedByUserId)
+            .IsRequired(false) 
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasQueryFilter(x => !x.CreatedByUser.IsDeleted);
+        builder.HasQueryFilter(x => x.CreatedByUserId == null || !x.CreatedByUser.IsDeleted);
     }
 }

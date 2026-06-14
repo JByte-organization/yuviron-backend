@@ -1360,7 +1360,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("CreatedByUserId")
+                    b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("char(36)");
 
                     b.Property<Guid>("EntityId")
@@ -2478,8 +2478,7 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasOne("Yuviron.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByUser");
                 });
