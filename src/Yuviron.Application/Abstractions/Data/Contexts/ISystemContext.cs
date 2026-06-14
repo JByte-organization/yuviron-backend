@@ -1,16 +1,18 @@
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Domain.Entities;
+
 namespace Yuviron.Application.Abstractions.Data.Contexts;
 
 public interface ISystemContext : IDataContext
 {
-    System.Linq.IQueryable<Yuviron.Domain.Entities.OutboxMessage> OutboxMessages { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ExternalMapping> ExternalMappings { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.FileMetadata> FileMetadata { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ListeningEvent> ListeningEvents { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.TrackListenHeatmap> TrackListenHeatmaps { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Notification> Notifications { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ReleaseNotificationTemplate> ReleaseNotificationTemplates { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Achievement> Achievements { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserAchievement> UserAchievements { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserAchievementProgress> UserAchievementProgress { get; }
+    IQueryable<OutboxMessage> OutboxMessages { get; }
+    IQueryable<ExternalMapping> ExternalMappings { get; }
+    IQueryable<FileMetadata> FileMetadata { get; }
+    IQueryable<ListeningEvent> ListeningEvents { get; }
+    IQueryable<TrackListenHeatmap> TrackListenHeatmaps { get; }
+    IQueryable<Notification> Notifications { get; }
+    IQueryable<ReleaseNotificationTemplate> ReleaseNotificationTemplates { get; }
+    IQueryable<Achievement> Achievements { get; }
+    IQueryable<UserAchievement> UserAchievements { get; }
+    IQueryable<UserAchievementProgress> UserAchievementProgress { get; }
 }

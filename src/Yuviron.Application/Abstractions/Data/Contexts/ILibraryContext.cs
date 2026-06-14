@@ -1,13 +1,15 @@
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Domain.Entities;
+
 namespace Yuviron.Application.Abstractions.Data.Contexts;
 
 public interface ILibraryContext : IDataContext
 {
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Playlist> Playlists { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.PlaylistTrack> PlaylistTracks { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserSavedTrack> UserSavedTracks { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserSavedAlbum> UserSavedAlbums { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserFollowArtist> UserFollowArtists { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserFollowUser> UserFollowUsers { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserSavedPlaylist> UserSavedPlaylists { get; }
+    IQueryable<Playlist> Playlists { get; }
+    IQueryable<PlaylistTrack> PlaylistTracks { get; }
+    IQueryable<UserSavedTrack> UserSavedTracks { get; }
+    IQueryable<UserSavedAlbum> UserSavedAlbums { get; }
+    IQueryable<UserFollowArtist> UserFollowArtists { get; }
+    IQueryable<UserFollowUser> UserFollowUsers { get; }
+    IQueryable<UserSavedPlaylist> UserSavedPlaylists { get; }
 }

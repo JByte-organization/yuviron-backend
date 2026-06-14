@@ -1,14 +1,16 @@
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Domain.Entities;
+
 namespace Yuviron.Application.Abstractions.Data.Contexts;
 
 public interface IIdentityContext : IDataContext
 {
-    System.Linq.IQueryable<Yuviron.Domain.Entities.User> Users { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Role> Roles { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserRole> UserRoles { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.RefreshToken> RefreshTokens { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserBlock> UserBlocks { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Permission> Permissions { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.RolePermission> RolePermissions { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserDevice> UserDevices { get; }
+    IQueryable<User> Users { get; }
+    IQueryable<Role> Roles { get; }
+    IQueryable<UserRole> UserRoles { get; }
+    IQueryable<RefreshToken> RefreshTokens { get; }
+    IQueryable<UserBlock> UserBlocks { get; }
+    IQueryable<Permission> Permissions { get; }
+    IQueryable<RolePermission> RolePermissions { get; }
+    IQueryable<UserDevice> UserDevices { get; }
 }
