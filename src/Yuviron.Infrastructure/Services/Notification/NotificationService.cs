@@ -19,19 +19,19 @@ public class NotificationService : INotificationService
     private readonly AppDbContext _profileContext;
     private readonly AppDbContext _systemContext;
     private readonly TimeProvider _timeProvider;
-    private readonly IHubContext<AppHub, IYuvironClient> _hubContext;
+    private readonly IHubContext<AppHub, IYuvironClient>? _hubContext;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         AppDbContext profileContext, AppDbContext systemContext,
         TimeProvider timeProvider,
-        IHubContext<AppHub, IYuvironClient> hubContext,
+        IServiceProvider serviceProvider,
         ILogger<NotificationService> logger)
     {
         _profileContext = profileContext;
         _systemContext = systemContext;
         _timeProvider = timeProvider;
-        _hubContext = hubContext;
+        _hubContext = (IHubContext<AppHub, IYuvironClient>?)serviceProvider.GetService(typeof(IHubContext<AppHub, IYuvironClient>));
         _logger = logger;
     }
 
@@ -101,7 +101,7 @@ public class NotificationService : INotificationService
             utcNow);
 
         var connectionIds = targetUserIds.Select(id => id.ToString()).ToList();
-        await _hubContext.Clients.Users(connectionIds).ReceiveNotification(dto);
+        if (_hubContext != null) await _hubContext.Clients.Users(connectionIds).ReceiveNotification(dto);
 
         _logger.LogInformation("Sent notification '{Type}' to {Count} users.", type, targetUserIds.Count);
     }

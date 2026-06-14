@@ -6,6 +6,7 @@ using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Security;
 using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Abstractions.Messaging;
+using Yuviron.Application.Abstractions.Data;
 using Yuviron.Infrastructure.Authentication;
 using Yuviron.Infrastructure.Caching;
 using Yuviron.Infrastructure.Services;
@@ -17,7 +18,6 @@ internal static class ServicesExtensions
 {
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        // Automated registration for Scoped services
         var infrastructureAssembly = Assembly.GetExecutingAssembly();
         var applicationAssembly = typeof(IUserContext).Assembly;
 
@@ -29,12 +29,19 @@ internal static class ServicesExtensions
             .Where(t => t.IsClass && !t.IsAbstract)
             .ToList();
 
+        // Types that should NOT be automatically registered
+        var excludedAbstractions = new HashSet<Type>
+        {
+            typeof(IDbTransaction) 
+        };
+
         foreach (var abstraction in abstractionTypes)
         {
+            if (excludedAbstractions.Contains(abstraction)) continue;
+
             var implementation = implementationTypes.FirstOrDefault(impl => abstraction.IsAssignableFrom(impl));
             if (implementation != null)
             {
-                // Register as Scoped by default
                 services.AddScoped(abstraction, implementation);
             }
         }
