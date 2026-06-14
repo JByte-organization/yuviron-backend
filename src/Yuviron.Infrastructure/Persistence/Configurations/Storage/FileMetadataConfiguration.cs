@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -20,5 +20,12 @@ public class FileMetadataConfiguration : IEntityTypeConfiguration<FileMetadata>
         
         builder.HasIndex(x => x.IsTemporary);
         builder.HasIndex(x => x.CreatedAt);
+
+        builder.HasOne(x => x.User)
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

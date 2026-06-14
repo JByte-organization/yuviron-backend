@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +23,8 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
     private const decimal GlobalRatePerStream = 0.003m; 
 
     public CalculateDailyRoyaltiesHandler(
-        IMonetizationContext monetizationContext, ISystemContext systemContext, 
+        IMonetizationContext monetizationContext, 
+        ISystemContext systemContext, 
         ILogger<CalculateDailyRoyaltiesHandler> logger, 
         TimeProvider timeProvider,
         IEventBus eventBus) 
@@ -43,11 +44,16 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
         var startDate = request.TargetDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var endDate = startDate.AddDays(1);
 
+        var catalogContext = (ICatalogContext)_systemContext;
+
         var artistStreamCounts = await _systemContext.ListeningEvents
             .AsNoTracking()
             .Where(e => e.PlayedAt >= startDate && e.PlayedAt < endDate && e.MsPlayed >= 30000)
-            .SelectMany(e => e.Track.TrackArtists.Where(ta => ta.Role == ArtistRole.Main)) 
-            .GroupBy(ta => ta.ArtistId)
+            .Join(catalogContext.TrackArtists.Where(ta => ta.Role == ArtistRole.Main),
+                e => e.TrackId,
+                ta => ta.TrackId,
+                (e, ta) => new { ta.ArtistId })
+            .GroupBy(x => x.ArtistId)
             .Select(g => new { ArtistId = g.Key, ValidStreams = g.Count() })
             .ToListAsync(cancellationToken);
 

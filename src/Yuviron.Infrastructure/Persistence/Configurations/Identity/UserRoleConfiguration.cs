@@ -26,5 +26,7 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
             .WithMany(r => r.UserRoles)
             .HasForeignKey(x => x.RoleId)
             .OnDelete(DeleteBehavior.Restrict); // Роль удалить нельзя, пока есть юзеры
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

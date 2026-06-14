@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Common;
@@ -60,5 +60,24 @@ public static class QueryableExtensions
         var items = await source.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 
         return new PaginatedList<T>(items, count, page, pageSize);
+    }
+
+    public static IQueryable<T> ApplySearch<T>(this IQueryable<T> query, string? searchTerm, params Expression<Func<T, bool>>[] filters)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+
+        Expression? combined = null;
+        var parameter = filters[0].Parameters[0];
+
+        foreach (var filter in filters)
+        {
+            var body = filter.Body;
+            if (combined == null) combined = body;
+            else combined = Expression.OrElse(combined, body);
+        }
+
+        if (combined == null) return query;
+
+        return query.Where(Expression.Lambda<Func<T, bool>>(combined, parameter));
     }
 }

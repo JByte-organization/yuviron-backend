@@ -320,4 +320,20 @@ public class ClickHouseAnalyticsRepository : IAnalyticsRepository
         await bulkCopy.InitAsync();
         await bulkCopy.WriteToServerAsync(rows, ct);
     }
+
+    public async Task<Dictionary<Guid, int>> GetTracksUniqueListenersAsync(DateTime minDate, CancellationToken ct)
+    {
+        using var connection = new ClickHouse.Client.ADO.ClickHouseConnection(_connectionString);
+        await connection.OpenAsync(ct);
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT TrackId, CAST(uniqExact(UserId) AS Int32) FROM yuviron_analytics.listening_chunks WHERE PlayedAt >= {minDate:DateTime} AND UserId IS NOT NULL GROUP BY TrackId";
+        command.AddParameter("minDate", minDate);
+        var result = new Dictionary<Guid, int>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            result[reader.GetGuid(0)] = reader.GetInt32(1);
+        }
+        return result;
+    }
 }

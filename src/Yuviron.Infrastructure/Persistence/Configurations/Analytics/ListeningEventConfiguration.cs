@@ -17,6 +17,7 @@ public class ListeningEventConfiguration : IEntityTypeConfiguration<ListeningEve
         builder.Property(x => x.CountryCode).HasMaxLength(2).IsFixedLength(); // Ровно 2 символа
 
         // --- Индексы ---
+        builder.HasIndex(x => x.PlayedAt); 
         builder.HasIndex(x => new { x.UserId, x.PlayedAt }); 
         builder.HasIndex(x => new { x.TrackId, x.PlayedAt }); 
 
@@ -32,5 +33,7 @@ public class ListeningEventConfiguration : IEntityTypeConfiguration<ListeningEve
             .WithMany()
             .HasForeignKey(x => x.TrackId)
             .OnDelete(DeleteBehavior.Restrict); 
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted);
     }
 }

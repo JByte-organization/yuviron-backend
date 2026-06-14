@@ -52,7 +52,7 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
         var albums = await _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .Select(a => new
             {
                 a.Id,

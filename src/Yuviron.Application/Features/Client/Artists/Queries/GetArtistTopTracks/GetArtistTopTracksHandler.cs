@@ -51,7 +51,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
         var rawTracks = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .OrderByDescending(t => t.PlayCount)
             .ThenBy(t => t.Title)
             .Take(request.Limit)

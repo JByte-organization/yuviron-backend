@@ -21,5 +21,7 @@ public class CustomThemeConfiguration : IEntityTypeConfiguration<CustomTheme>
             .WithMany() 
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

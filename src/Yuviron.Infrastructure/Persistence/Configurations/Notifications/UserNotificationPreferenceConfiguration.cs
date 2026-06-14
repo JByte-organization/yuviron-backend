@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -22,5 +22,7 @@ public sealed class UserNotificationPreferenceConfiguration : IEntityTypeConfigu
             .WithMany()
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

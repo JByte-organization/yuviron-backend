@@ -28,5 +28,7 @@ public class UserSettingsConfiguration : IEntityTypeConfiguration<UserSettings>
             .WithMany()
             .HasForeignKey(x => x.ThemeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

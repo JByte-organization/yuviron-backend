@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -29,5 +29,7 @@ public class ArtistSubscriptionConfiguration : IEntityTypeConfiguration<ArtistSu
             .WithMany()
             .HasForeignKey(x => x.PlanId)
             .OnDelete(DeleteBehavior.Restrict); 
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Consumers.Notifications.Email;
+using Yuviron.Infrastructure.Consumers.Notifications.InApp;
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Moq;

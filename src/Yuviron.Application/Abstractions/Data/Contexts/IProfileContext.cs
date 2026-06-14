@@ -1,11 +1,13 @@
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Domain.Entities;
+
 namespace Yuviron.Application.Abstractions.Data.Contexts;
 
 public interface IProfileContext : IDataContext
 {
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserProfile> UserProfiles { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Theme> Themes { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.CustomTheme> CustomThemes { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserSettings> UserSettings { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.UserNotificationPreference> UserNotificationPreferences { get; }
+    IQueryable<UserProfile> UserProfiles { get; }
+    IQueryable<Theme> Themes { get; }
+    IQueryable<CustomTheme> CustomThemes { get; }
+    IQueryable<UserSettings> UserSettings { get; }
+    IQueryable<UserNotificationPreference> UserNotificationPreferences { get; }
 }

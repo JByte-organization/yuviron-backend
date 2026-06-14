@@ -22,5 +22,7 @@ public class ArtistPinConfiguration : IEntityTypeConfiguration<ArtistPin>
                .WithMany(a => a.Pins)
                .HasForeignKey(x => x.ArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

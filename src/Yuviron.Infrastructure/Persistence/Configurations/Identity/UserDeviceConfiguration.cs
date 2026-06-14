@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -34,5 +34,7 @@ public class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevice>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.UserId, x.Fingerprint }).IsUnique(); 
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

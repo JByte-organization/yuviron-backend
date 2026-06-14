@@ -49,7 +49,7 @@ public sealed class GetArtistSimilarArtistsHandler : IRequestHandler<GetArtistSi
         var artistGenreIds = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .SelectMany(t => t.TrackGenres.Select(tg => tg.GenreId))
             .Distinct()
             .ToListAsync(cancellationToken);

@@ -1,5 +1,5 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
-﻿using System.Reflection;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
+using System.Reflection;
 using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -98,19 +98,13 @@ public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfi
     public IQueryable<RoyaltyAccrualDaily> RoyaltyAccrualsDaily => Set<RoyaltyAccrualDaily>();
     public IQueryable<PayoutRequest> PayoutRequests => Set<PayoutRequest>();
     public IQueryable<PayoutTransaction> PayoutTransactions => Set<PayoutTransaction>();
-    public IQueryable<PlaybackSession> PlaybackSessions => Set<PlaybackSession>();
     public IQueryable<ArtistSubscription> ArtistSubscriptions => Set<ArtistSubscription>();
-    public IQueryable<PlaybackQueueItem> PlaybackQueueItems => Set<PlaybackQueueItem>();
-    public IQueryable<SharedRoom> SharedRooms => Set<SharedRoom>();
-    public IQueryable<SharedRoomMember> SharedRoomMembers => Set<SharedRoomMember>();
-    public IQueryable<SharedRoomQueueItem> SharedRoomQueueItems => Set<SharedRoomQueueItem>();
     public IQueryable<SmartLink> SmartLinks => Set<SmartLink>();
     public IQueryable<SmartLinkClick> SmartLinkClicks => Set<SmartLinkClick>();
     public IQueryable<Banner>  Banners => Set<Banner>();
     public IQueryable<Lyrics> Lyrics => Set<Lyrics>();
     public IQueryable<UserDevice>  UserDevices => Set<UserDevice>();
     public IQueryable<UserSavedPlaylist> UserSavedPlaylists => Set<UserSavedPlaylist>();
-    public IQueryable<CopyrightClaim> CopyrightClaims => Set<CopyrightClaim>();
     public IQueryable<VerificationRequest> VerificationRequests => Set<VerificationRequest>();
     public IQueryable<Complaint> Complaints => Set<Complaint>();
     public IQueryable<FileMetadata> FileMetadata => Set<FileMetadata>();
@@ -119,14 +113,9 @@ public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfi
     public IQueryable<TrackListenHeatmap> TrackListenHeatmaps => Set<TrackListenHeatmap>();
     public IQueryable<Notification> Notifications => Set<Notification>();
     public IQueryable<ReleaseNotificationTemplate> ReleaseNotificationTemplates => Set<ReleaseNotificationTemplate>();
-    public IQueryable<Achievement> Achievements => Set<Achievement>();
-    public IQueryable<UserAchievement> UserAchievements => Set<UserAchievement>();
     public IQueryable<ArtistWallet>  ArtistWallets => Set<ArtistWallet>();
     public IQueryable<WalletTransaction>  WalletTransactions => Set<WalletTransaction>();
-    public IQueryable<UserAchievementProgress> UserAchievementProgress => Set<UserAchievementProgress>();
 
-    
-    
     void IDataContext.Add<T>(T entity) where T : class => base.Add(entity);
     void IDataContext.Remove<T>(T entity) where T : class => base.Remove(entity);
     void IDataContext.Update<T>(T entity) where T : class => base.Update(entity);

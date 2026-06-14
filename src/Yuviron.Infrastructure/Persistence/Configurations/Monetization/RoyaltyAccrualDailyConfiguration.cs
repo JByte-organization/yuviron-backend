@@ -24,5 +24,7 @@ public class RoyaltyAccrualDailyConfiguration : IEntityTypeConfiguration<Royalty
                .WithMany()
                .HasForeignKey(x => x.ArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

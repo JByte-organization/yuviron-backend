@@ -29,5 +29,7 @@ public class UserBlockConfiguration : IEntityTypeConfiguration<UserBlock>
             .WithMany()
             .HasForeignKey(x => x.BlockedByAdminId)
             .OnDelete(DeleteBehavior.Restrict); 
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

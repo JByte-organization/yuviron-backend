@@ -26,5 +26,7 @@ public class ArtistPayoutSettingsConfiguration : IEntityTypeConfiguration<Artist
             .OnDelete(DeleteBehavior.Cascade);
                
         builder.Property(x => x.AccountDetails).HasMaxLength(255);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

@@ -1,18 +1,20 @@
 using Yuviron.Application.Abstractions.Data;
+using Yuviron.Domain.Entities;
+
 namespace Yuviron.Application.Abstractions.Data.Contexts;
 
 public interface ICatalogContext : IDataContext
 {
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Artist> Artists { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ArtistSocialLink> ArtistSocialLinks { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ArtistPin> ArtistPins { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Album> Albums { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Track> Tracks { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Genre> Genres { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.AlbumArtist> AlbumArtists { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.TrackArtist> TrackArtists { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.TrackGenre> TrackGenres { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.TrackMood> TrackMoods { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.ArtistTeamMember> ArtistTeamMembers { get; }
-    System.Linq.IQueryable<Yuviron.Domain.Entities.Mood> Moods { get; }
+    IQueryable<Artist> Artists { get; }
+    IQueryable<ArtistSocialLink> ArtistSocialLinks { get; }
+    IQueryable<ArtistPin> ArtistPins { get; }
+    IQueryable<Album> Albums { get; }
+    IQueryable<Track> Tracks { get; }
+    IQueryable<Genre> Genres { get; }
+    IQueryable<AlbumArtist> AlbumArtists { get; }
+    IQueryable<TrackArtist> TrackArtists { get; }
+    IQueryable<TrackGenre> TrackGenres { get; }
+    IQueryable<TrackMood> TrackMoods { get; }
+    IQueryable<ArtistTeamMember> ArtistTeamMembers { get; }
+    IQueryable<Mood> Moods { get; }
 }

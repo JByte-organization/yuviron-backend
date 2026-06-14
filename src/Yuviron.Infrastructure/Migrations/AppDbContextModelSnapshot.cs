@@ -22,40 +22,6 @@ namespace Yuviron.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.Achievement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("IsActive");
-
-                    b.ToTable("achievements", (string)null);
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.Ad", b =>
                 {
                     b.Property<Guid>("Id")
@@ -709,40 +675,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("complaint_counters", (string)null);
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.CopyrightClaim", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("EntityType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("varchar(2000)");
-
-                    b.Property<Guid>("OwnerArtistId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("OwnsAllRights")
-                        .HasColumnType("tinyint(1)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerArtistId");
-
-                    b.HasIndex("EntityType", "EntityId");
-
-                    b.ToTable("copyright_claims", (string)null);
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.CustomTheme", b =>
                 {
                     b.Property<Guid>("Id")
@@ -924,6 +856,8 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PlayedAt");
 
                     b.HasIndex("TrackId", "PlayedAt");
 
@@ -1213,76 +1147,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.ToTable("plans", (string)null);
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.PlaybackQueueItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("AddedByUserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QueueType")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("TrackId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddedByUserId");
-
-                    b.HasIndex("TrackId");
-
-                    b.HasIndex("SessionId", "Position")
-                        .IsUnique();
-
-                    b.ToTable("playback_queue_items", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.PlaybackSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("ContextId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("ContextType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StartedAt");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ContextType", "ContextId");
-
-                    b.ToTable("playback_sessions", (string)null);
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.Playlist", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1480,97 +1344,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasKey("ArtistId", "Date");
 
                     b.ToTable("royalty_accruals_daily", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("HostUserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("HostUserId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("shared_rooms", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoomMember", b =>
-                {
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("JoinedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("LeftAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.HasKey("RoomId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("shared_room_members", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoomQueueItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("AddedByUserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("TrackId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddedByUserId");
-
-                    b.HasIndex("TrackId");
-
-                    b.HasIndex("RoomId", "Position")
-                        .IsUnique();
-
-                    b.ToTable("shared_room_queue", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.SmartLink", b =>
@@ -1922,49 +1695,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.UserAchievement", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("AchievementId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("UnlockedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("UserId", "AchievementId");
-
-                    b.HasIndex("AchievementId");
-
-                    b.ToTable("user_achievements", (string)null);
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.UserAchievementProgress", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("AchievementId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("MetricKey")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<int>("MetricValue")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("UserId", "AchievementId", "MetricKey");
-
-                    b.HasIndex("AchievementId");
-
-                    b.ToTable("user_achievement_progress", (string)null);
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserBlock", b =>
@@ -2565,17 +2295,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("ModeratedByAdmin");
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.CopyrightClaim", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.Artist", "OwnerArtist")
-                        .WithMany()
-                        .HasForeignKey("OwnerArtistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OwnerArtist");
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.CustomTheme", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.User", "User")
@@ -2667,44 +2386,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("PayoutRequest");
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.PlaybackQueueItem", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.User", "AddedByUser")
-                        .WithMany()
-                        .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.PlaybackSession", "Session")
-                        .WithMany("QueueItems")
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.Track", "Track")
-                        .WithMany()
-                        .HasForeignKey("TrackId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AddedByUser");
-
-                    b.Navigation("Session");
-
-                    b.Navigation("Track");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.PlaybackSession", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.Playlist", b =>
                 {
                     b.HasOne("Yuviron.Domain.Entities.Artist", "Artist")
@@ -2790,63 +2471,6 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Artist");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoom", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.User", "HostUser")
-                        .WithMany()
-                        .HasForeignKey("HostUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("HostUser");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoomMember", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.SharedRoom", "Room")
-                        .WithMany("Members")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoomQueueItem", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.User", "AddedByUser")
-                        .WithMany()
-                        .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.SharedRoom", "Room")
-                        .WithMany("Queue")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.Track", "Track")
-                        .WithMany()
-                        .HasForeignKey("TrackId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AddedByUser");
-
-                    b.Navigation("Room");
-
-                    b.Navigation("Track");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.SmartLink", b =>
@@ -2977,44 +2601,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Mood");
 
                     b.Navigation("Track");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.UserAchievement", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.Achievement", "Achievement")
-                        .WithMany()
-                        .HasForeignKey("AchievementId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Achievement");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.UserAchievementProgress", b =>
-                {
-                    b.HasOne("Yuviron.Domain.Entities.Achievement", "Achievement")
-                        .WithMany()
-                        .HasForeignKey("AchievementId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Yuviron.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Achievement");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.UserBlock", b =>
@@ -3291,11 +2877,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("Yuviron.Domain.Entities.PlaybackSession", b =>
-                {
-                    b.Navigation("QueueItems");
-                });
-
             modelBuilder.Entity("Yuviron.Domain.Entities.Playlist", b =>
                 {
                     b.Navigation("PlaylistTracks");
@@ -3306,13 +2887,6 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("Yuviron.Domain.Entities.SharedRoom", b =>
-                {
-                    b.Navigation("Members");
-
-                    b.Navigation("Queue");
                 });
 
             modelBuilder.Entity("Yuviron.Domain.Entities.SmartLink", b =>

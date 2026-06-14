@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +12,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.StudioArtist.Tracks.Commands.CreateTrack;
 
@@ -40,11 +41,17 @@ public sealed class CreateTrackHandler : IRequestHandler<CreateTrackCommand, Gui
             .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken)
             ?? throw new NotFoundException(nameof(Album), request.AlbumId);
 
+        // Only Main artists of the album can add tracks
+        var mainArtistIds = album.AlbumArtists
+            .Where(aa => aa.Role == ArtistRole.Main)
+            .Select(aa => aa.ArtistId)
+            .ToList();
+
         var hasAccess = await _catalogContext.ArtistTeamMembers
-            .HasManagementAccess(album.AlbumArtists.Select(aa => aa.ArtistId), userId)
+            .HasManagementAccess(mainArtistIds, userId)
             .AnyAsync(cancellationToken);
 
-        if (!hasAccess) throw new ForbiddenException("No access to this album.");
+        if (!hasAccess) throw new ForbiddenException("No access to this album (only Main artists or managers).");
 
         var uniqueGenres = request.GenreIds?.Distinct().ToList() ?? new List<Guid>();
         var uniqueMoods = request.MoodIds?.Distinct().ToList() ?? new List<Guid>();

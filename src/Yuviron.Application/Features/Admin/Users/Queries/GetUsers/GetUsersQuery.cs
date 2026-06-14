@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Users.Queries.DTOs;
@@ -9,6 +9,7 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 public sealed record GetUsersQuery(
     string? SearchTerm,
     AccountState? AccountState,
+    AppPermission? RequiredPermission = null,
     string? SortBy = null,    
     string? SortOrder = null, 
     int Page = 1,
@@ -17,5 +18,5 @@ public sealed record GetUsersQuery(
     IRequest<PaginatedList<UserListItemDto>>, 
     ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel; 
+    AppPermission ISecuredRequest.RequiredPermission => AppPermission.AccessAdminPanel; 
 }

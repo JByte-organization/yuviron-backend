@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -25,6 +25,14 @@ public class NotificationServiceTests
             .Options;
     }
 
+    private Mock<IServiceProvider> CreateServiceProviderMock(IHubContext<AppHub, IYuvironClient> hubContext)
+    {
+        var mock = new Mock<IServiceProvider>();
+        mock.Setup(x => x.GetService(typeof(IHubContext<AppHub, IYuvironClient>)))
+            .Returns(hubContext);
+        return mock;
+    }
+
     [Fact]
     public async Task SendToUserAsync_Should_CreateNotificationInDb_And_SendToSignalR()
     {
@@ -45,8 +53,9 @@ public class NotificationServiceTests
         hubContextMock.Setup(x => x.Clients).Returns(hubClientsMock.Object);
 
         var loggerMock = new Mock<ILogger<NotificationService>>();
+        var serviceProviderMock = CreateServiceProviderMock(hubContextMock.Object);
 
-        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, hubContextMock.Object, loggerMock.Object);
+        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, serviceProviderMock.Object, loggerMock.Object);
 
         // Act
         await service.SendToUserAsync(userId, category, type, title, body, NotificationEntityType.Artist, entityId, CancellationToken.None);
@@ -93,8 +102,9 @@ public class NotificationServiceTests
         hubContextMock.Setup(x => x.Clients).Returns(hubClientsMock.Object);
 
         var loggerMock = new Mock<ILogger<NotificationService>>();
+        var serviceProviderMock = CreateServiceProviderMock(hubContextMock.Object);
 
-        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, hubContextMock.Object, loggerMock.Object);
+        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, serviceProviderMock.Object, loggerMock.Object);
 
         await service.SendToUserAsync(
             userId,

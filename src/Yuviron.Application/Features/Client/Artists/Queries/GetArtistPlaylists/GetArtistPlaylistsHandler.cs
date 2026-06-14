@@ -49,7 +49,7 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var publicTracks = _catalogContext.Tracks.AsNoTracking().AvailableForPublic(utcNow);
         var publicArtistTrackIds = _catalogContext.Tracks.AsNoTracking().AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId).Select(t => t.Id);
+            .ForArtistMain(request.ArtistId).Select(t => t.Id);
 
         var baseQuery = _libraryContext.Playlists
             .AsNoTracking()

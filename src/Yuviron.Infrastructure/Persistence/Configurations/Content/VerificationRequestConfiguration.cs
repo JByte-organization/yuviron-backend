@@ -30,5 +30,7 @@ public class VerificationRequestConfiguration : IEntityTypeConfiguration<Verific
             .WithMany()
             .HasForeignKey(x => x.AdminId)
             .OnDelete(DeleteBehavior.SetNull); 
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted && !x.SubmittedByUser.IsDeleted);
     }
 }

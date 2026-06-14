@@ -11,6 +11,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OrphanedDataCleanupJob> _logger;
+    private const int BatchSize = 500;
 
     public OrphanedDataCleanupJob(IServiceProvider serviceProvider, ILogger<OrphanedDataCleanupJob> logger)
     {
@@ -39,55 +40,27 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         var utcNow = DateTime.UtcNow;
         var playlistRetentionCutoff = utcNow.AddDays(-30);
 
-        // --- PART 1: SANITY CHECKS (SOFT-DELETE BROKEN RECORDS) ---
-        var brokenAlbums = await context.Albums
-            .IgnoreQueryFilters()
-            .Where(a => !a.IsDeleted && !context.AlbumArtists.IgnoreQueryFilters().Any(aa => aa.AlbumId == a.Id))
-            .ToListAsync(ct);
-        
-        if (brokenAlbums.Any())
-        {
-            _logger.LogInformation("Sanity Check: Marking {Count} artistless albums as deleted.", brokenAlbums.Count);
-            foreach (var album in brokenAlbums) album.Delete(utcNow);
-        }
+        // --- PART 1: SANITY CHECKS (SOFT-DELETE BROKEN RECORDS IN BATCHES) ---
+        await BatchSoftDeleteBrokenAlbumsAsync(context, utcNow, ct);
+        await BatchSoftDeleteBrokenTracksAsync(context, utcNow, ct);
 
-        var brokenTracks = await context.Tracks
-            .IgnoreQueryFilters()
-            .Where(t => !t.IsDeleted && !context.TrackArtists.IgnoreQueryFilters().Any(ta => ta.TrackId == t.Id))
-            .ToListAsync(ct);
-
-        if (brokenTracks.Any())
-        {
-            _logger.LogInformation("Sanity Check: Marking {Count} artistless tracks as deleted.", brokenTracks.Count);
-            foreach (var track in brokenTracks) track.Delete(utcNow);
-        }
-        
-        await context.SaveChangesAsync(ct);
-
-        // --- PART 2: HARD DELETE EXPIRED SOFT-DELETED DATA ---
-        
-        // Hard delete playlists deleted more than 30 days ago
-        var expiredPlaylistIds = await context.Playlists
+        // --- PART 2: HARD DELETE EXPIRED SOFT-DELETED DATA (USING SUBQUERIES) ---
+        var expiredPlaylistsQuery = context.Playlists
             .IgnoreQueryFilters()
             .Where(p => p.IsDeleted && p.UpdatedAt < playlistRetentionCutoff)
-            .Select(p => p.Id)
-            .ToListAsync(ct);
+            .Select(p => p.Id);
 
-        if (expiredPlaylistIds.Any())
-        {
-            _logger.LogInformation("Cleanup: Hard deleting {Count} playlists expired for more than 30 days.", expiredPlaylistIds.Count);
-            await context.PlaylistTracks.IgnoreQueryFilters().Where(x => expiredPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
-            await context.UserSavedPlaylists.IgnoreQueryFilters().Where(x => expiredPlaylistIds.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
-            await context.Playlists.IgnoreQueryFilters().Where(p => expiredPlaylistIds.Contains(p.Id)).ExecuteDeleteAsync(ct);
-        }
+        await context.PlaylistTracks.IgnoreQueryFilters().Where(x => expiredPlaylistsQuery.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
+        await context.UserSavedPlaylists.IgnoreQueryFilters().Where(x => expiredPlaylistsQuery.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
+        await context.Playlists.IgnoreQueryFilters().Where(p => expiredPlaylistsQuery.Contains(p.Id)).ExecuteDeleteAsync(ct);
 
-        // --- PART 3: ORPHAN CLEANUP (HARD-DELETE DEPENDENCIES OF DELETED ROOTS) ---
+        // --- PART 3: ORPHAN CLEANUP (USING SQL SUBQUERIES FOR HIGH PERFORMANCE) ---
         var deletedUserIds = context.Users.IgnoreQueryFilters().Where(u => u.IsDeleted).Select(u => u.Id);
         var deletedArtistIds = context.Artists.IgnoreQueryFilters().Where(a => a.IsDeleted).Select(a => a.Id);
         var deletedTrackIds = context.Tracks.IgnoreQueryFilters().Where(t => t.IsDeleted).Select(t => t.Id);
         var deletedAlbumIds = context.Albums.IgnoreQueryFilters().Where(a => a.IsDeleted).Select(a => a.Id);
 
-        // User Orphans
+        // User Orphans - Efficiently delete using subqueries directly in database
         await context.UserRoles.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         await context.RefreshTokens.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         await context.UserDevices.Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
@@ -100,12 +73,11 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         await context.UserFollowUsers.Where(x => deletedUserIds.Contains(x.FollowerId) || deletedUserIds.Contains(x.FolloweeId)).ExecuteDeleteAsync(ct);
         await context.ArtistTeamMembers.IgnoreQueryFilters().Where(x => deletedUserIds.Contains(x.UserId)).ExecuteDeleteAsync(ct);
         
-        var userPlaylists = await context.Playlists
+        // Soft delete playlists of deleted users
+        await context.Playlists
             .IgnoreQueryFilters()
             .Where(x => !x.IsDeleted && x.UserId.HasValue && deletedUserIds.Contains(x.UserId.Value))
-            .ToListAsync(ct);
-        
-        foreach(var p in userPlaylists) p.Delete(utcNow);
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.IsDeleted, true).SetProperty(p => p.UpdatedAt, utcNow), ct);
 
         // Artist Orphans
         await context.ArtistTeamMembers.IgnoreQueryFilters().Where(x => deletedArtistIds.Contains(x.ArtistId)).ExecuteDeleteAsync(ct);
@@ -129,7 +101,42 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
         // Album Orphans
         await context.UserSavedAlbums.Where(x => deletedAlbumIds.Contains(x.AlbumId)).ExecuteDeleteAsync(ct);
 
-        await context.SaveChangesAsync(ct);
         _logger.LogInformation("Orphaned data cleanup completed successfully.");
+    }
+
+    private async Task BatchSoftDeleteBrokenAlbumsAsync(AppDbContext context, DateTime utcNow, CancellationToken ct)
+    {
+        while (true)
+        {
+            var brokenBatch = await context.Albums
+                .IgnoreQueryFilters()
+                .Where(a => !a.IsDeleted && !context.AlbumArtists.IgnoreQueryFilters().Any(aa => aa.AlbumId == a.Id))
+                .Take(BatchSize)
+                .ToListAsync(ct);
+
+            if (!brokenBatch.Any()) break;
+
+            _logger.LogInformation("Sanity Check: Marking batch of {Count} artistless albums as deleted.", brokenBatch.Count);
+            foreach (var album in brokenBatch) album.Delete(utcNow);
+            await context.SaveChangesAsync(ct);
+        }
+    }
+
+    private async Task BatchSoftDeleteBrokenTracksAsync(AppDbContext context, DateTime utcNow, CancellationToken ct)
+    {
+        while (true)
+        {
+            var brokenBatch = await context.Tracks
+                .IgnoreQueryFilters()
+                .Where(t => !t.IsDeleted && !context.TrackArtists.IgnoreQueryFilters().Any(ta => ta.TrackId == t.Id))
+                .Take(BatchSize)
+                .ToListAsync(ct);
+
+            if (!brokenBatch.Any()) break;
+
+            _logger.LogInformation("Sanity Check: Marking batch of {Count} artistless tracks as deleted.", brokenBatch.Count);
+            foreach (var track in brokenBatch) track.Delete(utcNow);
+            await context.SaveChangesAsync(ct);
+        }
     }
 }

@@ -26,5 +26,7 @@ public class ArtistSocialLinkConfiguration : IEntityTypeConfiguration<ArtistSoci
             .OnDelete(DeleteBehavior.Cascade);
             
         builder.HasIndex(x => new { x.ArtistId, x.Type }).IsUnique();
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

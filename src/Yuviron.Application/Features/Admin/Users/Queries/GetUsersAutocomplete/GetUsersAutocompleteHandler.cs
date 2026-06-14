@@ -1,8 +1,9 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Extensions;
 
 namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsersAutocomplete;
 
@@ -26,6 +27,7 @@ public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutoco
 
         var users = await _identityContext.Users
             .AsNoTracking()
+            .WhereHasPermission(request.RequiredPermission)
             .Where(u => !u.IsDeleted && 
                         (u.Email.Contains(searchTerm) || u.Profile.FirstName.Contains(searchTerm))) 
             .OrderBy(u => u.Email)

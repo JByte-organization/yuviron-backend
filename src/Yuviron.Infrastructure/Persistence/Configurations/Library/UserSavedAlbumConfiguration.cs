@@ -29,5 +29,7 @@ public class UserSavedAlbumConfiguration : IEntityTypeConfiguration<UserSavedAlb
                .WithMany()
                .HasForeignKey(x => x.AlbumId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted && !x.Album.IsDeleted);
     }
 }
