@@ -8,11 +8,11 @@ public class SmartLink : Entity
     public string Code { get; private set; } = string.Empty; 
     public SmartLinkType EntityType { get; private set; }
     public Guid EntityId { get; private set; }
-    public Guid CreatedByUserId { get; private set; }
+    public Guid? CreatedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
 
-    public virtual User CreatedByUser { get; private set; } = null!;
+    public virtual User? CreatedByUser { get; private set; }
     public virtual ICollection<SmartLinkClick> Clicks { get; private set; } = new List<SmartLinkClick>();
 
     private SmartLink() { }
@@ -21,7 +21,7 @@ public class SmartLink : Entity
         string code, 
         SmartLinkType entityType, 
         Guid entityId, 
-        Guid createdByUserId, 
+        Guid? createdByUserId, 
         DateTime? expiresAt, 
         DateTime utcNow)
     {

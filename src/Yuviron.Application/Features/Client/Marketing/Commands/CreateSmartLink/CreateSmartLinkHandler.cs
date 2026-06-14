@@ -42,7 +42,7 @@ public sealed class CreateSmartLinkHandler : IRequestHandler<CreateSmartLinkComm
 
     public async Task<SmartLinkDto> Handle(CreateSmartLinkCommand request, CancellationToken cancellationToken)
     {
-        var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
+        var userId = _currentUserService.UserId; // Может быть null для анонимов
 
         bool exists = request.EntityType switch
         {

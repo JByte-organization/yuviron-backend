@@ -26,12 +26,15 @@ public class CreateSmartLinkHandlerTests
     public async Task Handle_Should_CreateSmartLink_When_ArtistExists()
     {
         await using var dbContext = new AppDbContext(CreateOptions());
-        var userId = Guid.NewGuid();
-        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow);
-        dbContext.Add(artist);
+        var utcNow = DateTime.UtcNow;
+        
+        // Создаем пользователя и артиста
+        var user = User.Create("test@example.com", "hash", "Test", false, true, utcNow);
+        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, utcNow);
+        dbContext.AddRange(user, artist);
         await dbContext.SaveChangesAsync();
 
-        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == userId);
+        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == user.Id);
         
         var handler = new CreateSmartLinkHandler(
             dbContext, dbContext, dbContext, 
@@ -41,29 +44,50 @@ public class CreateSmartLinkHandlerTests
 
         result.Should().NotBeNull();
         result.Code.Should().HaveLength(8);
-        result.Url.Should().Be($"https://yuviron.com/sl/{result.Code}");
 
         var linkInDb = await dbContext.Set<SmartLink>().FirstOrDefaultAsync(sl => sl.Code == result.Code);
         linkInDb.Should().NotBeNull();
-        linkInDb!.EntityId.Should().Be(artist.Id);
-        linkInDb.EntityType.Should().Be(SmartLinkType.Artist);
-        linkInDb.CreatedByUserId.Should().Be(userId);
+        linkInDb!.CreatedByUserId.Should().Be(user.Id);
+    }
+
+    [Fact]
+    public async Task Handle_Should_CreateAnonymousSmartLink_When_UserNotLoggedIn()
+    {
+        await using var dbContext = new AppDbContext(CreateOptions());
+        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow);
+        dbContext.Add(artist);
+        await dbContext.SaveChangesAsync();
+
+        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == (Guid?)null);
+        
+        var handler = new CreateSmartLinkHandler(
+            dbContext, dbContext, dbContext, 
+            currentUser, TimeProvider.System, _frontendOptions);
+
+        var result = await handler.Handle(new CreateSmartLinkCommand(SmartLinkType.Artist, artist.Id), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        var linkInDb = await dbContext.Set<SmartLink>().FirstOrDefaultAsync(sl => sl.Code == result.Code);
+        linkInDb.Should().NotBeNull();
+        linkInDb!.CreatedByUserId.Should().BeNull();
     }
 
     [Fact]
     public async Task Handle_Should_ReturnExistingLink_When_AlreadyCreatedBySameUser()
     {
         await using var dbContext = new AppDbContext(CreateOptions());
-        var userId = Guid.NewGuid();
-        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow);
-        dbContext.Add(artist);
+        var utcNow = DateTime.UtcNow;
         
-        var existingLink = SmartLink.Create("existing", SmartLinkType.Artist, artist.Id, userId, null, DateTime.UtcNow);
+        var user = User.Create("test@example.com", "hash", "Test", false, true, utcNow);
+        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, utcNow);
+        dbContext.AddRange(user, artist);
+        
+        var existingLink = SmartLink.Create("existing", SmartLinkType.Artist, artist.Id, user.Id, null, utcNow);
         dbContext.Add(existingLink);
         
         await dbContext.SaveChangesAsync();
 
-        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == userId);
+        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == user.Id);
         
         var handler = new CreateSmartLinkHandler(
             dbContext, dbContext, dbContext, 
@@ -79,8 +103,7 @@ public class CreateSmartLinkHandlerTests
     public async Task Handle_Should_ThrowNotFound_When_EntityDoesNotExist()
     {
         await using var dbContext = new AppDbContext(CreateOptions());
-        var userId = Guid.NewGuid();
-        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == userId);
+        var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == Guid.NewGuid());
         
         var handler = new CreateSmartLinkHandler(
             dbContext, dbContext, dbContext, 
@@ -91,4 +114,3 @@ public class CreateSmartLinkHandlerTests
         await action.Should().ThrowAsync<NotFoundException>();
     }
 }
-

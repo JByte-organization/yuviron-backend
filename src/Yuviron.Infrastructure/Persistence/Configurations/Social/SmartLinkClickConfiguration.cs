@@ -26,6 +26,6 @@ public class SmartLinkClickConfiguration : IEntityTypeConfiguration<SmartLinkCli
             .HasForeignKey(x => x.SmartLinkId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasQueryFilter(x => !x.SmartLink.CreatedByUser.IsDeleted);
+        builder.HasQueryFilter(x => x.SmartLink.CreatedByUserId == null || !x.SmartLink.CreatedByUser.IsDeleted);
     }
 }

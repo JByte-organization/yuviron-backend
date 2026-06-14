@@ -4,10 +4,10 @@ using Yuviron.Application.Features.Client.Marketing.Commands.CreateSmartLink;
 
 namespace Yuviron.Api.Controllers.Client;
 
-[Authorize]
 [Route("api/marketing")]
 public class MarketingController : ApiControllerBase
 {
+    [AllowAnonymous]
     [HttpPost("smartlinks")]
     [ProducesResponseType(typeof(SmartLinkDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<SmartLinkDto>> CreateSmartLink([FromBody] CreateSmartLinkCommand command, CancellationToken ct)
