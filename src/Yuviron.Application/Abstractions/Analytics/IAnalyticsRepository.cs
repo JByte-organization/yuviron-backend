@@ -21,7 +21,7 @@ public interface IAnalyticsRepository
     Task<List<AudienceGeographyDto>> GetArtistGeographyAsync(IEnumerable<Guid> trackIds, DateTime minDate, CancellationToken ct);
     Task<List<AudienceDeviceDto>> GetArtistDevicesAsync(IEnumerable<Guid> trackIds, DateTime minDate, CancellationToken ct);
     Task<List<TrackTrendCandidateDto>> GetTrendingTracksAsync(DateTime currentWindowFromUtc, DateTime previousWindowFromUtc, CancellationToken ct);
-    Task<List<AdAnalyticsPointDto>> GetAdAnalyticsAsync(Guid adId, string interval, DateTime minDate, CancellationToken ct);
+    Task<List<AdAnalyticsPointDto>> GetAdAnalyticsAsync(Guid adId, string interval, DateTime minDate, CancellationToken ct); Task<Dictionary<Guid, int>> GetTracksUniqueListenersAsync(DateTime minDate, CancellationToken ct);
 
     // --- Seeding Methods (for Mock Data) ---
     Task SeedListeningChunksAsync(IEnumerable<ListeningChunkSeedData> chunks, CancellationToken ct);
