@@ -21,5 +21,7 @@ public class PayoutTransactionConfiguration : IEntityTypeConfiguration<PayoutTra
             .WithMany(r => r.Transactions)
             .HasForeignKey(x => x.PayoutRequestId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.PayoutRequest.Artist.IsDeleted);
     }
 }

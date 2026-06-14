@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -21,5 +21,7 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
 
         // Індекс для швидкої вибірки історії транзакцій
         builder.HasIndex(x => new { x.WalletId, x.CreatedAt });
+
+        builder.HasQueryFilter(x => !x.Wallet.Artist.IsDeleted);
     }
 }
