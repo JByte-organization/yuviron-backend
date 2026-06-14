@@ -21,5 +21,7 @@ public class ReleaseNotificationTemplateConfiguration : IEntityTypeConfiguration
                .WithMany()
                .HasForeignKey(x => x.ArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

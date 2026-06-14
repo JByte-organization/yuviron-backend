@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
@@ -21,5 +21,7 @@ public class UserFollowUserConfiguration: IEntityTypeConfiguration<UserFollowUse
             .WithMany()
             .HasForeignKey(x => x.FolloweeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(x => !x.Follower.IsDeleted && !x.Followee.IsDeleted);
     }
 }

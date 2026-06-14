@@ -19,5 +19,7 @@ public class LyricsConfiguration : IEntityTypeConfiguration<Lyrics>
             .WithOne(x => x.Lyrics)
             .HasForeignKey<Lyrics>(x => x.TrackId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted);
     }
 }

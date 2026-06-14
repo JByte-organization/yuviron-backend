@@ -25,5 +25,7 @@ public class AdImpressionConfiguration : IEntityTypeConfiguration<AdImpression>
             .WithMany()
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.Ad.IsDeleted && !x.User.IsDeleted);
     }
 }

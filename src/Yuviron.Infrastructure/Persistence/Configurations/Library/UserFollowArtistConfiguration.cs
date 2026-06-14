@@ -30,5 +30,7 @@ public class UserFollowArtistConfiguration : IEntityTypeConfiguration<UserFollow
                .WithMany() // У артиста нет коллекции подписчиков в этом классе (опционально)
                .HasForeignKey(x => x.ArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted && !x.Artist.IsDeleted);
     }
 }

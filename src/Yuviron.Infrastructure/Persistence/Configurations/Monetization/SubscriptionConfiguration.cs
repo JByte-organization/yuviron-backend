@@ -26,5 +26,7 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
                .WithMany()
                .HasForeignKey(x => x.PlanId)
                .OnDelete(DeleteBehavior.Restrict); 
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

@@ -33,5 +33,7 @@ public class ListeningEventConfiguration : IEntityTypeConfiguration<ListeningEve
             .WithMany()
             .HasForeignKey(x => x.TrackId)
             .OnDelete(DeleteBehavior.Restrict); 
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted);
     }
 }

@@ -28,5 +28,7 @@ public class ComplaintConfiguration : IEntityTypeConfiguration<Complaint>
             .WithMany()
             .HasForeignKey(x => x.ModeratedByAdminId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasQueryFilter(x => !x.CreatedByUser.IsDeleted);
     }
 }

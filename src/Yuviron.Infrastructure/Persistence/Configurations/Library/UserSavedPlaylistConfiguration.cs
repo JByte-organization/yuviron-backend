@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Persistence.Configurations;
 
-public class UserSavedPlaylistonfiguration : IEntityTypeConfiguration<UserSavedPlaylist>
+public class UserSavedPlaylistConfiguration : IEntityTypeConfiguration<UserSavedPlaylist>
 {
     public void Configure(EntityTypeBuilder<UserSavedPlaylist> builder)
     {
@@ -23,5 +23,7 @@ public class UserSavedPlaylistonfiguration : IEntityTypeConfiguration<UserSavedP
             .WithMany()
             .HasForeignKey(x => x.PlaylistId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted && !x.Playlist.IsDeleted);
     }
 }

@@ -22,5 +22,7 @@ public class SharedRoomConfiguration : IEntityTypeConfiguration<SharedRoom>
             .WithMany()
             .HasForeignKey(x => x.HostUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(x => !x.HostUser.IsDeleted);
     }
 }

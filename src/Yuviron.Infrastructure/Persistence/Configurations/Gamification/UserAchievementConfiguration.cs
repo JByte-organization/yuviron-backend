@@ -23,5 +23,7 @@ public class UserAchievementConfiguration : IEntityTypeConfiguration<UserAchieve
                .WithMany()
                .HasForeignKey(x => x.AchievementId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

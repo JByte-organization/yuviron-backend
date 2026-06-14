@@ -23,5 +23,7 @@ public class UserSavedTrackConfiguration : IEntityTypeConfiguration<UserSavedTra
                .WithMany()
                .HasForeignKey(x => x.TrackId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted && !x.Track.IsDeleted);
     }
 }

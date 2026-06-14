@@ -26,5 +26,7 @@ public class PayoutRequestConfiguration : IEntityTypeConfiguration<PayoutRequest
             .WithMany()
             .HasForeignKey(x => x.AdminId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted);
     }
 }

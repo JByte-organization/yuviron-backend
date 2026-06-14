@@ -24,5 +24,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .WithMany() 
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

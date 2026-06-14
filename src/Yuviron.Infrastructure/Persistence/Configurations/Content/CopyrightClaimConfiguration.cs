@@ -23,5 +23,7 @@ public class CopyrightClaimConfiguration : IEntityTypeConfiguration<CopyrightCla
                .WithMany()
                .HasForeignKey(x => x.OwnerArtistId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.OwnerArtist.IsDeleted);
     }
 }

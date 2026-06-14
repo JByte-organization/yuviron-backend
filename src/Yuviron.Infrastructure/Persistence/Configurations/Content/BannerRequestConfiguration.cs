@@ -42,5 +42,7 @@ public class BannerRequestConfiguration : IEntityTypeConfiguration<BannerRequest
             .WithMany()
             .HasForeignKey(x => x.AlbumId)
             .OnDelete(DeleteBehavior.SetNull); 
+
+        builder.HasQueryFilter(x => !x.Artist.IsDeleted && !x.SubmittedByUser.IsDeleted);
     }
 }

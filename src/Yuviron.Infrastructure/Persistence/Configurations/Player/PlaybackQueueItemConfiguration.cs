@@ -31,5 +31,7 @@ public class PlaybackQueueItemConfiguration : IEntityTypeConfiguration<PlaybackQ
             .HasForeignKey(x => x.AddedByUserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(x => !x.AddedByUser.IsDeleted && !x.Track.IsDeleted);
     }
 }

@@ -25,5 +25,7 @@ public class UserAchievementProgressConfiguration : IEntityTypeConfiguration<Use
             .WithMany()
             .HasForeignKey(x => x.AchievementId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(x => !x.User.IsDeleted);
     }
 }

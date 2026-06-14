@@ -17,5 +17,7 @@ public class TrackListenHeatmapConfiguration : IEntityTypeConfiguration<TrackLis
             .WithMany() 
             .HasForeignKey(x => x.TrackId)
             .OnDelete(DeleteBehavior.Cascade); // Удалили трек из базы — удалили и его тепловую карту
+
+        builder.HasQueryFilter(x => !x.Track.IsDeleted);
     }
 }

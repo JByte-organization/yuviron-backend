@@ -30,5 +30,7 @@ public class SharedRoomQueueItemConfiguration : IEntityTypeConfiguration<SharedR
                .WithMany()
                .HasForeignKey(x => x.AddedByUserId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(x => !x.AddedByUser.IsDeleted && !x.Track.IsDeleted);
     }
 }
