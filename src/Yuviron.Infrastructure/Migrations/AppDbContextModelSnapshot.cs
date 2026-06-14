@@ -925,6 +925,8 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PlayedAt");
+
                     b.HasIndex("TrackId", "PlayedAt");
 
                     b.HasIndex("UserId", "PlayedAt");

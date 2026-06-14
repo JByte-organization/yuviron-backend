@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
@@ -24,7 +24,8 @@ public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamM
     {
         var query = _catalogContext.ArtistTeamMembers
             .AsNoTracking()
-            .Where(tm => tm.ArtistId == request.ArtistId);
+            .Where(tm => tm.ArtistId == request.ArtistId)
+            .WhereHasPermission(request.RequiredPermission);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

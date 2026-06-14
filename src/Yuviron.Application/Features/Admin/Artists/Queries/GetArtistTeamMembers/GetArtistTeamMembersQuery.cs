@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Common;
 using Yuviron.Application.Features.Admin.Artists.Queries.DTOs;
@@ -9,6 +9,7 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMember
 public sealed record GetArtistTeamMembersQuery(
     Guid ArtistId,
     string? SearchTerm = null,
+    AppPermission? RequiredPermission = null,
     string? SortBy = null,    
     string? SortOrder = null,  
     int Page = 1,
@@ -17,5 +18,5 @@ public sealed record GetArtistTeamMembersQuery(
     IRequest<PaginatedList<ArtistTeamMemberDto>>, 
     ISecuredRequest
 {
-    public AppPermission RequiredPermission => AppPermission.AccessAdminPanel;
+    AppPermission ISecuredRequest.RequiredPermission => AppPermission.AccessAdminPanel; 
 }

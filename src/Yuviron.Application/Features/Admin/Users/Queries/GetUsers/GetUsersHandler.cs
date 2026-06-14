@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +27,7 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedLi
     {
         var query = _identityContext.Users
             .AsNoTracking()
-            ;
+            .WhereHasPermission(request.RequiredPermission);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

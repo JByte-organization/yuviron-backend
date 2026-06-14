@@ -1,8 +1,9 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
+using Yuviron.Application.Extensions;
 using Yuviron.Domain.Enums; 
 
 namespace Yuviron.Application.Features.Admin.Roles.Queries.GetRoles;
@@ -20,6 +21,7 @@ public sealed class GetRolesHandler : IRequestHandler<GetRolesQuery, List<RoleDt
     {
         var rolesFromDb = await _identityContext.Roles
             .AsNoTracking()
+            .WhereHasPermission(request.RequiredPermission)
             .OrderBy(r => r.Name) 
             .Select(r => new 
             {
