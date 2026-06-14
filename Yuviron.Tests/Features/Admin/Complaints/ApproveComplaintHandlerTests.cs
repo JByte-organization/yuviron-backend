@@ -31,23 +31,23 @@ public class ApproveComplaintHandlerTests
         var artist = Artist.Create(null, "Artist", null, null, null, VerificationStatus.None, utcNow);
         var user = User.Create("user@mail.com", "hash", "User", true, true, utcNow);
 
-        dbContext.Artists.Add(artist);
-        dbContext.Users.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(user);
         var complaint = Complaint.Create(user.Id, ComplaintTargetType.Artist, artist.Id, ComplaintReasonCode.Spam, "bad content", utcNow);
-        dbContext.Complaints.Add(complaint);
-        dbContext.ComplaintCounters.Add(ComplaintCounter.Create(ComplaintTargetType.Artist, artist.Id, utcNow));
+        dbContext.Add(complaint);
+        dbContext.Add(ComplaintCounter.Create(ComplaintTargetType.Artist, artist.Id, utcNow));
         await dbContext.SaveChangesAsync();
 
-        var handler = new ApproveComplaintHandler(dbContext, currentUserMock.Object, TimeProvider.System, eventBusMock.Object);
+        var handler = new ApproveComplaintHandler(dbContext, dbContext, dbContext, currentUserMock.Object, TimeProvider.System, eventBusMock.Object);
 
         await handler.Handle(new ApproveComplaintCommand(complaint.Id, "Valid report"), CancellationToken.None);
 
-        var updatedComplaint = await dbContext.Complaints.FindAsync(complaint.Id);
+        var updatedComplaint = await dbContext.Set<Complaint>().FindAsync(complaint.Id);
         updatedComplaint!.Status.Should().Be(ComplaintStatus.Approved);
         updatedComplaint.ModeratedByAdminId.Should().Be(adminId);
         updatedComplaint.ModerationNote.Should().Be("Valid report");
 
-        var counter = await dbContext.ComplaintCounters.FindAsync(ComplaintTargetType.Artist, artist.Id);
+        var counter = await dbContext.Set<ComplaintCounter>().FindAsync(ComplaintTargetType.Artist, artist.Id);
         counter!.CountOpen.Should().Be(0);
 
         eventBusMock.Verify(x => x.PublishAsync(
@@ -75,15 +75,15 @@ public class ApproveComplaintHandlerTests
         var utcNow = DateTime.UtcNow;
         var reporter = User.Create("reporter@mail.com", "hash", "Reporter", true, true, utcNow);
         var targetUser = User.Create("target@mail.com", "hash", "Target User", true, true, utcNow);
-        dbContext.Users.Add(reporter);
-        dbContext.Users.Add(targetUser);
-        dbContext.UserProfiles.Add(UserProfile.Create(targetUser.Id, "Target User", null, null, null, null, null, utcNow, Gender.Male, utcNow));
-        dbContext.Complaints.Add(Complaint.Create(reporter.Id, ComplaintTargetType.User, targetUser.Id, ComplaintReasonCode.Abuse, "bad behavior", utcNow));
-        dbContext.ComplaintCounters.Add(ComplaintCounter.Create(ComplaintTargetType.User, targetUser.Id, utcNow));
+        dbContext.Add(reporter);
+        dbContext.Add(targetUser);
+        dbContext.Add(UserProfile.Create(targetUser.Id, "Target User", null, null, null, null, null, utcNow, Gender.Male, utcNow));
+        dbContext.Add(Complaint.Create(reporter.Id, ComplaintTargetType.User, targetUser.Id, ComplaintReasonCode.Abuse, "bad behavior", utcNow));
+        dbContext.Add(ComplaintCounter.Create(ComplaintTargetType.User, targetUser.Id, utcNow));
         await dbContext.SaveChangesAsync();
 
         var complaint = await dbContext.Complaints.FirstAsync();
-        var handler = new ApproveComplaintHandler(dbContext, currentUserMock.Object, TimeProvider.System, eventBusMock.Object);
+        var handler = new ApproveComplaintHandler(dbContext, dbContext, dbContext, currentUserMock.Object, TimeProvider.System, eventBusMock.Object);
 
         await handler.Handle(new ApproveComplaintCommand(complaint.Id, "Confirmed"), CancellationToken.None);
 

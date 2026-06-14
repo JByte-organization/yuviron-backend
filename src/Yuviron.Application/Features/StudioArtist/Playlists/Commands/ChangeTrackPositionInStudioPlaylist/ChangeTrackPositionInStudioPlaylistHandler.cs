@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,35 +17,37 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.ChangeTra
 
 public sealed class ChangeTrackPositionInStudioPlaylistHandler : IRequestHandler<ChangeTrackPositionInStudioPlaylistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly IEventBus _eventBus;
 
     public ChangeTrackPositionInStudioPlaylistHandler(
-        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
+        ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(ChangeTrackPositionInStudioPlaylistCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
             ?? throw new NotFoundException("Playlist", request.PlaylistId);
 
         if (playlist.ArtistId == null) throw new ForbiddenException("This is not a studio artist playlist.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(playlist.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage this playlist.");
 
-        var trackToMove = await _context.PlaylistTracks
+        var trackToMove = await _libraryContext.PlaylistTracks
             .Include(t => t.Track)
             .FirstOrDefaultAsync(t => t.PlaylistId == request.PlaylistId && t.TrackId == request.TrackId, cancellationToken)
             ?? throw new NotFoundException("PlaylistTrack", request.TrackId);
@@ -51,7 +55,7 @@ public sealed class ChangeTrackPositionInStudioPlaylistHandler : IRequestHandler
         trackToMove.UpdatePosition(request.NewPosition);
         playlist.NotifyContentChanged(_timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _cache.SortedSetAddAsync($"playlist:{request.PlaylistId}:tracks", request.TrackId.ToString(), request.NewPosition, cancellationToken);
 

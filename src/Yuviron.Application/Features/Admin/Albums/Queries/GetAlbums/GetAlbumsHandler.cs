@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -12,13 +14,13 @@ namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbums;
 
 public sealed class GetAlbumsHandler : IRequestHandler<GetAlbumsQuery, PaginatedList<AlbumListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetAlbumsHandler(IApplicationDbContext context) => _context = context;
+    public GetAlbumsHandler(ICatalogContext catalogContext) => _catalogContext = catalogContext;
 
     public async Task<PaginatedList<AlbumListItemDto>> Handle(GetAlbumsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Albums.AsNoTracking();
+        var query = _catalogContext.Albums.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Title.Contains(request.SearchTerm));

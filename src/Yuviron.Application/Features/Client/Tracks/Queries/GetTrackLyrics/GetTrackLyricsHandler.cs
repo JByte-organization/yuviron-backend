@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,12 +11,12 @@ namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackLyrics;
 
 public sealed class GetTrackLyricsHandler : IRequestHandler<GetTrackLyricsQuery, TrackLyricsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider; 
 
-    public GetTrackLyricsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetTrackLyricsHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -22,7 +24,7 @@ public sealed class GetTrackLyricsHandler : IRequestHandler<GetTrackLyricsQuery,
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var trackData = await _context.Tracks
+        var trackData = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => t.Id == request.TrackId)

@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,20 +16,24 @@ namespace Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateP
 
 public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistProfileCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ArtistLimitsOptions _limits;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
 
     public CreateArtistProfileHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         IOptions<ArtistLimitsOptions> options,
         ICurrentUserService currentUser,
         IPermissionService permissionService) 
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _limits = options.Value; 
         _currentUser = currentUser;
@@ -40,11 +45,11 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         
-        var ownedArtistsCount = await _context.ArtistTeamMembers
+        var ownedArtistsCount = await _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .CountAsync(atm => atm.UserId == userId && atm.Role == ArtistTeamRole.Owner, cancellationToken);
 
-        var isPremium = await _context.Users
+        var isPremium = await _identityContext.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
             .AnyAsync(u => u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow), cancellationToken);
@@ -60,7 +65,7 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
     
         if (request.AvatarFileId.HasValue)
         {
-            avatarClaim = await _context.ClaimFileAsync(
+            avatarClaim = await _systemContext.ClaimFileAsync(
                 request.AvatarFileId.Value, userId, "image/", "avatars", cancellationToken);
         }
 
@@ -79,13 +84,13 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
             artist.RegisterFileSwapEvents(avatarClaim);
         }
 
-        _context.Artists.Add(artist);
+        _catalogContext.Add(artist);
         
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.UserRoles)
             .FirstAsync(u => u.Id == userId, cancellationToken);
             
-        var managementRole = await _context.Roles
+        var managementRole = await _identityContext.Roles
             .FirstAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
 
         bool roleAdded = false;
@@ -96,7 +101,7 @@ public sealed class CreateArtistProfileHandler : IRequestHandler<CreateArtistPro
             roleAdded = true;
         }
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         if (roleAdded)
         {

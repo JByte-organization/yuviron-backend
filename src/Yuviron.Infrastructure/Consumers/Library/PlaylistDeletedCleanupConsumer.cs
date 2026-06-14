@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,9 +9,9 @@ namespace Yuviron.Infrastructure.Consumers.Library;
 
 public class PlaylistDeletedCleanupConsumer : IConsumer<PlaylistDeletedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
 
-    public PlaylistDeletedCleanupConsumer(IApplicationDbContext context)
+    public PlaylistDeletedCleanupConsumer(AppDbContext context)
     {
         _context = context;
     }

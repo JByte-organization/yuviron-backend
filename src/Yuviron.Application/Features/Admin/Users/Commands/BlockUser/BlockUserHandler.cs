@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,18 +14,18 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.BlockUser;
 
 public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEventBus _eventBus;
 
     public BlockUserHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUserService,
         IEventBus eventBus)
     {
-        _context = context;
+        _identityContext = identityContext;
         _timeProvider = timeProvider;
         _currentUserService = currentUserService;
         _eventBus = eventBus;
@@ -31,7 +33,7 @@ public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
 
     public async Task<Guid> Handle(BlockUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users
+        var user = await _identityContext.Users
                        .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
 
@@ -41,7 +43,7 @@ public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
         }
 
         var adminId = _currentUserService.UserId 
-                      ?? throw new UnauthorizedAccessException("Admin context is required for this operation."); 
+                      ?? throw new UnauthorizedAccessException("Admin identityContext is required for this operation."); 
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -55,14 +57,14 @@ public sealed class BlockUserHandler : IRequestHandler<BlockUserCommand, Guid>
             request.EndsAt,
             utcNow);
 
-        _context.UserBlocks.Add(block);
+        _identityContext.Add(block);
 
         if (request.BlockType == BlockType.Full || request.BlockType == BlockType.Login)
         {
             user.SetAccountState(AccountState.Banned, utcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(
             new UserBlockedEvent(user.Id, request.ReasonCode, request.Description, request.EndsAt),

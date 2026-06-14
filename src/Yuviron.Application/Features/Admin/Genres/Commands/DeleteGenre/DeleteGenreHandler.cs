@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,22 +10,22 @@ namespace Yuviron.Application.Features.Admin.Genres.Commands.DeleteGenre;
 
 public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteGenreHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteGenreHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(DeleteGenreCommand request, CancellationToken cancellationToken)
     {
-        var genre = await _context.Genres
+        var genre = await _catalogContext.Genres
                         .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken)
                     ?? throw new NotFoundException(nameof(Genre), request.GenreId);
 
-        var hasAssociatedTracks = await _context.TrackGenres
+        var hasAssociatedTracks = await _catalogContext.TrackGenres
             .AnyAsync(tg => tg.GenreId == request.GenreId, cancellationToken);
 
         if (hasAssociatedTracks)
@@ -33,7 +35,7 @@ public sealed class DeleteGenreHandler : IRequestHandler<DeleteGenreCommand, Uni
 
         genre.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

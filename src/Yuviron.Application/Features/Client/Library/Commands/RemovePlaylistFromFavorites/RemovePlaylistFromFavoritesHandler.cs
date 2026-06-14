@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,26 +10,26 @@ namespace Yuviron.Application.Features.Client.Library.Commands.RemovePlaylistFro
 
 public sealed class RemovePlaylistFromFavoritesHandler : IRequestHandler<RemovePlaylistFromFavoritesCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICacheService _cacheService;
 
-    public RemovePlaylistFromFavoritesHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICacheService cacheService)
+    public RemovePlaylistFromFavoritesHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService, ICacheService cacheService)
     {
-        _context = context; _currentUserService = currentUserService; _cacheService = cacheService;
+        _libraryContext = libraryContext; _currentUserService = currentUserService; _cacheService = cacheService;
     }
 
     public async Task<Unit> Handle(RemovePlaylistFromFavoritesCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var entity = await _context.UserSavedPlaylists
+        var entity = await _libraryContext.UserSavedPlaylists
             .FirstOrDefaultAsync(usp => usp.UserId == userId && usp.PlaylistId == request.PlaylistId, cancellationToken);
 
         if (entity != null)
         {
-            _context.UserSavedPlaylists.Remove(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            _libraryContext.Remove(entity);
+            await _libraryContext.SaveChangesAsync(cancellationToken);
             
             await _cacheService.SetRemoveAsync($"user:{userId}:saved_playlists", request.PlaylistId.ToString(), cancellationToken);
         }

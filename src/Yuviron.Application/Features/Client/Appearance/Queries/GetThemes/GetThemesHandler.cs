@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions.Authentication;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Client.Appearance.Queries.GetThemes;
 
 public sealed class GetThemesHandler : IRequestHandler<GetThemesQuery, List<ThemeDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
 
     public GetThemesHandler(
-        IApplicationDbContext context,
+        IProfileContext profileContext,
         ICurrentUserService currentUser,
         IPermissionService permissionService)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
     }
@@ -33,7 +35,7 @@ public sealed class GetThemesHandler : IRequestHandler<GetThemesQuery, List<Them
             AppPermission.CustomTheme,
             cancellationToken);
 
-        var settings = await _context.UserSettings
+        var settings = await _profileContext.UserSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
 
@@ -44,7 +46,7 @@ public sealed class GetThemesHandler : IRequestHandler<GetThemesQuery, List<Them
 
         var currentThemeId = settings.ThemeId;
 
-        return await _context.Themes
+        return await _profileContext.Themes
             .AsNoTracking()
             .Where(x => x.UserId == null || x.UserId == userId)
             .Where(x => !x.IsPremiumOnly || hasCustomThemePermission)

@@ -42,17 +42,17 @@ public class AddTrackToPlaylistHandlerTests
         _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var playlist = Playlist.Create(currentUserId, null, "My List", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
-        dbContext.Playlists.Add(playlist);
+        dbContext.Add(playlist);
 
         var track1Id = Guid.NewGuid();
         var track2Id = Guid.NewGuid();
-        dbContext.Tracks.Add(Track.Create(track1Id, Guid.NewGuid(), 1, "Track 1", 200000, false, null, "key1", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
-        dbContext.Tracks.Add(Track.Create(track2Id, Guid.NewGuid(), 2, "Track 2", 200000, false, null, "key2", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        dbContext.Add(Track.Create(track1Id, Guid.NewGuid(), 1, "Track 1", 200000, false, null, "key1", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        dbContext.Add(Track.Create(track2Id, Guid.NewGuid(), 2, "Track 2", 200000, false, null, "key2", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
         
         await dbContext.SaveChangesAsync();
 
         // ИСПРАВЛЕНО: Добавлен _cacheMock.Object
-        var handler = new AddTrackToPlaylistHandler(dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
+        var handler = new AddTrackToPlaylistHandler(dbContext, dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
 
         await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, track1Id), CancellationToken.None);
         await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, track2Id), CancellationToken.None);
@@ -77,11 +77,11 @@ public class AddTrackToPlaylistHandlerTests
 
         var playlist = Playlist.Create(currentUserId, null, "My List", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
         var trackId = Guid.NewGuid();
-        dbContext.Playlists.Add(playlist);
-        dbContext.Tracks.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Track 1", 200000, false, null, "key1", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        dbContext.Add(playlist);
+        dbContext.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Track 1", 200000, false, null, "key1", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
-        var handler = new AddTrackToPlaylistHandler(dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
+        var handler = new AddTrackToPlaylistHandler(dbContext, dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
 
         await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, trackId), CancellationToken.None);
         await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, trackId), CancellationToken.None);
@@ -103,11 +103,11 @@ public class AddTrackToPlaylistHandlerTests
         _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var playlist = Playlist.Create(otherUserId, null, "Other List", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
-        dbContext.Playlists.Add(playlist);
+        dbContext.Add(playlist);
         await dbContext.SaveChangesAsync();
 
         // ИСПРАВЛЕНО: Добавлен _cacheMock.Object
-        var handler = new AddTrackToPlaylistHandler(dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
+        var handler = new AddTrackToPlaylistHandler(dbContext, dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);
 
         Func<Task> action = async () => await handler.Handle(new AddTrackToPlaylistCommand(playlist.Id, Guid.NewGuid()), CancellationToken.None);
         await action.Should().ThrowAsync<ForbiddenException>();

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,16 +18,18 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteTra
 
 public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavoriteTracksQuery, PaginatedList<UserFavoriteTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
     public GetUserFavoriteTracksHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ILibraryContext libraryContext, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
         _timeProvider = timeProvider;
     }
@@ -37,10 +41,10 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var query = _context.UserSavedTracks
+        var query = _libraryContext.UserSavedTracks
             .AsNoTracking()
             .Where(ust => ust.UserId == userId && 
-                          _context.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
+                          _catalogContext.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
 
         var sortedQuery = query.ApplySorting(
             request.SortBy,

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,16 +10,16 @@ namespace Yuviron.Application.Features.Admin.Finance.Queries.GetPayoutRequestDet
 
 public sealed class GetPayoutRequestDetailsHandler : IRequestHandler<GetPayoutRequestDetailsQuery, PayoutRequestDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetPayoutRequestDetailsHandler(IApplicationDbContext context)
+    public GetPayoutRequestDetailsHandler(IMonetizationContext monetizationContext)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
     }
 
     public async Task<PayoutRequestDetailsDto> Handle(GetPayoutRequestDetailsQuery request, CancellationToken cancellationToken)
     {
-        var payout = await _context.PayoutRequests
+        var payout = await _monetizationContext.PayoutRequests
                          .Include(pr => pr.Artist)
                          .ThenInclude(a => a.ArtistWallet)
                          .Include(pr => pr.Artist)

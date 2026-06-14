@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.StudioArtist.Tracks.Commands.DeleteLyrics
 
 public sealed class DeleteLyricsHandler : IRequestHandler<DeleteLyricsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public DeleteLyricsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public DeleteLyricsHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -23,13 +25,13 @@ public sealed class DeleteLyricsHandler : IRequestHandler<DeleteLyricsCommand, U
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
                         .Include(t => t.Lyrics) 
                         .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId && !t.IsDeleted, cancellationToken)
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(track.Album!.AlbumArtists.Select(aa => aa.ArtistId), userId)
             .AnyAsync(cancellationToken);
 
@@ -37,7 +39,7 @@ public sealed class DeleteLyricsHandler : IRequestHandler<DeleteLyricsCommand, U
 
         track.SetLyrics(null);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
     
         return Unit.Value;
     }

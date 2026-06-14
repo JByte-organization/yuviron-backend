@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 // Yuviron.Application.Features.Admin.Dashboard.Queries.GetDashboardStats.GetAdminDashboardHandler
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,16 +15,18 @@ namespace Yuviron.Application.Features.Admin.Dashboard.Queries.GetDashboardStats
 
 public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboardQuery, AdminDashboardDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cacheService;
 
     public GetAdminDashboardHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cacheService)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cacheService = cacheService;
     }
@@ -37,17 +41,17 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
         var dayAgo = utcNow.AddDays(-1);
 
         // 1. Summary
-        var totalUsers = await _context.Users.CountAsync(cancellationToken);
-        var newUsers24h = await _context.Users.CountAsync(u => u.CreatedAt >= dayAgo, cancellationToken);
-        var premiumUsers = await _context.Users.CountAsync(
+        var totalUsers = await _identityContext.Users.CountAsync(cancellationToken);
+        var newUsers24h = await _identityContext.Users.CountAsync(u => u.CreatedAt >= dayAgo, cancellationToken);
+        var premiumUsers = await _identityContext.Users.CountAsync(
             u => u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow),
             cancellationToken);
         
-        var totalTracks = await _context.Tracks.CountAsync(cancellationToken);
-        var totalAlbums = await _context.Albums.CountAsync(cancellationToken);
-        var totalArtists = await _context.Artists.CountAsync(cancellationToken);
+        var totalTracks = await _catalogContext.Tracks.CountAsync(cancellationToken);
+        var totalAlbums = await _catalogContext.Albums.CountAsync(cancellationToken);
+        var totalArtists = await _catalogContext.Artists.CountAsync(cancellationToken);
         
-        var totalPlays = await _context.Tracks.SumAsync(t => (long)t.PlayCount, cancellationToken);
+        var totalPlays = await _catalogContext.Tracks.SumAsync(t => (long)t.PlayCount, cancellationToken);
 
         var summary = new DashboardSummaryDto(
             totalTracks, totalArtists, totalAlbums, 
@@ -55,7 +59,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
         );
 
         // 2. Recent users
-        var recentUsers = await _context.Users
+        var recentUsers = await _identityContext.Users
             .AsNoTracking()
             .OrderByDescending(u => u.CreatedAt)
             .Take(5)
@@ -68,7 +72,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .ToListAsync(cancellationToken);
 
         // 3. Top Genres
-        var topGenres = await _context.Genres
+        var topGenres = await _catalogContext.Genres
             .AsNoTracking()
             .Select(g => new {
                 Genre = g,
@@ -82,7 +86,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .ToListAsync(cancellationToken);
 
         // 4. Top Moods
-        var topMoods = await _context.Moods
+        var topMoods = await _catalogContext.Moods
             .AsNoTracking()
             .Select(m => new {
                 Mood = m,
@@ -96,7 +100,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .ToListAsync(cancellationToken);
 
         // 5. Popular Albums
-        var popularAlbums = await _context.Albums
+        var popularAlbums = await _catalogContext.Albums
             .AsNoTracking()
             .Select(a => new {
                 Album = a,
@@ -110,7 +114,7 @@ public sealed class GetAdminDashboardHandler : IRequestHandler<GetAdminDashboard
             .ToListAsync(cancellationToken);
 
         // 6. Top Artists 
-        var topArtists = await _context.Artists
+        var topArtists = await _catalogContext.Artists
             .AsNoTracking()
             .Select(a => new {
                 Artist = a,

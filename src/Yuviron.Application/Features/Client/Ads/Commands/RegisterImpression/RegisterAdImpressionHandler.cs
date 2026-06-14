@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using System;
 using System.Threading;
@@ -11,13 +13,13 @@ namespace Yuviron.Application.Features.Client.Ads.Commands.RegisterImpression;
 
 public sealed class RegisterAdImpressionHandler : IRequestHandler<RegisterAdImpressionCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public RegisterAdImpressionHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public RegisterAdImpressionHandler(IMonetizationContext monetizationContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -29,7 +31,7 @@ public sealed class RegisterAdImpressionHandler : IRequestHandler<RegisterAdImpr
 
         var impression = AdImpression.Create(request.AdId, userId, request.Context, utcNow);
 
-        _context.AdImpressions.Add(impression);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.Add(impression);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
     }
 }

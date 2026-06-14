@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Security.Cryptography;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +16,7 @@ public record AdminLoginCodeModel(string Code);
 
 public sealed class AdminPreLoginHandler : IRequestHandler<AdminPreLoginCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IOtpService _otpService;
     private readonly IEmailService _emailService;
@@ -22,14 +24,14 @@ public sealed class AdminPreLoginHandler : IRequestHandler<AdminPreLoginCommand,
     private readonly ITemplateService _templateService; 
 
     public AdminPreLoginHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IPasswordHasher passwordHasher,
         IOtpService otpService,
         IEmailService emailService,
         ILogger<AdminPreLoginHandler> logger,
         ITemplateService templateService) 
     {
-        _context = context;
+        _identityContext = identityContext;
         _passwordHasher = passwordHasher;
         _otpService = otpService;
         _emailService = emailService;
@@ -41,7 +43,7 @@ public sealed class AdminPreLoginHandler : IRequestHandler<AdminPreLoginCommand,
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .AsNoTracking()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)

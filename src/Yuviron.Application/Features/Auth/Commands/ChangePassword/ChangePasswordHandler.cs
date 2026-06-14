@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,18 +12,18 @@ namespace Yuviron.Application.Features.Auth.Commands.ChangePassword;
 
 public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
     public ChangePasswordHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         ICurrentUserService currentUser, 
         IPasswordHasher passwordHasher, 
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _currentUser = currentUser;
         _passwordHasher = passwordHasher;
         _timeProvider = timeProvider;
@@ -31,7 +33,7 @@ public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordComman
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
                        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), userId);
 
@@ -44,7 +46,7 @@ public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordComman
         
         user.SetPasswordHash(newHash, _timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

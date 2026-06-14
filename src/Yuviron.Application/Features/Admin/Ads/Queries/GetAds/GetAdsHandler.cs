@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,13 +17,13 @@ namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAds;
 
 public sealed class GetAdsHandler : IRequestHandler<GetAdsQuery, PaginatedList<AdSummaryDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetAdsHandler(IApplicationDbContext context) => _context = context;
+    public GetAdsHandler(IMonetizationContext monetizationContext) => _monetizationContext = monetizationContext;
 
     public async Task<PaginatedList<AdSummaryDto>> Handle(GetAdsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Ads.AsNoTracking();
+        var query = _monetizationContext.Ads.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,16 +15,18 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.UpdatePlaylist;
 
 public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdatePlaylistHandler(
-        IApplicationDbContext context, 
+        ILibraryContext libraryContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -31,7 +35,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
@@ -45,7 +49,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
 
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
 
             playlist.RegisterFileSwapEvents(coverClaim, playlist.CoverUrl);
@@ -63,6 +67,6 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             utcNow: utcNow
         );
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _libraryContext.SaveChangesAsync(cancellationToken);
     }
 }

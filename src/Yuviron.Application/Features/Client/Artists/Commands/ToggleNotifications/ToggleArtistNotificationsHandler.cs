@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,12 +10,12 @@ namespace Yuviron.Application.Features.Client.Artists.Commands.ToggleNotificatio
 
 public sealed class ToggleArtistNotificationsHandler : IRequestHandler<ToggleArtistNotificationsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public ToggleArtistNotificationsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public ToggleArtistNotificationsHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -21,7 +23,7 @@ public sealed class ToggleArtistNotificationsHandler : IRequestHandler<ToggleArt
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var followRecord = await _context.UserFollowArtists
+        var followRecord = await _libraryContext.UserFollowArtists
             .FirstOrDefaultAsync(f => f.UserId == userId && f.ArtistId == request.ArtistId, cancellationToken);
 
         if (followRecord == null)
@@ -29,7 +31,7 @@ public sealed class ToggleArtistNotificationsHandler : IRequestHandler<ToggleArt
 
         followRecord.SetNotifyNewReleases(request.ReceiveNotifications);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _libraryContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

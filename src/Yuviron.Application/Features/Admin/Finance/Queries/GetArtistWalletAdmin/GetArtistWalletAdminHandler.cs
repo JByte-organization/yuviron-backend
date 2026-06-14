@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -6,16 +8,16 @@ namespace Yuviron.Application.Features.Admin.Finance.Queries.GetArtistWalletAdmi
 
 public sealed class GetArtistWalletAdminHandler : IRequestHandler<GetArtistWalletAdminQuery, AdminArtistWalletDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetArtistWalletAdminHandler(IApplicationDbContext context)
+    public GetArtistWalletAdminHandler(IMonetizationContext monetizationContext)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
     }
 
     public async Task<AdminArtistWalletDto> Handle(GetArtistWalletAdminQuery request, CancellationToken cancellationToken)
     {
-        var wallet = await _context.ArtistWallets
+        var wallet = await _monetizationContext.ArtistWallets
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.ArtistId == request.ArtistId, cancellationToken);
 

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -16,13 +18,13 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Queries.GetStudioArt
 
 public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArtistProfileQuery, StudioArtistProfileDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public GetStudioArtistProfileHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public GetStudioArtistProfileHandler(ICatalogContext catalogContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _catalogContext = catalogContext; _currentUser = currentUser; _timeProvider = timeProvider;
     }
 
     public async Task<StudioArtistProfileDto> Handle(GetStudioArtistProfileQuery request, CancellationToken cancellationToken)
@@ -30,7 +32,7 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var teamMember = await _context.ArtistTeamMembers
+        var teamMember = await _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .FirstOrDefaultAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId, cancellationToken);
 
@@ -39,7 +41,7 @@ public sealed class GetStudioArtistProfileHandler : IRequestHandler<GetStudioArt
         var currentRole = teamMember.Role;
         var isHighLevelAccess = currentRole == ArtistTeamRole.Owner || currentRole == ArtistTeamRole.Manager;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .AsNoTracking()
             .Include(a => a.ArtistWallet)
             .Include(a => a.PayoutSettings)

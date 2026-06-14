@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -11,11 +13,11 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistsAutocompl
 
 public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAutocompleteQuery, List<ArtistAutocompleteDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetArtistsAutocompleteHandler(IApplicationDbContext context)
+    public GetArtistsAutocompleteHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<List<ArtistAutocompleteDto>> Handle(GetArtistsAutocompleteQuery request, CancellationToken cancellationToken)
@@ -25,7 +27,7 @@ public sealed class GetArtistsAutocompleteHandler : IRequestHandler<GetArtistsAu
 
         var searchTerm = request.SearchTerm.Trim().ToLower();
 
-        return await _context.Artists
+        return await _catalogContext.Artists
             .AsNoTracking()
             .Where(a => a.Name.ToLower().Contains(searchTerm))
             .OrderBy(a => a.Name)

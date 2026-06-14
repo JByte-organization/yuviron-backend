@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,12 +18,12 @@ namespace Yuviron.Application.Features.StudioArtist.Albums.Queries.GetStudioAlbu
 
 public sealed class GetStudioAlbumTracksHandler : IRequestHandler<GetStudioAlbumTracksQuery, List<StudioAlbumTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioAlbumTracksHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioAlbumTracksHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -29,7 +31,7 @@ public sealed class GetStudioAlbumTracksHandler : IRequestHandler<GetStudioAlbum
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var albumInfo = await _context.Albums
+        var albumInfo = await _catalogContext.Albums
             .AsNoTracking()
             .Where(a => a.Id == request.AlbumId)
             .Select(a => new { ArtistIds = a.AlbumArtists.Select(aa => aa.ArtistId).ToList() })
@@ -37,13 +39,13 @@ public sealed class GetStudioAlbumTracksHandler : IRequestHandler<GetStudioAlbum
 
         if (albumInfo == null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .Where(tm => albumInfo.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this album.");
 
-        return await _context.Tracks
+        return await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.AlbumId == request.AlbumId)
             .OrderBy(t => t.AlbumPosition)

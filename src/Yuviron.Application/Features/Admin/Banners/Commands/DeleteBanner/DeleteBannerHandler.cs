@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,24 +10,24 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.DeleteBanner;
 
 public sealed class DeleteBannerHandler : IRequestHandler<DeleteBannerCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
 
-    public DeleteBannerHandler(IApplicationDbContext context)
+    public DeleteBannerHandler(IContentContext contentContext)
     {
-        _context = context;
+        _contentContext = contentContext;
     }
 
     public async Task<Unit> Handle(DeleteBannerCommand request, CancellationToken cancellationToken)
     {
-        var banner = await _context.Banners
+        var banner = await _contentContext.Banners
                          .FirstOrDefaultAsync(b => b.Id == request.BannerId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Banner), request.BannerId);
 
         banner.Delete();
 
-        _context.Banners.Remove(banner);
+        _contentContext.Remove(banner);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _contentContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

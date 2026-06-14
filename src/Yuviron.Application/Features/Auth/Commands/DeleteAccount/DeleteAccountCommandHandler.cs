@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,12 +14,12 @@ namespace Yuviron.Application.Features.Auth.Commands.DeleteAccount;
 
 public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
 
-    public DeleteAccountCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public DeleteAccountCommandHandler(IIdentityContext identityContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
         _currentUser = currentUser;
     }
 
@@ -25,7 +27,7 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
     {
         var userId = _currentUser.UserId!.Value;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
@@ -42,7 +44,7 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
             token.Revoke(DateTime.UtcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

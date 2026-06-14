@@ -69,9 +69,7 @@ public class UserDeviceTrackerTests
             clientInfo.Device, 
             clientInfo.Browser, 
             clientInfo.IpAddress, 
-            DateTime.UtcNow);
-
-        _context.UserDevices.Add(existingDevice);
+            DateTime.UtcNow); _context.Add(existingDevice);
         await _context.SaveChangesAsync();
 
         // Act

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,13 +19,13 @@ namespace Yuviron.Application.Features.StudioArtist.Tracks.Commands.UpdateLyrics
 
 public sealed class UpdateLyricsHandler : IRequestHandler<UpdateLyricsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
 
-    public UpdateLyricsHandler(IApplicationDbContext context, ICurrentUserService currentUser, IEventBus eventBus)
+    public UpdateLyricsHandler(ICatalogContext catalogContext, ICurrentUserService currentUser, IEventBus eventBus)
     {
-        _context = context; 
+        _catalogContext = catalogContext; 
         _currentUser = currentUser;
         _eventBus = eventBus;
     }
@@ -32,14 +34,14 @@ public sealed class UpdateLyricsHandler : IRequestHandler<UpdateLyricsCommand, U
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
                         .Include(t => t.TrackArtists)
                         .Include(t => t.Lyrics) 
                         .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId && !t.IsDeleted, cancellationToken)
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(track.Album!.AlbumArtists.Select(aa => aa.ArtistId), userId)
             .AnyAsync(cancellationToken);
 
@@ -51,7 +53,7 @@ public sealed class UpdateLyricsHandler : IRequestHandler<UpdateLyricsCommand, U
 
         track.SetLyrics(request.LyricsText);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(
             new TrackLyricsUpdatedEvent(artistId, track.Id, track.Title, userId),

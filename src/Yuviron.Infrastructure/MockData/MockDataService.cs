@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +25,11 @@ namespace Yuviron.Infrastructure.MockData;
 
 public class MockDataService : IMockDataService
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _identityContext;
+    private readonly AppDbContext _catalogContext;
+    private readonly AppDbContext _profileContext;
+    private readonly AppDbContext _monetizationContext;
+    private readonly AppDbContext _systemContext;
     private readonly IFileStorageService _fileStorageService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IPasswordHasher _passwordHasher;
@@ -30,14 +37,18 @@ public class MockDataService : IMockDataService
     private readonly ILogger<MockDataService> _logger;
 
     public MockDataService(
-        IApplicationDbContext context,
+        AppDbContext identityContext, AppDbContext catalogContext, AppDbContext profileContext, AppDbContext monetizationContext, AppDbContext systemContext,
         IFileStorageService fileStorageService,
         IHttpClientFactory httpClientFactory,
         IPasswordHasher passwordHasher,
         IAnalyticsRepository analyticsRepository,
         ILogger<MockDataService> logger)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _profileContext = profileContext;
+        _monetizationContext = monetizationContext;
+        _systemContext = systemContext;
         _fileStorageService = fileStorageService;
         _httpClientFactory = httpClientFactory;
         _passwordHasher = passwordHasher;
@@ -56,15 +67,15 @@ public class MockDataService : IMockDataService
 
         // 0. Pre-prepare
         var hashedPassword = _passwordHasher.Hash("Qwerty!1");
-        var dbContext = (DbContext)_context;
+        var dbContext = (DbContext)_identityContext;
         dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(30));
 
         // 1. Load base data
-        var artistsList = await _context.Artists.Include(a => a.TrackArtists).AsNoTracking().ToListAsync(cancellationToken);
+        var artistsList = await _catalogContext.Artists.Include(a => a.TrackArtists).AsNoTracking().ToListAsync(cancellationToken);
         var artistsIds = artistsList.Select(a => a.Id).ToList();
-        var tracksList = await _context.Tracks.Include(t => t.TrackArtists).AsNoTracking().ToListAsync(cancellationToken);
+        var tracksList = await _catalogContext.Tracks.Include(t => t.TrackArtists).AsNoTracking().ToListAsync(cancellationToken);
         var tracksIds = tracksList.Select(t => t.Id).ToList();
-        var plansIds = await _context.Plans.Select(p => p.Id).ToListAsync(cancellationToken);
+        var plansIds = await _monetizationContext.Plans.Select(p => p.Id).ToListAsync(cancellationToken);
 
         if (!artistsIds.Any() || !tracksIds.Any()) return;
 
@@ -108,7 +119,7 @@ public class MockDataService : IMockDataService
             
             var user = User.Create(email, hashedPassword, person.FirstName, true, true, utcNow);
             user.ClearDomainEvents();
-            _context.Users.Add(user); 
+            _identityContext.Add(user); 
             
             // --- AVATAR UPLOAD (From Pool) ---
             string? finalAvatarUrl = null;
@@ -120,8 +131,8 @@ public class MockDataService : IMockDataService
                     using var ms = new MemoryStream(data);
                     var tempPath = await _fileStorageService.UploadAsync(ms, "temp", fileId.ToString("N"), contentType, cancellationToken);
                     var fileMeta = FileMetadata.Create(fileId, user.Id, "avatar.jpg", contentType, data.Length, tempPath, utcNow);
-                    _context.FileMetadata.Add(fileMeta);
-                    var claim = await _context.ClaimFileAsync(fileId, user.Id, "image/", "avatars", cancellationToken);
+                    _systemContext.Add(fileMeta);
+                    var claim = await _systemContext.ClaimFileAsync(fileId, user.Id, "image/", "avatars", cancellationToken);
                     user.RegisterFileSwapEvents(claim);
                     finalAvatarUrl = claim.FinalPath;
                 } catch { }
@@ -129,30 +140,30 @@ public class MockDataService : IMockDataService
 
             // Profile & Settings
             var profile = UserProfile.Create(user.Id, userName, finalAvatarUrl, null, countries[random.Next(countries.Length)], person.Address.City, faker.Lorem.Sentence(), person.DateOfBirth, (Gender)random.Next(1, 3), utcNow);
-            _context.UserProfiles.Add(profile);
-            _context.UserSettings.Add(UserSettings.Create(user.Id, utcNow));
+            _profileContext.Add(profile);
+            _profileContext.Add(UserSettings.Create(user.Id, utcNow));
 
             // Premium (15%)
             if (plansIds.Any() && random.NextDouble() < 0.15)
             {
-                _context.Subscriptions.Add(Subscription.Create(user.Id, plansIds[random.Next(plansIds.Count)], utcNow.AddDays(-30), utcNow.AddDays(30), SubscriptionStatus.Active, utcNow));
+                _monetizationContext.Add(Subscription.Create(user.Id, plansIds[random.Next(plansIds.Count)], utcNow.AddDays(-30), utcNow.AddDays(30), SubscriptionStatus.Active, utcNow));
                 premiumUserIds.Add(user.Id);
             }
 
             if (i % 250 == 0)
             {
                 _logger.LogInformation("Users progress: {P}% ({I}/{T})", Math.Round((double)i / usersToGenerate * 100, 1), i, usersToGenerate);
-                await _context.SaveChangesAsync(cancellationToken);
+                await _identityContext.SaveChangesAsync(cancellationToken);
                 dbContext.ChangeTracker.Clear();
             }
         }
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         dbContext.ChangeTracker.Clear();
 
         // 4. Update Global Connections
         _logger.LogInformation("Generating social connections for the new crowd...");
-        var allUsersIds = await _context.Users.AsNoTracking().Select(u => u.Id).ToListAsync(cancellationToken);
-        var premiumUserIdsActual = await _context.Subscriptions.AsNoTracking().Select(s => s.UserId).ToListAsync(cancellationToken);
+        var allUsersIds = await _identityContext.Users.AsNoTracking().Select(u => u.Id).ToListAsync(cancellationToken);
+        var premiumUserIdsActual = await _monetizationContext.Subscriptions.AsNoTracking().Select(s => s.UserId).ToListAsync(cancellationToken);
         var premiumUserIdsSet = new HashSet<Guid>(premiumUserIdsActual);
         var systemUserId = allUsersIds.First();
 
@@ -176,21 +187,21 @@ public class MockDataService : IMockDataService
                 var imgId = Guid.NewGuid();
                 using var imgMs = new MemoryStream(imgData);
                 var imgTemp = await _fileStorageService.UploadAsync(imgMs, "temp", imgId.ToString("N"), imgType, cancellationToken);
-                _context.FileMetadata.Add(FileMetadata.Create(imgId, systemUserId, "ad_img.jpg", imgType, imgData.Length, imgTemp, utcNow));
-                var imgClaim = await _context.ClaimFileAsync(imgId, systemUserId, "image/", "ads", cancellationToken);
+                _systemContext.Add(FileMetadata.Create(imgId, systemUserId, "ad_img.jpg", imgType, imgData.Length, imgTemp, utcNow));
+                var imgClaim = await _systemContext.ClaimFileAsync(imgId, systemUserId, "image/", "ads", cancellationToken);
 
                 // Upload Audio
                 var audId = Guid.NewGuid();
                 using var audMs = new MemoryStream(mockAudio);
                 var audTemp = await _fileStorageService.UploadAsync(audMs, "temp", audId.ToString("N"), "audio/mpeg", cancellationToken);
-                _context.FileMetadata.Add(FileMetadata.Create(audId, systemUserId, "ad_audio.mp3", "audio/mpeg", mockAudio.Length, audTemp, utcNow));
-                var audClaim = await _context.ClaimFileAsync(audId, systemUserId, "audio/", "ads", cancellationToken);
+                _systemContext.Add(FileMetadata.Create(audId, systemUserId, "ad_audio.mp3", "audio/mpeg", mockAudio.Length, audTemp, utcNow));
+                var audClaim = await _systemContext.ClaimFileAsync(audId, systemUserId, "audio/", "ads", cancellationToken);
 
                 ads.Add(Ad.Create(brand, title, audClaim.FinalPath, imgClaim.FinalPath, link, true, utcNow));
             } catch { }
         }
-        _context.Ads.AddRange(ads);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.AddRange(ads);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         // Artist Team Members
         _logger.LogInformation("Assigning users to artist teams...");
@@ -307,8 +318,8 @@ public class MockDataService : IMockDataService
 
             if (dailyImpressions.Any())
             {
-                _context.AdImpressions.AddRange(dailyImpressions);
-                await _context.SaveChangesAsync(cancellationToken);
+                _monetizationContext.AddRange(dailyImpressions);
+                await _identityContext.SaveChangesAsync(cancellationToken);
             }
 
             // --- SEED CLICKHOUSE ---

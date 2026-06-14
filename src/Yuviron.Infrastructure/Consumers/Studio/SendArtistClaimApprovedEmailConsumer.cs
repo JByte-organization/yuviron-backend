@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using MassTransit;
 using Microsoft.Extensions.Logging;
 using Yuviron.Application.Abstractions.Messaging;
@@ -18,14 +20,14 @@ public class SendArtistClaimApprovedEmailConsumer : IConsumer<ArtistClaimApprove
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
     private readonly FrontendOptions _frontendOptions;
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly ILogger<SendArtistClaimApprovedEmailConsumer> _logger;
 
     public SendArtistClaimApprovedEmailConsumer(
         IEmailService emailService,
         ITemplateService templateService,
         IOptions<FrontendOptions> frontendOptions,
-        IApplicationDbContext context,
+        AppDbContext context,
         ILogger<SendArtistClaimApprovedEmailConsumer> logger)
     {
         _emailService = emailService;

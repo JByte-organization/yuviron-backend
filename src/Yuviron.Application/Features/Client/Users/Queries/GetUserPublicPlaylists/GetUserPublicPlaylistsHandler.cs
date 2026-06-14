@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -15,26 +17,28 @@ namespace Yuviron.Application.Features.Client.Users.Queries.GetUserPublicPlaylis
 
 public sealed class GetUserPublicPlaylistsHandler : IRequestHandler<GetUserPublicPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICacheService _cache; 
     private readonly ICurrentUserService _currentUser;
 
     public GetUserPublicPlaylistsHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ILibraryContext libraryContext,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _libraryContext = libraryContext;
         _cache = cache;
         _currentUser = currentUser;
     }
 
     public async Task<PaginatedList<UserPlaylistDto>> Handle(GetUserPublicPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        var userExists = await _context.Users.AnyAsync(u => u.Id == request.TargetUserId , cancellationToken);
+        var userExists = await _identityContext.Users.AnyAsync(u => u.Id == request.TargetUserId , cancellationToken);
         if (!userExists) throw new NotFoundException(nameof(User), request.TargetUserId);
 
-        var query = _context.Playlists.AsNoTracking().Where(p => p.UserId == request.TargetUserId && p.Visibility == PlaylistVisibility.Public && p.ArtistId == null);
+        var query = _libraryContext.Playlists.AsNoTracking().Where(p => p.UserId == request.TargetUserId && p.Visibility == PlaylistVisibility.Public && p.ArtistId == null);
 
         var sortedQuery = query.ApplySorting(request.SortBy, request.SortOrder, defaultSortBy: nameof(Yuviron.Domain.Entities.Playlist.CreatedAt), defaultDesc: true,
             mapping: new Dictionary<string, Expression<Func<Domain.Entities.Playlist, object>>> { [nameof(UserPlaylistDto.TracksCount)] = p => p.PlaylistTracks.Count(pt => !pt.Track.IsDeleted) });

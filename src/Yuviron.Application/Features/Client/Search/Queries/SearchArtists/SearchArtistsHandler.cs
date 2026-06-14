@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,11 +12,11 @@ namespace Yuviron.Application.Features.Client.Search.Queries.SearchArtists;
 
 public sealed class SearchArtistsHandler : IRequestHandler<SearchArtistsQuery, PaginatedList<SearchArtistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public SearchArtistsHandler(IApplicationDbContext context)
+    public SearchArtistsHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<PaginatedList<SearchArtistDto>> Handle(SearchArtistsQuery request, CancellationToken cancellationToken)
@@ -22,7 +24,7 @@ public sealed class SearchArtistsHandler : IRequestHandler<SearchArtistsQuery, P
         var page = request.Page;
         var pageSize = request.PageSize;
         var searchTerm = SearchQueryNormalizer.Normalize(request.SearchTerm);
-        var exactQuery = _context.BuildPublicArtistSearchQuery(searchTerm);
+        var exactQuery = _catalogContext.BuildPublicArtistSearchQuery(searchTerm);
 
         if (!SearchFuzzyMatcher.ShouldUseFuzzy(searchTerm))
         {
@@ -58,7 +60,7 @@ public sealed class SearchArtistsHandler : IRequestHandler<SearchArtistsQuery, P
             .ToHashSet();
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicArtistFuzzyCandidateQuery(fragments)
             .SelectArtistSearchRows()
             .ToListAsync(cancellationToken);

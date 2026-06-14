@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,16 +15,22 @@ namespace Yuviron.Application.Features.Admin.Playlists.Commands.CreatePlaylist;
 
 public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public CreatePlaylistHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -37,13 +45,13 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
 
         if (targetUserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == targetUserId.Value, cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(u => u.Id == targetUserId.Value, cancellationToken);
             if (!userExists) throw new NotFoundException(nameof(User), targetUserId.Value);
         }
 
         if (targetArtistId.HasValue)
         {
-            var artistExists = await _context.Artists.AnyAsync(a => a.Id == targetArtistId.Value, cancellationToken);
+            var artistExists = await _catalogContext.Artists.AnyAsync(a => a.Id == targetArtistId.Value, cancellationToken);
             if (!artistExists) throw new NotFoundException(nameof(Artist), targetArtistId.Value);
         }
 
@@ -52,7 +60,7 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
         }
 
@@ -72,8 +80,8 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
             playlist.RegisterFileSwapEvents(coverClaim);
         }
 
-        _context.Playlists.Add(playlist);
-        await _context.SaveChangesAsync(cancellationToken);
+        _libraryContext.Add(playlist);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return playlist.Id;
     }

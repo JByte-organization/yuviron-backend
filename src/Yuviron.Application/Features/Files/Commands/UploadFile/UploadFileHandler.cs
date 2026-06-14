@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.IO;
 using System.Threading;
@@ -11,18 +13,18 @@ namespace Yuviron.Application.Features.Files.Commands.UploadFile;
 
 public sealed class UploadFileHandler : IRequestHandler<UploadFileCommand, UploadResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
     public UploadFileHandler(
-        IApplicationDbContext context, 
+        ISystemContext systemContext, 
         IFileStorageService fileStorageService, 
         ICurrentUserService currentUser,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _systemContext = systemContext;
         _fileStorageService = fileStorageService;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
@@ -43,8 +45,8 @@ public sealed class UploadFileHandler : IRequestHandler<UploadFileCommand, Uploa
         var fileMeta = FileMetadata.Create(
             fileId, userId, request.FileName, request.ContentType, request.FileStream.Length, filePath, utcNow);
     
-        _context.FileMetadata.Add(fileMeta);
-        await _context.SaveChangesAsync(cancellationToken);
+        _systemContext.Add(fileMeta);
+        await _systemContext.SaveChangesAsync(cancellationToken);
     
         return new UploadResponse(fileId, $"/api/files/temp/{uniqueFileName}");
     }

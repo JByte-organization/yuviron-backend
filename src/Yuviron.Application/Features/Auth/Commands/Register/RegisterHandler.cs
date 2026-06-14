@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,18 +14,18 @@ namespace Yuviron.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<RegisterHandler> _logger;
     private readonly TimeProvider _timeProvider; 
 
     public RegisterHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IPasswordHasher passwordHasher,
         ILogger<RegisterHandler> logger,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _passwordHasher = passwordHasher;
         _logger = logger;
         _timeProvider = timeProvider; 
@@ -34,7 +36,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
         var firstName = request.FirstName.Trim();
 
-        var emailExists = await _context.Users
+        var emailExists = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
 
@@ -42,7 +44,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
 
         var roleNamesToAssign = new List<string> { nameof(RoleName.User) };
 
-        var rolesToAssign = await _context.Roles
+        var rolesToAssign = await _identityContext.Roles
             .AsNoTracking()
             .Where(r => roleNamesToAssign.Contains(r.Name))
             .ToListAsync(cancellationToken);
@@ -78,11 +80,11 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, Guid>
             user.UserRoles.Add(new UserRole(user.Id, role.Id));
         }
 
-        _context.Users.Add(user);
+        _identityContext.Add(user);
 
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _identityContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {

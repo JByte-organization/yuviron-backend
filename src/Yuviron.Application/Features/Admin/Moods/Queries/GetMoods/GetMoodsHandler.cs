@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -10,13 +12,13 @@ namespace Yuviron.Application.Features.Admin.Moods.Queries.GetMoods;
 
 public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, PaginatedList<MoodDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetMoodsHandler(IApplicationDbContext context) => _context = context;
+    public GetMoodsHandler(ICatalogContext catalogContext) => _catalogContext = catalogContext;
 
     public async Task<PaginatedList<MoodDto>> Handle(GetMoodsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Moods
+        var query = _catalogContext.Moods
             .AsNoTracking()
             ;
 

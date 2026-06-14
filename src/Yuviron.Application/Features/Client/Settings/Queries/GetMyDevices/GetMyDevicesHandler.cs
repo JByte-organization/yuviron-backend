@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,19 +9,19 @@ namespace Yuviron.Application.Features.Client.Settings.Queries.GetMyDevices;
 
 public sealed class GetMyDevicesHandler : IRequestHandler<GetMyDevicesQuery, List<UserDeviceDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetMyDevicesHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetMyDevicesHandler(IIdentityContext identityContext, ICurrentUserService currentUser)
     {
-        _context = context; _currentUser = currentUser;
+        _identityContext = identityContext; _currentUser = currentUser;
     }
 
     public async Task<List<UserDeviceDto>> Handle(GetMyDevicesQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        return await _context.UserDevices
+        return await _identityContext.UserDevices
             .AsNoTracking()
             .Where(d => d.UserId == userId)
             .OrderByDescending(d => d.LastUsedAt)

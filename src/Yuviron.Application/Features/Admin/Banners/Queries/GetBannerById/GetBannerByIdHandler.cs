@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBannerById;
 
 public sealed class GetBannerByIdHandler : IRequestHandler<GetBannerByIdQuery, BannerDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
 
-    public GetBannerByIdHandler(IApplicationDbContext context)
+    public GetBannerByIdHandler(IContentContext contentContext)
     {
-        _context = context;
+        _contentContext = contentContext;
     }
 
     public async Task<BannerDetailsDto> Handle(GetBannerByIdQuery request, CancellationToken cancellationToken)
     {
-        var banner = await _context.Banners
+        var banner = await _contentContext.Banners
             .AsNoTracking()
             .Include(b => b.Artist)
             .Where(b => b.Id == request.BannerId)

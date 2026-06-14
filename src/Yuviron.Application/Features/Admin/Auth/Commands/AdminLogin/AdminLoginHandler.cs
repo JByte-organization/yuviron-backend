@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,7 +14,7 @@ namespace Yuviron.Application.Features.Admin.Auth.Commands.AdminLogin;
 
 public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, LoginResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly TimeProvider _timeProvider;
@@ -20,14 +22,14 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
     private readonly IPermissionService _permissionService;
 
     public AdminLoginHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         TimeProvider timeProvider,
         IOtpService otpService,
         IPermissionService permissionService)
     {
-        _context = context;
+        _identityContext = identityContext;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _timeProvider = timeProvider;
@@ -53,7 +55,7 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
 
         await _otpService.RemoveAdminLoginCodeAsync(normalizedEmail, cancellationToken);
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePermissions)
@@ -76,7 +78,7 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        await user.EnsureAllowedToLoginAsync(_context, utcNow, cancellationToken);
+        await user.EnsureAllowedToLoginAsync(_identityContext, utcNow, cancellationToken);
 
         user.UpdateLastLogin(utcNow);
 
@@ -93,8 +95,8 @@ public sealed class AdminLoginHandler : IRequestHandler<AdminLoginCommand, Login
             utcNow            
         );
 
-        _context.RefreshTokens.Add(refreshTokenEntity);
-        await _context.SaveChangesAsync(cancellationToken);
+        _identityContext.Add(refreshTokenEntity);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(
             user.Id,

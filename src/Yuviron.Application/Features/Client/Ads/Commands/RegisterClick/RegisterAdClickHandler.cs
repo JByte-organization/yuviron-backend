@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,13 +9,13 @@ namespace Yuviron.Application.Features.Client.Ads.Commands.RegisterClick;
 
 public sealed class RegisterAdClickHandler : IRequestHandler<RegisterAdClickCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public RegisterAdClickHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public RegisterAdClickHandler(IMonetizationContext monetizationContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -23,7 +25,7 @@ public sealed class RegisterAdClickHandler : IRequestHandler<RegisterAdClickComm
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var impression = await _context.AdImpressions
+        var impression = await _monetizationContext.AdImpressions
             .Where(i => i.AdId == request.AdId && i.UserId == userId)
             .OrderByDescending(i => i.ShownAt)
             .FirstOrDefaultAsync(cancellationToken);
@@ -31,7 +33,7 @@ public sealed class RegisterAdClickHandler : IRequestHandler<RegisterAdClickComm
         if (impression != null)
         {
             impression.MarkAsClicked(utcNow);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _monetizationContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

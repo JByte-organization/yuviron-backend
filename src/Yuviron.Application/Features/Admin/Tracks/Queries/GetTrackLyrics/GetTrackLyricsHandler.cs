@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,16 +14,16 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackLyrics;
 
 public sealed class GetTrackLyricsHandler : IRequestHandler<GetTrackLyricsQuery, AdminTrackLyricsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetTrackLyricsHandler(IApplicationDbContext context)
+    public GetTrackLyricsHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<AdminTrackLyricsDto> Handle(GetTrackLyricsQuery request, CancellationToken cancellationToken)
     {
-        var trackData = await _context.Tracks
+        var trackData = await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => new AdminTrackLyricsDto(t.Lyrics != null ? t.Lyrics.PlainText : null))

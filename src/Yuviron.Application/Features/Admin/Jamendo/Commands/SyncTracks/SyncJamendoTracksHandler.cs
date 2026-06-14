@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,7 +18,8 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
 {
     private readonly IJamendoApiService _jamendoApi;
     private readonly IJamendoEntityResolver _entityResolver;
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly IEventBus _eventBus;
     private readonly ILogger<SyncJamendoTracksHandler> _logger;
     private readonly TimeProvider _timeProvider;
@@ -25,7 +28,7 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
     public SyncJamendoTracksHandler(
         IJamendoApiService jamendoApi,
         IJamendoEntityResolver entityResolver,
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ISystemContext systemContext,
         IEventBus eventBus,
         ILogger<SyncJamendoTracksHandler> logger,
         TimeProvider timeProvider,
@@ -33,7 +36,8 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
     {
         _jamendoApi = jamendoApi;
         _entityResolver = entityResolver;
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _eventBus = eventBus;
         _logger = logger;
         _timeProvider = timeProvider;
@@ -101,16 +105,16 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
 
     private async Task<bool> IsTrackAlreadySyncedAsync(string jamendoId, string? isrc, string trackName, CancellationToken ct)
     {
-        var existingMapping = await _context.ExternalMappings
+        var existingMapping = await _systemContext.ExternalMappings
             .FirstOrDefaultAsync(m => m.Provider == ExternalProvider.Jamendo && m.ExternalId == jamendoId && m.EntityType == nameof(Track), ct);
 
         if (existingMapping != null)
         {
-            var mappedTrack = await _context.Tracks.FirstOrDefaultAsync(t => t.Id == existingMapping.InternalId, ct);
+            var mappedTrack = await _catalogContext.Tracks.FirstOrDefaultAsync(t => t.Id == existingMapping.InternalId, ct);
             if (mappedTrack == null || mappedTrack.IsDeleted)
             {
-                _context.ExternalMappings.Remove(existingMapping);
-                await _context.SaveChangesAsync(ct);
+                _systemContext.Remove(existingMapping);
+                await _catalogContext.SaveChangesAsync(ct);
                 _logger.LogWarning("Dead mapping found and removed. Downloading track {TrackName} again.", trackName);
                 return false;
             }
@@ -121,11 +125,11 @@ public sealed class SyncJamendoTracksHandler : IRequestHandler<SyncJamendoTracks
 
         if (!string.IsNullOrWhiteSpace(isrc))
         {
-            var trackByIsrc = await _context.Tracks.FirstOrDefaultAsync(t => t.Isrc == isrc, ct);
+            var trackByIsrc = await _catalogContext.Tracks.FirstOrDefaultAsync(t => t.Isrc == isrc, ct);
             if (trackByIsrc != null)
             {
-                _context.ExternalMappings.Add(ExternalMapping.Create(trackByIsrc.Id, nameof(Track), ExternalProvider.Jamendo, jamendoId));
-                await _context.SaveChangesAsync(ct);
+                _systemContext.Add(ExternalMapping.Create(trackByIsrc.Id, nameof(Track), ExternalProvider.Jamendo, jamendoId));
+                await _catalogContext.SaveChangesAsync(ct);
                 _logger.LogInformation("Track {Title} found via ISRC. Let's connect.", trackName);
                 return true;
             }

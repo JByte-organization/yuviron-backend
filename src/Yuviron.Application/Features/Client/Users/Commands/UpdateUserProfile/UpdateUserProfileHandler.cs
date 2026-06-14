@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,20 +18,22 @@ namespace Yuviron.Application.Features.Client.Users.Commands.UpdateUserProfile;
 
 public sealed class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfileCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
     private readonly UserSettingsPolicy _userSettingsPolicy; 
 
     public UpdateUserProfileHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ISystemContext systemContext, 
         ICurrentUserService currentUser,
         TimeProvider timeProvider,
         IPermissionService permissionService,
         UserSettingsPolicy userSettingsPolicy)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _systemContext = systemContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
@@ -41,7 +45,7 @@ public sealed class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfile
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Profile)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
@@ -53,13 +57,13 @@ public sealed class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfile
         string? finalAvatarUrl = user.Profile.AvatarUrl;
         if (request.AvatarFileId.HasValue)
         {
-            await _context.ValidateAnimatedMediaPolicyAsync(
+            await _systemContext.ValidateAnimatedMediaPolicyAsync(
                 request.AvatarFileId.Value, 
                 hasAnimatedMediaPermission, 
                 _userSettingsPolicy, 
                 cancellationToken);
             
-            var claim = await _context.ClaimFileAsync(request.AvatarFileId.Value, userId, "image/", "avatars", cancellationToken);
+            var claim = await _systemContext.ClaimFileAsync(request.AvatarFileId.Value, userId, "image/", "avatars", cancellationToken);
             user.Profile.RegisterFileSwapEvents(claim, user.Profile.AvatarUrl);
             finalAvatarUrl = claim.FinalPath;
         }
@@ -67,13 +71,13 @@ public sealed class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfile
         string? finalBannerUrl = user.Profile.BannerUrl;
         if (request.BannerFileId.HasValue)
         {
-            await _context.ValidateAnimatedMediaPolicyAsync(
+            await _systemContext.ValidateAnimatedMediaPolicyAsync(
                 request.BannerFileId.Value, 
                 hasAnimatedMediaPermission, 
                 _userSettingsPolicy, 
                 cancellationToken);
             
-            var claim = await _context.ClaimFileAsync(request.BannerFileId.Value, userId, "image/", "banners", cancellationToken);
+            var claim = await _systemContext.ClaimFileAsync(request.BannerFileId.Value, userId, "image/", "banners", cancellationToken);
             user.Profile.RegisterFileSwapEvents(claim, user.Profile.BannerUrl);
             finalBannerUrl = claim.FinalPath;
         }
@@ -83,7 +87,7 @@ public sealed class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfile
             user.Profile.Country, user.Profile.City, request.Bio, 
             user.Profile.DateOfBirth, user.Profile.Gender, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
     }
     
 }

@@ -32,16 +32,11 @@ public class NotifyStudioTeamOnPlaylistAdditionConsumerTests
     public async Task Consume_Should_Notify_All_Team_Members()
     {
         // Arrange
-        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow);
-        _context.Artists.Add(artist);
+        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow); _context.Add(artist);
         var artistId = artist.Id;
 
         var member1 = User.Create("member1@test.com", "hash", "M1", true, true, DateTime.UtcNow);
-        var member2 = User.Create("member2@test.com", "hash", "M2", true, true, DateTime.UtcNow);
-        _context.Users.AddRange(member1, member2);
-        
-        _context.ArtistTeamMembers.Add(ArtistTeamMember.Create(artistId, member1.Id, ArtistTeamRole.Owner, DateTime.UtcNow));
-        _context.ArtistTeamMembers.Add(ArtistTeamMember.Create(artistId, member2.Id, ArtistTeamRole.Manager, DateTime.UtcNow));
+        var member2 = User.Create("member2@test.com", "hash", "M2", true, true, DateTime.UtcNow); _context.AddRange(member1, member2); _context.Add(ArtistTeamMember.Create(artistId, member1.Id, ArtistTeamRole.Owner, DateTime.UtcNow)); _context.Add(ArtistTeamMember.Create(artistId, member2.Id, ArtistTeamRole.Manager, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var trackId = Guid.NewGuid();

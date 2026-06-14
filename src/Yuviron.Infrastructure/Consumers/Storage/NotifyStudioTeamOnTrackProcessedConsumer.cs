@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,7 +15,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class NotifyStudioTeamOnTrackProcessedConsumer : NotifyArtistTeamConsumerBase<TrackProcessingCompletedEvent>
 {
-    public NotifyStudioTeamOnTrackProcessedConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyStudioTeamOnTrackProcessedConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override async Task SendNotificationAsync(TrackProcessingCompletedEvent msg, List<Guid> teamIds, CancellationToken ct) =>
         await NotificationService.SendToUsersAsync(teamIds, NotificationCategory.System, "track_processed", 

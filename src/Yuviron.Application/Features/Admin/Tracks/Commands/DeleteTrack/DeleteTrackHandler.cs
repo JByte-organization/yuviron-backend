@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,20 +13,20 @@ namespace Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrack;
 
 public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
-    public DeleteTrackHandler(IApplicationDbContext context, TimeProvider timeProvider, IEventBus eventBus) 
+    public DeleteTrackHandler(ICatalogContext catalogContext, TimeProvider timeProvider, IEventBus eventBus) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(DeleteTrackCommand request, CancellationToken cancellationToken)
     {
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
                         .Include(t => t.TrackArtists)
                         .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken)
@@ -36,7 +38,7 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
 
         track.Delete(_timeProvider.GetUtcNow().UtcDateTime); 
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(
             new ModeratedTrackDeletedEvent(track.Id, artistId, track.Title),

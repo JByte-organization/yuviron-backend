@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,20 +13,20 @@ namespace Yuviron.Application.Features.StudioArtist.Payments.Commands.CancelSubs
 
 public sealed class CancelSubscriptionHandler : IRequestHandler<CancelSubscriptionCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
     public CancelSubscriptionHandler(
-        IApplicationDbContext context,
+        IMonetizationContext monetizationContext,
         ICurrentUserService currentUser,
         IPaymentService paymentService,
         TimeProvider timeProvider,
         IEventBus eventBus)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _paymentService = paymentService;
         _timeProvider = timeProvider;
@@ -35,7 +37,7 @@ public sealed class CancelSubscriptionHandler : IRequestHandler<CancelSubscripti
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         
-        var sub = await _context.Subscriptions
+        var sub = await _monetizationContext.Subscriptions
             .FirstOrDefaultAsync(s => s.UserId == userId && s.Status == SubscriptionStatus.Active && s.IsAutoRenewing, cancellationToken);
 
         if (sub == null || string.IsNullOrEmpty(sub.StripeSubscriptionId))
@@ -46,7 +48,7 @@ public sealed class CancelSubscriptionHandler : IRequestHandler<CancelSubscripti
         await _paymentService.CancelSubscriptionAsync(sub.StripeSubscriptionId, cancellationToken);
 
         sub.CancelRenewal(_timeProvider.GetUtcNow().UtcDateTime);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new SubscriptionCanceledEvent(userId, sub.Plan.Name), cancellationToken);
 

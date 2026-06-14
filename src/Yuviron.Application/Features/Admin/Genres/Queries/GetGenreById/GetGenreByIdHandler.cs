@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,13 +11,13 @@ namespace Yuviron.Application.Features.Admin.Genres.Queries.GetGenresById;
 
 public sealed class GetGenreByIdHandler : IRequestHandler<GetGenreByIdQuery, GenreDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetGenreByIdHandler(IApplicationDbContext context) => _context = context;
+    public GetGenreByIdHandler(ICatalogContext catalogContext) => _catalogContext = catalogContext;
 
     public async Task<GenreDetailsDto> Handle(GetGenreByIdQuery request, CancellationToken cancellationToken)
     {
-        var genre = await _context.Genres
+        var genre = await _catalogContext.Genres
             .AsNoTracking()
             .Where(g => g.Id == request.GenreId )
             .Select(g => new GenreDetailsDto(

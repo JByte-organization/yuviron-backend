@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -13,18 +15,20 @@ namespace Yuviron.Application.Features.StudioArtist.Finance.Commands.RequestPayo
 
 public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
 
     public RequestPayoutHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, IMonetizationContext monetizationContext, 
         TimeProvider timeProvider, 
         ICurrentUserService currentUser,
         IEventBus eventBus) 
     {
-        _context = context; _timeProvider = timeProvider; _currentUser = currentUser; _eventBus = eventBus;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext; _timeProvider = timeProvider; _currentUser = currentUser; _eventBus = eventBus;
     }
 
     public async Task<Guid> Handle(RequestPayoutCommand request, CancellationToken cancellationToken)
@@ -32,16 +36,16 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var isOwner = await _context.ArtistTeamMembers
+        var isOwner = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId && tm.Role == ArtistTeamRole.Owner, cancellationToken);
         
         if (!isOwner) throw new ForbiddenException("Only the Owner of the artist profile can request a payout.");
 
-        var wallet = await _context.ArtistWallets
+        var wallet = await _monetizationContext.ArtistWallets
             .FirstOrDefaultAsync(w => w.ArtistId == request.ArtistId, cancellationToken)
             ?? throw new InvalidOperationException("Wallet not found. No funds available.");
 
-        var settings = await _context.ArtistPayoutSettings
+        var settings = await _monetizationContext.ArtistPayoutSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId, cancellationToken);
 
@@ -57,7 +61,7 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
         wallet.HoldFunds(request.Amount, utcNow);
 
         var payoutRequest = PayoutRequest.Create(request.ArtistId, request.Amount, utcNow);
-        _context.PayoutRequests.Add(payoutRequest);
+        _monetizationContext.Add(payoutRequest);
 
         var walletTx = WalletTransaction.Create(
             wallet.Id, 
@@ -67,11 +71,11 @@ public sealed class RequestPayoutHandler : IRequestHandler<RequestPayoutCommand,
             payoutRequest.Id, 
             utcNow);
         
-        _context.WalletTransactions.Add(walletTx);
+        _monetizationContext.Add(walletTx);
 
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _catalogContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {

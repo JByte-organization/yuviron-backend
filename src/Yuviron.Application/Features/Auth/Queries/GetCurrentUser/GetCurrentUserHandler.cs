@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,16 +17,18 @@ namespace Yuviron.Application.Features.Auth.Queries.GetCurrentUser;
 
 public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery, CurrentUserDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
     public GetCurrentUserHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
         _currentUserService = currentUserService;
         _timeProvider = timeProvider;
     }
@@ -36,7 +40,7 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .AsNoTracking()
             .Include(u => u.Profile)
             .Include(u => u.Settings)
@@ -49,7 +53,7 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
         bool isPremium = user.HasActivePremiumSubscription(utcNow);
         var settings = user.Settings ?? UserSettings.Create(userId, utcNow);
 
-        var managedArtists = await _context.ArtistTeamMembers
+        var managedArtists = await _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .Where(tm => tm.UserId == userId)
             .Select(tm => new UserManagedArtistDto(

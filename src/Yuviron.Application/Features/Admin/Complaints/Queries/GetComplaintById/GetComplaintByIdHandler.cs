@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,23 +10,23 @@ namespace Yuviron.Application.Features.Admin.Complaints.Queries.GetComplaintById
 
 public sealed class GetComplaintByIdHandler : IRequestHandler<GetComplaintByIdQuery, ComplaintDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IAuditingContext _auditingContext;
 
-    public GetComplaintByIdHandler(IApplicationDbContext context)
+    public GetComplaintByIdHandler(IAuditingContext auditingContext)
     {
-        _context = context;
+        _auditingContext = auditingContext;
     }
 
     public async Task<ComplaintDetailsDto> Handle(GetComplaintByIdQuery request, CancellationToken cancellationToken)
     {
-        var complaint = await _context.Complaints
+        var complaint = await _auditingContext.Complaints
             .AsNoTracking()
             .Include(c => c.CreatedByUser)
             .FirstOrDefaultAsync(c => c.Id == request.ComplaintId, cancellationToken);
 
         if (complaint == null) throw new NotFoundException(nameof(Complaint), request.ComplaintId);
 
-        var counter = await _context.ComplaintCounters
+        var counter = await _auditingContext.ComplaintCounters
             .AsNoTracking()
             .FirstOrDefaultAsync(cc => cc.TargetType == complaint.TargetType && cc.TargetId == complaint.TargetId, cancellationToken);
 

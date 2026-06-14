@@ -34,16 +34,16 @@ public class ClaimArtistProfileHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         // Ничейный артист
         var artist = Artist.Create(null, "The Beatles", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(artist);
+        dbContext.Add(artist);
         await dbContext.SaveChangesAsync();
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
-        var handler = new ClaimArtistProfileHandler(dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
+        var handler = new ClaimArtistProfileHandler(dbContext, dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
 
         var command = new ClaimArtistProfileCommand(
             artist.Id, ClaimRole.Manager, "manager@beatles.com", "inst.com/beatles", null, "Please verify");
@@ -66,16 +66,16 @@ public class ClaimArtistProfileHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         // Создаем артиста и сразу даем ему владельца (другого юзера)
         var artist = Artist.Create(Guid.NewGuid(), "Taken Band", null, null, null, VerificationStatus.Verified, utcNow);
-        dbContext.Artists.Add(artist);
+        dbContext.Add(artist);
         await dbContext.SaveChangesAsync();
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
-        var handler = new ClaimArtistProfileHandler(dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
+        var handler = new ClaimArtistProfileHandler(dbContext, dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
 
         var command = new ClaimArtistProfileCommand(
             artist.Id, ClaimRole.Artist, "email@mail.com", "link", null, null);
@@ -95,21 +95,21 @@ public class ClaimArtistProfileHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         var artist = Artist.Create(null, "The Beatles", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(artist);
+        dbContext.Add(artist);
 
         // ИМИТИРУЕМ, что юзер УЖЕ подал заявку вчера и она висит в статусе Pending
         var existingRequest = VerificationRequest.Create(
             artist.Id, user.Id, ClaimRole.Manager, "m@m.com", "link", null, null, utcNow);
-        dbContext.VerificationRequests.Add(existingRequest);
+        dbContext.Add(existingRequest);
         
         await dbContext.SaveChangesAsync();
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
-        var handler = new ClaimArtistProfileHandler(dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
+        var handler = new ClaimArtistProfileHandler(dbContext, dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
 
         // Пытаемся подать ЕЩЕ ОДНУ заявку на того же артиста
         var command = new ClaimArtistProfileCommand(
@@ -130,22 +130,22 @@ public class ClaimArtistProfileHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         // Юзер УЖЕ владеет одной группой (исчерпал бесплатный лимит)
         var ownedArtist = Artist.Create(user.Id, "My First Band", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(ownedArtist);
+        dbContext.Add(ownedArtist);
 
         // Артист, которого он хочет забрать
         var targetArtist = Artist.Create(null, "Target Band", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(targetArtist);
+        dbContext.Add(targetArtist);
         
         await dbContext.SaveChangesAsync();
 
         // Лимит 1 профиль
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
-        var handler = new ClaimArtistProfileHandler(dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
+        var handler = new ClaimArtistProfileHandler(dbContext, dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object);
 
         var command = new ClaimArtistProfileCommand(
             targetArtist.Id, ClaimRole.Manager, "m@m.com", "link", null, null);

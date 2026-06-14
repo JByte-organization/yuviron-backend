@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -12,12 +14,14 @@ namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistTracks
 
 public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracksQuery, PaginatedList<PlaylistTrackItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICacheService _cache;
 
-    public GetPlaylistTracksHandler(IApplicationDbContext context, ICacheService cache)
+    public GetPlaylistTracksHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICacheService cache)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _cache = cache;
     }
 
@@ -29,7 +33,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
 
         if (isCustomSorting || hasSearchTerm)
         {
-            var query = _context.PlaylistTracks
+            var query = _libraryContext.PlaylistTracks
                 .AsNoTracking()
                 .Where(pt => pt.PlaylistId == request.PlaylistId);
 
@@ -77,7 +81,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         {
             await _cache.SetAddAsync("missing_cache:playlists", request.PlaylistId.ToString(), cancellationToken);
 
-            var fallbackQuery = _context.PlaylistTracks
+            var fallbackQuery = _libraryContext.PlaylistTracks
                 .AsNoTracking()
                 .Where(pt => pt.PlaylistId == request.PlaylistId);
 
@@ -101,7 +105,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         }
 
         var trackIds = tracksWithScores.Keys.Select(id => Guid.Parse(id)).ToList();
-        var tracks = await _context.Tracks
+        var tracks = await _catalogContext.Tracks
             .AsNoTracking()
             .Include(t => t.Album)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)

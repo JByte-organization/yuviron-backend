@@ -27,11 +27,11 @@ public class GetThemesHandlerTests
 
         var userId = Guid.NewGuid();
         var theme = Theme.Create("Ocean", "#2DD4BF", "#0F766E", "#042F2E", true, false);
-        dbContext.Themes.Add(theme);
+        dbContext.Add(theme);
 
         var settings = UserSettings.Create(userId, DateTime.UtcNow);
         settings.ApplyDesign(theme.Id, null, DateTime.UtcNow);
-        dbContext.UserSettings.Add(settings);
+        dbContext.Add(settings);
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -58,10 +58,10 @@ public class GetThemesHandlerTests
         await using var dbContext = new AppDbContext(CreateOptions());
 
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         
-        dbContext.Themes.Add(Theme.Create("Free Theme", "#111111", "#222222", "#333333", false, false));
-        dbContext.Themes.Add(Theme.Create("Premium Theme", "#444444", "#555555", "#666666", false, true));
+        dbContext.Add(Theme.Create("Free Theme", "#111111", "#222222", "#333333", false, false));
+        dbContext.Add(Theme.Create("Premium Theme", "#444444", "#555555", "#666666", false, true));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -87,11 +87,11 @@ public class GetThemesHandlerTests
 
         var userId = Guid.NewGuid();
         var customTheme = CustomTheme.Create(userId, "#111111", "#222222", "#000000", DateTime.UtcNow);
-        dbContext.CustomThemes.Add(customTheme);
+        dbContext.Add(customTheme);
 
         var settings = UserSettings.Create(userId, DateTime.UtcNow);
         settings.ApplyDesign(null, customTheme.Id, DateTime.UtcNow);
-        dbContext.UserSettings.Add(settings);
+        dbContext.Add(settings);
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -113,11 +113,11 @@ public class GetThemesHandlerTests
         var currentUserId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
 
-        dbContext.UserSettings.Add(UserSettings.Create(currentUserId, DateTime.UtcNow));
-        dbContext.UserSettings.Add(UserSettings.Create(otherUserId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(currentUserId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(otherUserId, DateTime.UtcNow));
 
-        dbContext.Themes.Add(Theme.Create("Mine", "#111111", "#222222", "#333333", false, true, currentUserId));
-        dbContext.Themes.Add(Theme.Create("Theirs", "#444444", "#555555", "#666666", false, true, otherUserId));
+        dbContext.Add(Theme.Create("Mine", "#111111", "#222222", "#333333", false, true, currentUserId));
+        dbContext.Add(Theme.Create("Theirs", "#444444", "#555555", "#666666", false, true, otherUserId));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();

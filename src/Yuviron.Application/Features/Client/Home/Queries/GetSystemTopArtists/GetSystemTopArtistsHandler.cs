@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,16 +17,18 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetSystemTopArtists;
 
 public sealed class GetSystemTopArtistsHandler : IRequestHandler<GetSystemTopArtistsQuery, List<TopArtistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICacheService _cacheService;
     private readonly ICurrentUserService _currentUser;
 
     public GetSystemTopArtistsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ILibraryContext libraryContext, 
         ICacheService cacheService,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _cacheService = cacheService;
         _currentUser = currentUser;
     }
@@ -37,7 +41,7 @@ public sealed class GetSystemTopArtistsHandler : IRequestHandler<GetSystemTopArt
         
         if (cachedArtists == null)
         {
-            cachedArtists = await _context.Artists
+            cachedArtists = await _catalogContext.Artists
                 .AsNoTracking()
                 .OrderByDescending(a => a.MonthlyListenersCount) 
                 .Take(request.Limit)
@@ -45,7 +49,7 @@ public sealed class GetSystemTopArtistsHandler : IRequestHandler<GetSystemTopArt
                     a.Id,
                     a.Name,
                     a.AvatarUrl,
-                    _context.UserFollowArtists.Count(ufa => ufa.ArtistId == a.Id),
+                    _libraryContext.UserFollowArtists.Count(ufa => ufa.ArtistId == a.Id),
                     false 
                 ))
                 .ToListAsync(cancellationToken);

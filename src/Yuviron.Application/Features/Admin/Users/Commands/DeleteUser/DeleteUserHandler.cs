@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,18 +11,18 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.DeleteUser;
 
 public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteUserHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteUserHandler(IIdentityContext identityContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users
+        var user = await _identityContext.Users
                        .Include(u => u.Profile)
                        .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), request.UserId);
@@ -29,7 +31,7 @@ public sealed class DeleteUserHandler : IRequestHandler<DeleteUserCommand, Unit>
         
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

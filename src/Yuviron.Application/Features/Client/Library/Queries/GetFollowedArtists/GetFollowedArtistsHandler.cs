@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +13,12 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetFollowedArtists
 
 public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtistsQuery, PaginatedList<FollowedArtistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetFollowedArtistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetFollowedArtistsHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -25,7 +27,7 @@ public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtis
         var userId = _currentUserService.UserId
                      ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-        var query = _context.UserFollowArtists
+        var query = _libraryContext.UserFollowArtists
             .AsNoTracking()
             .Where(ufa => ufa.UserId == userId && !ufa.Artist.IsDeleted);
 
@@ -37,7 +39,7 @@ public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtis
             mapping: new Dictionary<string, Expression<Func<UserFollowArtist, object>>>
             {
                 ["Name"] = ufa => ufa.Artist.Name,
-                ["FollowersCount"] = ufa => _context.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId),
+                ["FollowersCount"] = ufa => _libraryContext.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId),
                 ["FollowedAt"] = ufa => ufa.FollowedAt
             });
 
@@ -45,7 +47,7 @@ public sealed class GetFollowedArtistsHandler : IRequestHandler<GetFollowedArtis
             ufa.ArtistId,
             ufa.Artist.Name,
             ufa.Artist.AvatarUrl,
-            _context.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId),
+            _libraryContext.UserFollowArtists.Count(x => x.ArtistId == ufa.ArtistId),
             ufa.FollowedAt 
         ));
 

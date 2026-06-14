@@ -32,21 +32,15 @@ public class NotifyOwnersOnPayoutApprovedConsumerTests
     public async Task Consume_Should_Notify_All_Owners()
     {
         // Arrange
-        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow);
-        _context.Artists.Add(artist);
+        var artist = Artist.Create(null, "Test Artist", null, null, null, VerificationStatus.None, DateTime.UtcNow); _context.Add(artist);
         var artistId = artist.Id;
 
         var owner1 = User.Create("owner1@test.com", "hash", "O1", true, true, DateTime.UtcNow);
         var owner2 = User.Create("owner2@test.com", "hash", "O2", true, true, DateTime.UtcNow);
-        var member = User.Create("member@test.com", "hash", "M", true, true, DateTime.UtcNow);
-        _context.Users.AddRange(owner1, owner2, member);
+        var member = User.Create("member@test.com", "hash", "M", true, true, DateTime.UtcNow); _context.AddRange(owner1, owner2, member);
         var owner1Id = owner1.Id;
         var owner2Id = owner2.Id;
-        var memberId = member.Id;
-        
-        _context.ArtistTeamMembers.Add(ArtistTeamMember.Create(artistId, owner1Id, ArtistTeamRole.Owner, DateTime.UtcNow));
-        _context.ArtistTeamMembers.Add(ArtistTeamMember.Create(artistId, owner2Id, ArtistTeamRole.Owner, DateTime.UtcNow));
-        _context.ArtistTeamMembers.Add(ArtistTeamMember.Create(artistId, memberId, ArtistTeamRole.Manager, DateTime.UtcNow));
+        var memberId = member.Id; _context.Add(ArtistTeamMember.Create(artistId, owner1Id, ArtistTeamRole.Owner, DateTime.UtcNow)); _context.Add(ArtistTeamMember.Create(artistId, owner2Id, ArtistTeamRole.Owner, DateTime.UtcNow)); _context.Add(ArtistTeamMember.Create(artistId, memberId, ArtistTeamRole.Manager, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var msg = new PayoutApprovedEvent(artistId, 150.50m);

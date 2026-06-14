@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,23 +14,23 @@ namespace Yuviron.Application.Features.Client.Users.Commands.UpdateMarketingPref
 
 public class UpdateMarketingPreferencesCommandHandler : IRequestHandler<UpdateMarketingPreferencesCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
 
-    public UpdateMarketingPreferencesCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public UpdateMarketingPreferencesCommandHandler(IIdentityContext identityContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
         _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateMarketingPreferencesCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId!.Value;
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var user = await _identityContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user == null) throw new NotFoundException(nameof(User), userId);
 
         user.UpdateMarketingPreferences(request.AcceptMarketing, DateTime.UtcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

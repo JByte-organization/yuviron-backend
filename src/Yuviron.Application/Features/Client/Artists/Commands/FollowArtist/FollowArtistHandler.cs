@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,20 +17,22 @@ namespace Yuviron.Application.Features.Client.Artists.Commands.FollowArtist;
 
 public sealed class FollowArtistHandler : IRequestHandler<FollowArtistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEventBus _eventBus;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cacheService;
 
     public FollowArtistHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ILibraryContext libraryContext,
         ICurrentUserService currentUserService,
         IEventBus eventBus,
         TimeProvider timeProvider,
         ICacheService cacheService)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
         _eventBus = eventBus;
         _timeProvider = timeProvider;
@@ -39,31 +43,31 @@ public sealed class FollowArtistHandler : IRequestHandler<FollowArtistCommand, U
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var alreadyFollowing = await _context.UserFollowArtists
+        var alreadyFollowing = await _libraryContext.UserFollowArtists
             .AnyAsync(f => f.UserId == userId && f.ArtistId == request.ArtistId, cancellationToken);
 
         if (alreadyFollowing) return Unit.Value;
 
-        var previousFollowersCount = await _context.UserFollowArtists
+        var previousFollowersCount = await _libraryContext.UserFollowArtists
             .CountAsync(f => f.ArtistId == request.ArtistId, cancellationToken);
 
-        _context.UserFollowArtists.Add(new UserFollowArtist(
+        _libraryContext.Add(new UserFollowArtist(
             userId,
             request.ArtistId,
             true,
             _timeProvider.GetUtcNow().UtcDateTime
         ));
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new UserFollowedArtistEvent(userId, request.ArtistId), cancellationToken);
 
-        var followersCount = await _context.UserFollowArtists.CountAsync(f => f.ArtistId == request.ArtistId, cancellationToken);
+        var followersCount = await _libraryContext.UserFollowArtists.CountAsync(f => f.ArtistId == request.ArtistId, cancellationToken);
         
         if (previousFollowersCount < 1000 && followersCount >= 1000)
         {

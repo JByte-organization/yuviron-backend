@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,18 +17,18 @@ namespace Yuviron.Application.Features.Client.Settings.Commands.TogglePrivateSes
 
 public class TogglePrivateSessionCommandHandler : IRequestHandler<TogglePrivateSessionCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
     private readonly UserSettingsPolicy _policy;
 
     public TogglePrivateSessionCommandHandler(
-        IApplicationDbContext context, 
+        IProfileContext profileContext, 
         ICurrentUserService currentUser,
         IPermissionService permissionService,
         UserSettingsPolicy policy)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
         _policy = policy;
@@ -35,7 +37,7 @@ public class TogglePrivateSessionCommandHandler : IRequestHandler<TogglePrivateS
     public async Task<Unit> Handle(TogglePrivateSessionCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId!.Value;
-        var settings = await _context.UserSettings.FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
+        var settings = await _profileContext.UserSettings.FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
         if (settings == null) throw new NotFoundException(nameof(UserSettings), userId);
 
         bool hasPrivateSession = await _permissionService.HasPermissionAsync(userId, AppPermission.PrivateSession, cancellationToken);
@@ -47,7 +49,7 @@ public class TogglePrivateSessionCommandHandler : IRequestHandler<TogglePrivateS
         }
 
         settings.TogglePrivateSession(request.PrivateSession && canUsePrivateSession, DateTime.UtcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _profileContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

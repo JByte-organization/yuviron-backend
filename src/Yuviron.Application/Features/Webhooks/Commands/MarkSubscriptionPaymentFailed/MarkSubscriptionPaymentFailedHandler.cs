@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,16 @@ namespace Yuviron.Application.Features.Webhooks.Commands.MarkSubscriptionPayment
 
 public sealed class MarkSubscriptionPaymentFailedHandler : IRequestHandler<MarkSubscriptionPaymentFailedCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
     public MarkSubscriptionPaymentFailedHandler(
-        IApplicationDbContext context,
+        IMonetizationContext monetizationContext,
         TimeProvider timeProvider,
         IEventBus eventBus)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _timeProvider = timeProvider;
         _eventBus = eventBus;
     }
@@ -28,7 +30,7 @@ public sealed class MarkSubscriptionPaymentFailedHandler : IRequestHandler<MarkS
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var userSubscription = await _context.Subscriptions
+        var userSubscription = await _monetizationContext.Subscriptions
             .Include(x => x.Plan)
             .FirstOrDefaultAsync(x => x.StripeSubscriptionId == request.StripeSubscriptionId, cancellationToken);
 
@@ -37,7 +39,7 @@ public sealed class MarkSubscriptionPaymentFailedHandler : IRequestHandler<MarkS
             if (userSubscription.Status != SubscriptionStatus.Cancelled && userSubscription.Status != SubscriptionStatus.Expired)
             {
                 userSubscription.MarkAsPastDue(utcNow);
-                await _context.SaveChangesAsync(cancellationToken);
+                await _monetizationContext.SaveChangesAsync(cancellationToken);
 
                 await _eventBus.PublishAsync(
                     new SubscriptionPaymentFailedEvent(
@@ -52,7 +54,7 @@ public sealed class MarkSubscriptionPaymentFailedHandler : IRequestHandler<MarkS
             return Unit.Value;
         }
 
-        var artistSubscription = await _context.ArtistSubscriptions
+        var artistSubscription = await _monetizationContext.ArtistSubscriptions
             .Include(x => x.Plan)
             .FirstOrDefaultAsync(x => x.StripeSubscriptionId == request.StripeSubscriptionId, cancellationToken);
 
@@ -61,7 +63,7 @@ public sealed class MarkSubscriptionPaymentFailedHandler : IRequestHandler<MarkS
             if (artistSubscription.Status != SubscriptionStatus.Cancelled && artistSubscription.Status != SubscriptionStatus.Expired)
             {
                 artistSubscription.MarkAsPastDue(utcNow);
-                await _context.SaveChangesAsync(cancellationToken);
+                await _monetizationContext.SaveChangesAsync(cancellationToken);
 
                 await _eventBus.PublishAsync(
                     new ArtistSubscriptionPaymentFailedEvent(

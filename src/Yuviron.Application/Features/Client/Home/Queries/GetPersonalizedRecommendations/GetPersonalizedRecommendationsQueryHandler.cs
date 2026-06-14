@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,18 +19,22 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetPersonalizedRecomm
 
 public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPersonalizedRecommendationsQuery, List<RecommendationTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
 
     public GetPersonalizedRecommendationsQueryHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext, 
         ICurrentUserService currentUser, 
         ICacheService cacheService,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _currentUser = currentUser;
         _cacheService = cacheService;
         _timeProvider = timeProvider;
@@ -48,7 +54,7 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
             return cachedRecs.Take(request.Limit).ToList();
         }
 
-        var recentTrackIds = await _context.ListeningEvents
+        var recentTrackIds = await _systemContext.ListeningEvents
             .Where(le => le.UserId == userId.Value && !le.IsPrivate)
             .OrderByDescending(le => le.PlayedAt)
             .Take(50)
@@ -56,7 +62,7 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var likedTrackIds = await _context.UserSavedTracks
+        var likedTrackIds = await _libraryContext.UserSavedTracks
             .Where(ut => ut.UserId == userId.Value)
             .OrderByDescending(ut => ut.SavedAt)
             .Take(20)
@@ -70,19 +76,19 @@ public class GetPersonalizedRecommendationsQueryHandler : IRequestHandler<GetPer
             return new List<RecommendationTrackDto>(); 
         }
 
-        var seedArtists = await _context.TrackArtists
+        var seedArtists = await _catalogContext.TrackArtists
             .Where(ta => seedTrackIds.Contains(ta.TrackId))
             .Select(ta => ta.ArtistId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var seedGenres = await _context.TrackGenres
+        var seedGenres = await _catalogContext.TrackGenres
             .Where(tg => seedTrackIds.Contains(tg.TrackId))
             .Select(tg => tg.GenreId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var query = _context.Tracks
+        var query = _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)

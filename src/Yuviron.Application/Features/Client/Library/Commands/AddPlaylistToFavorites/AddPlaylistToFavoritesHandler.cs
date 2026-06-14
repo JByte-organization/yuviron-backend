@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,15 +18,17 @@ namespace Yuviron.Application.Features.Client.Library.Commands.AddPlaylistToFavo
 
 public sealed class AddPlaylistToFavoritesHandler : IRequestHandler<AddPlaylistToFavoritesCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICacheService _cacheService;
     private readonly IEventBus _eventBus;
 
-    public AddPlaylistToFavoritesHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUserService, ICacheService cacheService, IEventBus eventBus)
+    public AddPlaylistToFavoritesHandler(IProfileContext profileContext, ILibraryContext libraryContext, TimeProvider timeProvider, ICurrentUserService currentUserService, ICacheService cacheService, IEventBus eventBus)
     {
-        _context = context; _timeProvider = timeProvider; _currentUserService = currentUserService; _cacheService = cacheService; _eventBus = eventBus;
+        _profileContext = profileContext;
+        _libraryContext = libraryContext; _timeProvider = timeProvider; _currentUserService = currentUserService; _cacheService = cacheService; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(AddPlaylistToFavoritesCommand request, CancellationToken cancellationToken)
@@ -32,23 +36,22 @@ public sealed class AddPlaylistToFavoritesHandler : IRequestHandler<AddPlaylistT
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var playlist = await _context.Playlists
-            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && !p.IsDeleted && 
-                          (p.Visibility == PlaylistVisibility.Public || p.UserId == userId), cancellationToken);
+        var playlist = await _libraryContext.Playlists
+            .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && (p.Visibility == PlaylistVisibility.Public || p.UserId == userId), cancellationToken);
 
         if (playlist == null) throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
-        var alreadySaved = await _context.UserSavedPlaylists
+        var alreadySaved = await _libraryContext.UserSavedPlaylists
             .AnyAsync(usp => usp.UserId == userId && usp.PlaylistId == request.PlaylistId, cancellationToken);
 
         if (!alreadySaved)
         {
-            _context.UserSavedPlaylists.Add(new UserSavedPlaylist(userId, request.PlaylistId, utcNow));
-            await _context.SaveChangesAsync(cancellationToken);
+            _libraryContext.Add(new UserSavedPlaylist(userId, request.PlaylistId, utcNow));
+            await _profileContext.SaveChangesAsync(cancellationToken);
             
             await _cacheService.SetAddAsync($"user:{userId}:saved_playlists", request.PlaylistId.ToString(), cancellationToken);
 
-            var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == userId, cancellationToken);
+            var userProfile = await _profileContext.UserProfiles.FirstOrDefaultAsync(p => p.Id == userId, cancellationToken);
             var userName = userProfile?.FirstName ?? "Користувач";
 
             if (playlist.UserId.HasValue)

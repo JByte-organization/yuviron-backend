@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Diagnostics;
 using System.Linq; // Добавь LINQ
 using System.Text.Json;
@@ -15,16 +17,18 @@ namespace Yuviron.Application.Features.Analytics.Commands.CommitTrackPlay;
 public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayCommand, Unit>
 {
     private readonly IAnalyticsService _analyticsService;
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
 
     public CommitTrackPlayHandler(
         IAnalyticsService analyticsService,
-        IApplicationDbContext context,
+        IProfileContext profileContext, ISystemContext systemContext,
         TimeProvider timeProvider)
     {
         _analyticsService = analyticsService;
-        _context = context;
+        _profileContext = profileContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
     }
 
@@ -40,7 +44,7 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
             bool isPrivate = false;
             if (request.UserId != System.Guid.Empty)
             {
-                var settings = await _context.UserSettings
+                var settings = await _profileContext.UserSettings
                     .AsNoTracking()
                     .FirstOrDefaultAsync(s => s.Id == request.UserId, ct);
                 
@@ -58,7 +62,7 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
                 playedAt,
                 isPrivate
             );
-            _context.ListeningEvents.Add(listeningEvent);
+            _systemContext.Add(listeningEvent);
 
             var successEvent = new TrackSuccessfullyPlayedEvent(
                 request.UserId, request.TrackId, msPlayed, playedAt, 
@@ -69,7 +73,7 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
                 JsonSerializer.Serialize(successEvent),
                 playedAt, Activity.Current?.Id);
 
-            _context.OutboxMessages.Add(message);
+            _systemContext.Add(message);
             
             if (request.Chunks != null && request.Chunks.Any())
             {
@@ -88,10 +92,10 @@ public sealed class CommitTrackPlayHandler : IRequestHandler<CommitTrackPlayComm
                     JsonSerializer.Serialize(chEvent),
                     playedAt, Activity.Current?.Id);
 
-                _context.OutboxMessages.Add(chMessage);
+                _systemContext.Add(chMessage);
             }
             
-            await _context.SaveChangesAsync(ct);
+            await _profileContext.SaveChangesAsync(ct);
         }
             
         return Unit.Value;

@@ -47,7 +47,7 @@ public class GetSystemTopArtistsHandlerTests
         var artist3 = Artist.Create(null, "Mid-tier Artist", null, null, null, VerificationStatus.None, utcNow);
         artist3.SetMonthlyListenersCount(15000);
 
-        dbContext.Artists.AddRange(artist1, artist2, artist3);
+        dbContext.AddRange(artist1, artist2, artist3);
         await dbContext.SaveChangesAsync();
 
         _cacheServiceMock.Setup(x => x.GetAsync<List<TopArtistDto>>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -58,7 +58,7 @@ public class GetSystemTopArtistsHandlerTests
             .ReturnsAsync(true);
 
         // Добавили ICurrentUserService
-        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
+        var handler = new GetSystemTopArtistsHandler(dbContext, dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
         var query = new GetSystemTopArtistsQuery(Limit: 2); 
 
         // Act
@@ -94,7 +94,7 @@ public class GetSystemTopArtistsHandlerTests
             .ReturnsAsync(cachedArtists);
 
         // Добавили ICurrentUserService
-        var handler = new GetSystemTopArtistsHandler(dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
+        var handler = new GetSystemTopArtistsHandler(dbContext, dbContext, _cacheServiceMock.Object, _currentUserServiceMock.Object);
 
         // Act
         var result = await handler.Handle(new GetSystemTopArtistsQuery(Limit: 5), CancellationToken.None);

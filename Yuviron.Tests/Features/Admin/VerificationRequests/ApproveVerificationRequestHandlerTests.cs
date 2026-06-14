@@ -41,38 +41,37 @@ public class ApproveVerificationRequestHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var managementRole = Role.Create(nameof(RoleName.ManagementUser));
-        dbContext.Roles.Add(managementRole);
+        dbContext.Add(managementRole);
 
         var artist = Artist.Create(null, "Eminem", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(artist);
+        dbContext.Add(artist);
 
         var realUser = User.Create("real@mail.com", "hash", "Real", true, true, utcNow);
-        dbContext.Users.Add(realUser);
+        dbContext.Add(realUser);
 
         var fakeUser = User.Create("fake@mail.com", "hash", "Fake", true, true, utcNow);
-        dbContext.Users.Add(fakeUser);
+        dbContext.Add(fakeUser);
 
         var realRequest = VerificationRequest.Create(
             artist.Id, realUser.Id, ClaimRole.Artist, "official@eminem.com", "link", null, null, utcNow);
-        dbContext.VerificationRequests.Add(realRequest);
+        dbContext.Add(realRequest);
 
         var fakeRequest = VerificationRequest.Create(
             artist.Id, fakeUser.Id, ClaimRole.Artist, "scammer@mail.com", "link", null, null, utcNow);
-        dbContext.VerificationRequests.Add(fakeRequest);
+        dbContext.Add(fakeRequest);
 
         await dbContext.SaveChangesAsync();
 
-        var handler = new ApproveVerificationRequestHandler(
-            dbContext, TimeProvider.System, _currentUserServiceMock.Object, _permissionServiceMock.Object, _eventBusMock.Object); 
+        var handler = new ApproveVerificationRequestHandler(dbContext, dbContext, TimeProvider.System, _currentUserServiceMock.Object, _permissionServiceMock.Object, _eventBusMock.Object); 
             
         var command = new ApproveVerificationRequestCommand(realRequest.Id, "All good");
 
         await handler.Handle(command, CancellationToken.None);
 
-        var updatedRealReq = await dbContext.VerificationRequests.FindAsync(realRequest.Id);
+        var updatedRealReq = await dbContext.Set<VerificationRequest>().FindAsync(realRequest.Id);
         updatedRealReq!.Status.Should().Be(VerificationRequestStatus.Approved);
 
-        var updatedFakeReq = await dbContext.VerificationRequests.FindAsync(fakeRequest.Id);
+        var updatedFakeReq = await dbContext.Set<VerificationRequest>().FindAsync(fakeRequest.Id);
         updatedFakeReq!.Status.Should().Be(VerificationRequestStatus.Rejected);
         
         var updatedArtist = await dbContext.Artists.Include(a => a.TeamMembers).FirstAsync(a => a.Id == artist.Id);
@@ -92,17 +91,16 @@ public class ApproveVerificationRequestHandlerTests
         var artist = Artist.Create(null, "Band", null, null, null, VerificationStatus.None, utcNow);
         var user = User.Create("mail@mail.com", "hash", "User", true, true, utcNow);
         
-        dbContext.Artists.Add(artist);
-        dbContext.Users.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(user);
 
         var request = VerificationRequest.Create(artist.Id, user.Id, ClaimRole.Artist, "m@m.com", "link", null, null, utcNow);
         
         request.Reject(adminId, "Declined", utcNow); 
-        dbContext.VerificationRequests.Add(request);
+        dbContext.Add(request);
         await dbContext.SaveChangesAsync();
 
-        var handler = new ApproveVerificationRequestHandler(
-            dbContext, TimeProvider.System, _currentUserServiceMock.Object, _permissionServiceMock.Object, _eventBusMock.Object); 
+        var handler = new ApproveVerificationRequestHandler(dbContext, dbContext, TimeProvider.System, _currentUserServiceMock.Object, _permissionServiceMock.Object, _eventBusMock.Object); 
             
         var command = new ApproveVerificationRequestCommand(request.Id, "Trying to approve again");
 

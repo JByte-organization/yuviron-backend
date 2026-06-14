@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,13 +11,13 @@ namespace Yuviron.Application.Features.Admin.Moods.Queries.GetMoodById;
 
 public sealed class GetMoodByIdHandler : IRequestHandler<GetMoodByIdQuery, GetMoodByIdDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetMoodByIdHandler(IApplicationDbContext context) => _context = context;
+    public GetMoodByIdHandler(ICatalogContext catalogContext) => _catalogContext = catalogContext;
 
     public async Task<GetMoodByIdDto> Handle(GetMoodByIdQuery request, CancellationToken cancellationToken)
     {
-        var mood = await _context.Moods
+        var mood = await _catalogContext.Moods
             .AsNoTracking()
             .Where(m => m.Id == request.Id )
             .Select(m => new GetMoodByIdDto(

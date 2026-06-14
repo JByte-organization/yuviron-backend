@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,20 +14,20 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistRelatedTr
 
 public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRelatedTracksQuery, List<RelatedTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
     public GetArtistRelatedTracksHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<List<RelatedTrackDto>> Handle(GetArtistRelatedTracksQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
+        var artistExists = await _catalogContext.Artists
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
@@ -35,7 +37,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var artistGenreIds = await _context.Tracks
+        var artistGenreIds = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)
@@ -50,7 +52,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
             return new List<RelatedTrackDto>();
         }
 
-        var rawTracks = await _context.Tracks
+        var rawTracks = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => !t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId) &&

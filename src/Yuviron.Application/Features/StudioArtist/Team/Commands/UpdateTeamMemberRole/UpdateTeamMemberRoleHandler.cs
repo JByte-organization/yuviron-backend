@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,18 +17,18 @@ namespace Yuviron.Application.Features.StudioArtist.Team.Commands.UpdateTeamMemb
 
 public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemberRoleCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus; // <-- ДОДАНО
 
     public UpdateTeamMemberRoleHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser, 
         TimeProvider timeProvider,
         IEventBus eventBus) // <-- ДОДАНО
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
+        _catalogContext = catalogContext; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(UpdateTeamMemberRoleCommand request, CancellationToken cancellationToken)
@@ -35,19 +36,19 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
         var currentUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var isOwner = await _context.ArtistTeamMembers
+        var isOwner = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == currentUserId && tm.Role == ArtistTeamRole.Owner, cancellationToken);
         
         if (!isOwner) throw new ForbiddenException("Only the Owner can change team roles.");
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
                          .Include(a => a.TeamMembers)
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         artist.UpdateTeamMemberRole(request.TargetUserId, request.NewRole, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new TeamRoleChangedEvent(
             request.TargetUserId,

@@ -1,3 +1,4 @@
+using Yuviron.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,7 @@ public class TempFilesCleanupJob : BackgroundService
     private async Task CleanupFiles(CancellationToken stoppingToken)
     {
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var storage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
 
         var threshold = DateTime.UtcNow.Add(-_expirationAge);
@@ -65,7 +66,7 @@ public class TempFilesCleanupJob : BackgroundService
                 await storage.DeleteAsync(fileMeta.CurrentStorageKey, stoppingToken);
                 
                 // 2. Удаляем запись из БД
-                context.FileMetadata.Remove(fileMeta);
+                context.Remove(fileMeta);
                 deletedCount++;
             }
             catch (Exception ex)

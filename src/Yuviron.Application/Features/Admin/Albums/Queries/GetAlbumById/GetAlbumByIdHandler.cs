@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,16 @@ namespace Yuviron.Application.Features.Admin.Albums.Queries.GetAlbumById;
 
 public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, AlbumDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetAlbumByIdHandler(IApplicationDbContext context)
+    public GetAlbumByIdHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<AlbumDetailsDto> Handle(GetAlbumByIdQuery request, CancellationToken cancellationToken)
     {
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .AsNoTracking()
             .Where(a => a.Id == request.AlbumId)
             .Select(a => new AlbumDetailsDto(

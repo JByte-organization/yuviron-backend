@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options; // <-- Для IOptions
@@ -17,17 +18,17 @@ namespace Yuviron.Application.Features.Files.Queries.GetImage;
 public sealed class GetPublicFileHandler : IRequestHandler<GetPublicFileQuery, GetPublicFileResponse>
 {
     private readonly IFileStorageService _fileStorage;
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     
     private readonly string[] _publicFolders; // <-- Поле для списка
 
     public GetPublicFileHandler(
         IFileStorageService fileStorage, 
-        IApplicationDbContext context,
+        ISystemContext systemContext,
         IOptions<FileAccessOptions> accessOptions) // <-- Инжектим настройки
     {
         _fileStorage = fileStorage;
-        _context = context;
+        _systemContext = systemContext;
         _publicFolders = accessOptions.Value.PublicFolders; 
     }
 
@@ -36,7 +37,7 @@ public sealed class GetPublicFileHandler : IRequestHandler<GetPublicFileQuery, G
         if (!Guid.TryParse(request.Hash, out var fileId))
             throw new NotFoundException("Image", request.Hash);
 
-        var fileMeta = await _context.FileMetadata
+        var fileMeta = await _systemContext.FileMetadata
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsTemporary, cancellationToken);
 

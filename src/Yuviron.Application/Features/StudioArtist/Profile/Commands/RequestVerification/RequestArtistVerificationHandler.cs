@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,13 +13,17 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.RequestVeri
 
 public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestArtistVerificationCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IAuditingContext _auditingContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
-    public RequestArtistVerificationHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUser)
+    public RequestArtistVerificationHandler(ICatalogContext catalogContext, IAuditingContext auditingContext, ISystemContext systemContext, TimeProvider timeProvider, ICurrentUserService currentUser)
     {
-        _context = context; _timeProvider = timeProvider; _currentUser = currentUser;
+        _catalogContext = catalogContext;
+        _auditingContext = auditingContext;
+        _systemContext = systemContext; _timeProvider = timeProvider; _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(RequestArtistVerificationCommand request, CancellationToken cancellationToken)
@@ -25,7 +31,7 @@ public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestAr
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .Include(a => a.TeamMembers)
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
@@ -33,7 +39,7 @@ public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestAr
         if (!artist.TeamMembers.Any(tm => tm.UserId == userId && tm.Role == ArtistTeamRole.Owner))
             throw new ForbiddenException("Only the Owner of the artist profile can request verification.");
 
-        var existingRequest = await _context.VerificationRequests
+        var existingRequest = await _auditingContext.VerificationRequests
             .AnyAsync(vr => vr.ArtistId == request.ArtistId && vr.Status == VerificationRequestStatus.Pending, cancellationToken);
 
         if (existingRequest)
@@ -42,7 +48,7 @@ public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestAr
         ClaimedFileResult? proofFileClaim = null;
         if (request.ProofFileId.HasValue)
         {
-            proofFileClaim = await _context.ClaimFileAsync(
+            proofFileClaim = await _systemContext.ClaimFileAsync(
                 request.ProofFileId.Value, userId, "image/", "proofs", cancellationToken);
         }
 
@@ -57,8 +63,8 @@ public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestAr
             utcNow: utcNow
         );
 
-        _context.VerificationRequests.Add(verificationReq);
-        await _context.SaveChangesAsync(cancellationToken);
+        _auditingContext.Add(verificationReq);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

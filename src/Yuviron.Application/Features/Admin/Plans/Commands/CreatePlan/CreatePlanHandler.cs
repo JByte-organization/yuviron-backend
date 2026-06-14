@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -10,18 +12,18 @@ namespace Yuviron.Application.Features.Admin.Plans.Commands.CreatePlan;
 
 public sealed class CreatePlanHandler : IRequestHandler<CreatePlanCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
 
-    public CreatePlanHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public CreatePlanHandler(IMonetizationContext monetizationContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<Guid> Handle(CreatePlanCommand request, CancellationToken cancellationToken)
     {
-        if (await _context.Plans.AnyAsync(p => p.Name == request.Name, cancellationToken))
+        if (await _monetizationContext.Plans.AnyAsync(p => p.Name == request.Name, cancellationToken))
         {
             throw new InvalidOperationException($"Plan with name '{request.Name}' already exists.");
         }
@@ -37,8 +39,8 @@ public sealed class CreatePlanHandler : IRequestHandler<CreatePlanCommand, Guid>
             utcNow
         );
 
-        _context.Plans.Add(plan);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.Add(plan);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         return plan.Id;
     }

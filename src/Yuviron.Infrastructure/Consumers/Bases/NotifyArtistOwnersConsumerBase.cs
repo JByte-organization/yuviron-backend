@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,10 +12,10 @@ namespace Yuviron.Infrastructure.Consumers.Bases;
 public abstract class NotifyArtistOwnersConsumerBase<TEvent> : IConsumer<TEvent>
     where TEvent : class, IArtistEvent
 {
-    protected readonly IApplicationDbContext Context;
+    protected readonly AppDbContext Context;
     protected readonly INotificationService NotificationService;
 
-    protected NotifyArtistOwnersConsumerBase(IApplicationDbContext context, INotificationService notificationService)
+    protected NotifyArtistOwnersConsumerBase(AppDbContext context, INotificationService notificationService)
     {
         Context = context;
         NotificationService = notificationService;

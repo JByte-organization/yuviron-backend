@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,13 +11,13 @@ namespace Yuviron.Application.Features.Webhooks.Commands.RenewSubscription;
 
 public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscriptionCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
-    public RenewSubscriptionHandler(IApplicationDbContext context, TimeProvider timeProvider, IEventBus eventBus)
+    public RenewSubscriptionHandler(IMonetizationContext monetizationContext, TimeProvider timeProvider, IEventBus eventBus)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _timeProvider = timeProvider;
         _eventBus = eventBus;
     }
@@ -25,7 +27,7 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var stripeSubId = request.StripeSubscriptionId;
 
-        var listenerSub = await _context.Subscriptions
+        var listenerSub = await _monetizationContext.Subscriptions
             .Include(s => s.Plan)
             .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSubId, cancellationToken);
 
@@ -35,7 +37,7 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
             var newEndAt = listenerSub.EndAt.AddMonths(months);
             listenerSub.Renew(newEndAt, utcNow);
             
-            await _context.SaveChangesAsync(cancellationToken);
+            await _monetizationContext.SaveChangesAsync(cancellationToken);
 
             await _eventBus.PublishAsync(
                 new SubscriptionRenewedEvent(
@@ -47,7 +49,7 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
             return Unit.Value; 
         }
 
-        var artistSub = await _context.ArtistSubscriptions
+        var artistSub = await _monetizationContext.ArtistSubscriptions
             .Include(s => s.Plan) 
             .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSubId, cancellationToken);
             
@@ -56,7 +58,7 @@ public sealed class RenewSubscriptionHandler : IRequestHandler<RenewSubscription
             var months = artistSub.Plan.Period == PlanPeriod.Month ? 1 : 12;
             artistSub.Renew(artistSub.EndAt.AddMonths(months), utcNow);
             
-            await _context.SaveChangesAsync(cancellationToken);
+            await _monetizationContext.SaveChangesAsync(cancellationToken);
             return Unit.Value; 
         }
 

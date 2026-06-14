@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,7 +15,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class NotifyOwnersOnFirstRoyaltiesConsumer : NotifyArtistOwnersConsumerBase<FirstRoyaltiesEarnedEvent>
 {
-    public NotifyOwnersOnFirstRoyaltiesConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyOwnersOnFirstRoyaltiesConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override async Task SendNotificationAsync(FirstRoyaltiesEarnedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
         await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.Billing, "first_royalties", 

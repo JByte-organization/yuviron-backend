@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -14,23 +16,23 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistById;
 
 public sealed class GetArtistByIdHandler : IRequestHandler<GetArtistByIdQuery, ArtistDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetArtistByIdHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _cache = cache;
         _currentUser = currentUser;
     }
 
     public async Task<ArtistDetailsDto> Handle(GetArtistByIdQuery request, CancellationToken cancellationToken)
     {
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .AsNoTracking()
             .Where(a => a.Id == request.ArtistId)
             .Select(a => new ArtistDetailsDto(

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,20 +19,26 @@ namespace Yuviron.Application.Features.StudioArtist.Marketing.Commands.SubmitBan
 
 public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerRequestCommand, SubmitBannerResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IContentContext _contentContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
     private readonly MarketingOptions _options; 
 
     public SubmitBannerRequestHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, IContentContext contentContext, ISystemContext systemContext, 
         TimeProvider timeProvider, 
         ICurrentUserService currentUser, 
         IPaymentService paymentService,
         IOptions<MarketingOptions> options) 
     {
-        _context = context; 
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _contentContext = contentContext;
+        _systemContext = systemContext; 
         _timeProvider = timeProvider; 
         _currentUser = currentUser; 
         _paymentService = paymentService;
@@ -42,20 +50,20 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var user = await _context.Users.FirstAsync(u => u.Id == userId, cancellationToken);
+        var user = await _identityContext.Users.FirstAsync(u => u.Id == userId, cancellationToken);
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage marketing for this artist.");
 
-        var albumExists = await _context.AlbumArtists
+        var albumExists = await _catalogContext.AlbumArtists
             .AnyAsync(aa => aa.ArtistId == request.ArtistId && aa.AlbumId == request.AlbumId, cancellationToken);
             
         if (!albumExists) throw new ForbiddenException("The selected album does not belong to this artist.");
 
-        var existingPendingRequest = await _context.BannerRequests
+        var existingPendingRequest = await _contentContext.BannerRequests
             .AnyAsync(br => br.ArtistId == request.ArtistId && (br.Status == BannerRequestStatus.Pending || br.Status == BannerRequestStatus.AwaitingPayment), cancellationToken);
 
         if (existingPendingRequest)
@@ -63,7 +71,7 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
 
         if (request.DurationDays < 1) throw new InvalidOperationException("Duration must be at least 1 day.");
 
-        var bannerClaim = await _context.ClaimFileAsync(
+        var bannerClaim = await _systemContext.ClaimFileAsync(
             request.BannerFileId, userId, "image/", "banners", cancellationToken);
 
         var bannerRequest = BannerRequest.Create(
@@ -78,7 +86,7 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
             utcNow: utcNow);
 
         bannerRequest.RegisterFileSwapEvents(bannerClaim);
-        _context.BannerRequests.Add(bannerRequest);
+        _contentContext.Add(bannerRequest);
 
         decimal totalPrice = request.DurationDays * _options.BannerPricePerDay;
 
@@ -87,7 +95,7 @@ public sealed class SubmitBannerRequestHandler : IRequestHandler<SubmitBannerReq
 
         bannerRequest.SetCheckoutSession(stripeSession.SessionId);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return new SubmitBannerResponse(bannerRequest.Id, stripeSession.CheckoutUrl);
     }

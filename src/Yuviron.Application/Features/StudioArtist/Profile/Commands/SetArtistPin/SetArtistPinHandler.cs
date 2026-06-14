@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,13 +17,15 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.SetArtistPi
 
 public sealed class SetArtistPinHandler : IRequestHandler<SetArtistPinCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public SetArtistPinHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public SetArtistPinHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext; _currentUser = currentUser; _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(SetArtistPinCommand request, CancellationToken cancellationToken)
@@ -29,12 +33,12 @@ public sealed class SetArtistPinHandler : IRequestHandler<SetArtistPinCommand, U
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .Include(a => a.Pins)
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasEditorAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -42,9 +46,9 @@ public sealed class SetArtistPinHandler : IRequestHandler<SetArtistPinCommand, U
 
         bool entityExists = request.EntityType switch
         {
-            ArtistPinType.Track => await _context.Tracks.AnyAsync(t => t.Id == request.EntityId, cancellationToken),
-            ArtistPinType.Album => await _context.Albums.AnyAsync(a => a.Id == request.EntityId, cancellationToken),
-            ArtistPinType.Playlist => await _context.Playlists.AnyAsync(p => p.Id == request.EntityId, cancellationToken),
+            ArtistPinType.Track => await _catalogContext.Tracks.AnyAsync(t => t.Id == request.EntityId, cancellationToken),
+            ArtistPinType.Album => await _catalogContext.Albums.AnyAsync(a => a.Id == request.EntityId, cancellationToken),
+            ArtistPinType.Playlist => await _libraryContext.Playlists.AnyAsync(p => p.Id == request.EntityId, cancellationToken),
             _ => false
         };
 
@@ -55,7 +59,7 @@ public sealed class SetArtistPinHandler : IRequestHandler<SetArtistPinCommand, U
 
         artist.SetPin(request.EntityType, request.EntityId, request.Position, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

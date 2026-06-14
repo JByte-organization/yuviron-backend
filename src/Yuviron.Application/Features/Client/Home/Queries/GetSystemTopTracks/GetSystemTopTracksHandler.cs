@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,18 +18,18 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetSystemTopTracks;
 
 public sealed class GetSystemTopTracksHandler : IRequestHandler<GetSystemTopTracksQuery, List<TopTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public GetSystemTopTracksHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICacheService cacheService,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _cacheService = cacheService;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
@@ -43,7 +45,7 @@ public sealed class GetSystemTopTracksHandler : IRequestHandler<GetSystemTopTrac
         {
             var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-            cachedTracks = await _context.Tracks
+            cachedTracks = await _catalogContext.Tracks
                 .AsNoTracking()
                 .AvailableForPublic(utcNow)
                 .OrderByDescending(t => t.PlayCount) 

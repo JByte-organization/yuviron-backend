@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtistTeamMember
 
 public sealed class GetArtistTeamMembersHandler : IRequestHandler<GetArtistTeamMembersQuery, PaginatedList<ArtistTeamMemberDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetArtistTeamMembersHandler(IApplicationDbContext context)
+    public GetArtistTeamMembersHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<PaginatedList<ArtistTeamMemberDto>> Handle(GetArtistTeamMembersQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.ArtistTeamMembers
+        var query = _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .Where(tm => tm.ArtistId == request.ArtistId);
 

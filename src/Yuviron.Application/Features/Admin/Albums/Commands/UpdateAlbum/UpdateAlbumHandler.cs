@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,18 @@ namespace Yuviron.Application.Features.Admin.Albums.Commands.UpdateAlbum;
 
 public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     
     public UpdateAlbumHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ISystemContext systemContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -29,14 +33,14 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
-        var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+        var existingArtistsCount = await _catalogContext.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
             throw new NotFoundException(nameof(Artist), "One or more provided IDs"); 
         }
 
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .Include(a => a.AlbumArtists) 
             .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken);
 
@@ -50,7 +54,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
         
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
             
             album.RegisterFileSwapEvents(coverClaim);
@@ -68,7 +72,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand, Uni
             uniqueArtistIds,
             utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,14 +14,14 @@ namespace Yuviron.Application.Features.Admin.Finance.Commands.RejectPayout;
 
 public sealed class RejectPayoutHandler : IRequestHandler<RejectPayoutCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
 
-    public RejectPayoutHandler(IApplicationDbContext context, TimeProvider timeProvider, IEventBus eventBus, ICurrentUserService currentUser)
+    public RejectPayoutHandler(IMonetizationContext monetizationContext, TimeProvider timeProvider, IEventBus eventBus, ICurrentUserService currentUser)
     {
-        _context = context; _timeProvider = timeProvider; _eventBus = eventBus; _currentUser = currentUser;
+        _monetizationContext = monetizationContext; _timeProvider = timeProvider; _eventBus = eventBus; _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(RejectPayoutCommand request, CancellationToken cancellationToken)
@@ -27,11 +29,11 @@ public sealed class RejectPayoutHandler : IRequestHandler<RejectPayoutCommand, U
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var payoutRequest = await _context.PayoutRequests
+        var payoutRequest = await _monetizationContext.PayoutRequests
                                 .FirstOrDefaultAsync(pr => pr.Id == request.PayoutRequestId, cancellationToken)
                             ?? throw new NotFoundException(nameof(PayoutRequest), request.PayoutRequestId);
 
-        var wallet = await _context.ArtistWallets
+        var wallet = await _monetizationContext.ArtistWallets
                          .FirstOrDefaultAsync(w => w.ArtistId == payoutRequest.ArtistId, cancellationToken)
                      ?? throw new InvalidOperationException("Wallet not found.");
 
@@ -42,9 +44,9 @@ public sealed class RejectPayoutHandler : IRequestHandler<RejectPayoutCommand, U
             wallet.Id, payoutRequest.RequestedAmount, WalletTransactionType.PayoutReleased, 
             $"Payout rejected: {request.Reason}", payoutRequest.Id, utcNow);
 
-        _context.WalletTransactions.Add(walletTx);
+        _monetizationContext.Add(walletTx);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new PayoutRejectedEvent(payoutRequest.ArtistId, payoutRequest.RequestedAmount, request.Reason), cancellationToken);
         return Unit.Value;

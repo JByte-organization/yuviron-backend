@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,10 +11,10 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public sealed class NotifyTeamOnStudioPlaylistTrackChangedConsumer : IConsumer<StudioPlaylistTrackChangedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
 
-    public NotifyTeamOnStudioPlaylistTrackChangedConsumer(IApplicationDbContext context, INotificationService notificationService)
+    public NotifyTeamOnStudioPlaylistTrackChangedConsumer(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
         _notificationService = notificationService;

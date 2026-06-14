@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -13,20 +15,22 @@ namespace Yuviron.Application.Features.Admin.VerificationRequests.Commands.Appro
 
 public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveVerificationRequestCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly IAuditingContext _auditingContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
     private readonly IEventBus _eventBus;
 
     public ApproveVerificationRequestHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, IAuditingContext auditingContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
         IPermissionService permissionService, 
         IEventBus eventBus)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _auditingContext = auditingContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _permissionService = permissionService;
@@ -38,7 +42,7 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var request = await _context.VerificationRequests
+        var request = await _auditingContext.VerificationRequests
             .Include(vr => vr.Artist)
                 .ThenInclude(a => a.TeamMembers)
             .Include(vr => vr.SubmittedByUser)
@@ -66,7 +70,7 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
             VerificationStatus.Verified, 
             utcNow);
 
-        var managementRole = await _context.Roles
+        var managementRole = await _identityContext.Roles
             .FirstAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
 
         bool roleAdded = false;
@@ -76,7 +80,7 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
             roleAdded = true;
         }
 
-        var otherPendingRequests = await _context.VerificationRequests
+        var otherPendingRequests = await _auditingContext.VerificationRequests
             .Where(vr => vr.ArtistId == request.ArtistId 
                          && vr.Id != request.Id 
                          && vr.Status == VerificationRequestStatus.Pending)
@@ -87,7 +91,7 @@ public sealed class ApproveVerificationRequestHandler : IRequestHandler<ApproveV
             otherReq.Reject(adminId, "Profile has been verified by another user.", utcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         if (roleAdded)
         {

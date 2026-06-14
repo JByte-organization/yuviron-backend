@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,20 +19,20 @@ namespace Yuviron.Application.Features.Admin.Banners.Commands.ApproveBannerReque
 
 public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerRequestCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
     private readonly MarketingOptions _options;
 
     public ApproveBannerRequestHandler(
-        IApplicationDbContext context,
+        IContentContext contentContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
         IEventBus eventBus,
         IOptions<MarketingOptions> options)
     {
-        _context = context;
+        _contentContext = contentContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _eventBus = eventBus;
@@ -40,7 +42,7 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
     public async Task<Guid> Handle(ApproveBannerRequestCommand request, CancellationToken cancellationToken)
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
-        var bannerReq = await _context.BannerRequests
+        var bannerReq = await _contentContext.BannerRequests
             .FirstOrDefaultAsync(br => br.Id == request.RequestId, cancellationToken)
             ?? throw new NotFoundException(nameof(BannerRequest), request.RequestId);
 
@@ -73,7 +75,7 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
             expiresAt: null,
             utcNow: utcNow
         );
-        _context.SmartLinks.Add(smartLink);
+        _contentContext.Add(smartLink);
 
         string targetUrl = $"/sl/{smartCode}";
 
@@ -90,8 +92,8 @@ public sealed class ApproveBannerRequestHandler : IRequestHandler<ApproveBannerR
             targetGenres: request.TargetGenres ?? bannerReq.TargetGenres
         );
 
-        _context.Banners.Add(activeBanner);
-        await _context.SaveChangesAsync(cancellationToken);
+        _contentContext.Add(activeBanner);
+        await _contentContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(
             new BannerRequestApprovedEvent(

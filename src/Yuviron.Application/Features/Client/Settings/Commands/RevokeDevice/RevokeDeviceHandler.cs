@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,24 +10,24 @@ namespace Yuviron.Application.Features.Client.Settings.Queries.Commands.RevokeDe
 
 public sealed class RevokeDeviceHandler : IRequestHandler<RevokeDeviceCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
 
-    public RevokeDeviceHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public RevokeDeviceHandler(IIdentityContext identityContext, ICurrentUserService currentUser)
     {
-        _context = context; _currentUser = currentUser;
+        _identityContext = identityContext; _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(RevokeDeviceCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var device = await _context.UserDevices
+        var device = await _identityContext.UserDevices
                          .FirstOrDefaultAsync(d => d.Id == request.DeviceId && d.UserId == userId, cancellationToken)
                      ?? throw new NotFoundException("Device", request.DeviceId);
 
-        _context.UserDevices.Remove(device);
-        await _context.SaveChangesAsync(cancellationToken);
+        _identityContext.Remove(device);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

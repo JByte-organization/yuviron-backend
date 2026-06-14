@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,16 +17,18 @@ namespace Yuviron.Application.Features.StudioArtist.Artists.Commands.UpdateArtis
 
 public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateArtistHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -34,11 +38,11 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasEditorAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -47,7 +51,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
         string? finalAvatarUrl = artist.AvatarUrl;
         if (request.AvatarFileId.HasValue)
         {
-            var avatarClaim = await _context.ClaimFileAsync(
+            var avatarClaim = await _systemContext.ClaimFileAsync(
                 request.AvatarFileId.Value, userId, "image/", "artists/avatars", cancellationToken);
             artist.RegisterFileSwapEvents(avatarClaim, artist.AvatarUrl);
             finalAvatarUrl = avatarClaim.FinalPath;
@@ -56,7 +60,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
         string? finalBannerUrl = artist.BannerUrl;
         if (request.BannerFileId.HasValue)
         {
-            var bannerClaim = await _context.ClaimFileAsync(
+            var bannerClaim = await _systemContext.ClaimFileAsync(
                 request.BannerFileId.Value, userId, "image/", "artists/banners", cancellationToken);
             artist.RegisterFileSwapEvents(bannerClaim, artist.BannerUrl);
             finalBannerUrl = bannerClaim.FinalPath;
@@ -71,6 +75,6 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand>
             utcNow
         );
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
     }
 }

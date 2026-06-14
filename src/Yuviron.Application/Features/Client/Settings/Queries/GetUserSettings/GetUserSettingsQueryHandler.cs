@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -11,12 +13,12 @@ namespace Yuviron.Application.Features.Client.Settings.Queries.GetUserSettings;
 
 public class GetUserSettingsQueryHandler : IRequestHandler<GetUserSettingsQuery, UserSettingsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetUserSettingsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetUserSettingsQueryHandler(IProfileContext profileContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
     }
 
@@ -24,14 +26,14 @@ public class GetUserSettingsQueryHandler : IRequestHandler<GetUserSettingsQuery,
     {
         var userId = _currentUser.UserId!.Value;
 
-        var settings = await _context.UserSettings
+        var settings = await _profileContext.UserSettings
             .FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
 
         if (settings == null)
         {
             settings = UserSettings.Create(userId, DateTime.UtcNow);
-            _context.UserSettings.Add(settings);
-            await _context.SaveChangesAsync(cancellationToken);
+            _profileContext.Add(settings);
+            await _profileContext.SaveChangesAsync(cancellationToken);
         }
 
         return new UserSettingsDto

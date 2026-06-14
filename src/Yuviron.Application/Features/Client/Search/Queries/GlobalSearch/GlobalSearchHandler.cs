@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,18 +13,21 @@ namespace Yuviron.Application.Features.Client.Search.Queries.GlobalSearch;
 
 public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, GlobalSearchResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache; 
     private readonly ICurrentUserService _currentUser; 
 
     public GlobalSearchHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext,
+        ILibraryContext libraryContext,
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -74,7 +79,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         int limit,
         CancellationToken cancellationToken)
     {
-        var exactQuery = _context.BuildPublicTrackSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicTrackSearchQuery(searchTerm, utcNow);
         var exactCount = await exactQuery.CountAsync(cancellationToken);
         var exactItems = await exactQuery
             .ApplyTrackSearchOrdering()
@@ -89,7 +94,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 
         var exactIds = exactItems.Select(item => item.Id).ToHashSet();
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicTrackFuzzyCandidateQuery(fragments, utcNow)
             .SelectTrackSearchRows()
             .ToListAsync(cancellationToken);
@@ -121,7 +126,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         int limit,
         CancellationToken cancellationToken)
     {
-        var exactQuery = _context.BuildPublicArtistSearchQuery(searchTerm);
+        var exactQuery = _catalogContext.BuildPublicArtistSearchQuery(searchTerm);
         var exactCount = await exactQuery.CountAsync(cancellationToken);
         var exactItems = await exactQuery
             .ApplyArtistSearchOrdering()
@@ -136,7 +141,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 
         var exactIds = exactItems.Select(item => item.Id).ToHashSet();
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicArtistFuzzyCandidateQuery(fragments)
             .SelectArtistSearchRows()
             .ToListAsync(cancellationToken);
@@ -169,7 +174,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         int limit,
         CancellationToken cancellationToken)
     {
-        var exactQuery = _context.BuildPublicAlbumSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicAlbumSearchQuery(searchTerm, utcNow);
         var exactCount = await exactQuery.CountAsync(cancellationToken);
         var exactItems = await exactQuery
             .ApplyAlbumSearchOrdering()
@@ -184,7 +189,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 
         var exactIds = exactItems.Select(item => item.Id).ToHashSet();
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicAlbumFuzzyCandidateQuery(fragments, utcNow)
             .SelectAlbumSearchRows()
             .ToListAsync(cancellationToken);
@@ -218,7 +223,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         int limit,
         CancellationToken cancellationToken)
     {
-        var exactQuery = _context.BuildPublicPlaylistSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicPlaylistSearchQuery(_libraryContext, searchTerm, utcNow);
         var exactCount = await exactQuery.CountAsync(cancellationToken);
         var exactItems = await exactQuery
             .ApplyPlaylistSearchOrdering()
@@ -233,8 +238,7 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 
         var exactIds = exactItems.Select(item => item.Id).ToHashSet();
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
-            .BuildPublicPlaylistFuzzyCandidateQuery(fragments, utcNow)
+        var fuzzyRows = await _libraryContext.BuildPublicPlaylistFuzzyCandidateQuery(_catalogContext, fragments, utcNow)
             .SelectPlaylistSearchRows()
             .ToListAsync(cancellationToken);
 
@@ -265,8 +269,8 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
         int limit,
         CancellationToken cancellationToken)
     {
-        var exactGenresQuery = _context.BuildPublicGenreSearchQuery(searchTerm, utcNow);
-        var exactMoodsQuery = _context.BuildPublicMoodSearchQuery(searchTerm, utcNow);
+        var exactGenresQuery = _catalogContext.BuildPublicGenreSearchQuery(searchTerm, utcNow);
+        var exactMoodsQuery = _catalogContext.BuildPublicMoodSearchQuery(searchTerm, utcNow);
 
         var exactGenresCount = await exactGenresQuery.CountAsync(cancellationToken);
         var exactMoodsCount = await exactMoodsQuery.CountAsync(cancellationToken);
@@ -303,12 +307,12 @@ public sealed class GlobalSearchHandler : IRequestHandler<GlobalSearchQuery, Glo
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
 
-        var fuzzyGenreRows = await _context
+        var fuzzyGenreRows = await _catalogContext
             .BuildPublicGenreFuzzyCandidateQuery(fragments, utcNow)
             .SelectGenreSearchRows()
             .ToListAsync(cancellationToken);
 
-        var fuzzyMoodRows = await _context
+        var fuzzyMoodRows = await _catalogContext
             .BuildPublicMoodFuzzyCandidateQuery(fragments, utcNow)
             .SelectMoodSearchRows()
             .ToListAsync(cancellationToken);

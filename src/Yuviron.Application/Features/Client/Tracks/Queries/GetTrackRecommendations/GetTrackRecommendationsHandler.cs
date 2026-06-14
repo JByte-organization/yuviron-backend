@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,14 +12,14 @@ namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackRecommendat
 
 public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRecommendationsQuery, List<RecommendedTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;            
 
     public GetTrackRecommendationsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -25,7 +27,7 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var baseTrackTags = await _context.Tracks
+        var baseTrackTags = await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => new {
@@ -41,7 +43,7 @@ public sealed class GetTrackRecommendationsHandler : IRequestHandler<GetTrackRec
         var genreIds = baseTrackTags.GenreIds.ToList();
         var moodIds = baseTrackTags.MoodIds.ToList();
 
-        var rawRecommendations = await _context.Tracks
+        var rawRecommendations = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => t.Id != request.TrackId 

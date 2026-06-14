@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,16 +16,16 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.RemoveSocia
 
 public sealed class RemoveSocialLinkHandler : IRequestHandler<RemoveSocialLinkCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
     public RemoveSocialLinkHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser, 
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -33,19 +35,19 @@ public sealed class RemoveSocialLinkHandler : IRequestHandler<RemoveSocialLinkCo
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasEditorAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage this artist's profile.");
 
-        var link = await _context.ArtistSocialLinks
+        var link = await _catalogContext.ArtistSocialLinks
             .FirstOrDefaultAsync(l => l.ArtistId == request.ArtistId && l.Type == request.Type, cancellationToken);
             
         if (link != null)
         {
-            _context.ArtistSocialLinks.Remove(link);
-            await _context.SaveChangesAsync(cancellationToken);
+            _catalogContext.Remove(link);
+            await _catalogContext.SaveChangesAsync(cancellationToken);
         }
 
         return Unit.Value;

@@ -26,7 +26,7 @@ public class NotificationPreferencesHandlerTests
         await using var dbContext = new AppDbContext(CreateOptions());
 
         var userId = Guid.NewGuid();
-        dbContext.UserNotificationPreferences.Add(UserNotificationPreference.Create(
+        dbContext.Add(UserNotificationPreference.Create(
             userId,
             NotificationCategory.Music,
             "new_release",
@@ -52,7 +52,7 @@ public class NotificationPreferencesHandlerTests
         await using var dbContext = new AppDbContext(CreateOptions());
 
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();

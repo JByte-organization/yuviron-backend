@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,14 +13,16 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.AddTrackToPlayl
 
 public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlaylistCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
 
-    public AddTrackToPlaylistHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
+    public AddTrackToPlaylistHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
         _cache = cache;
@@ -28,19 +32,19 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken);
 
         if (playlist is null) throw new NotFoundException(nameof(Playlist), request.PlaylistId);
         if (playlist.UserId != userId) throw new ForbiddenException("Access denied.");
 
-        var trackExists = await _context.Tracks.AnyAsync(t => t.Id == request.TrackId , cancellationToken);
+        var trackExists = await _catalogContext.Tracks.AnyAsync(t => t.Id == request.TrackId , cancellationToken);
         if (!trackExists) throw new NotFoundException(nameof(Track), request.TrackId);
 
-        if (await _context.PlaylistTracks.AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken))
+        if (await _libraryContext.PlaylistTracks.AnyAsync(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId, cancellationToken))
             return; 
 
-        var maxPosition = await _context.PlaylistTracks
+        var maxPosition = await _libraryContext.PlaylistTracks
             .Where(pt => pt.PlaylistId == request.PlaylistId)
             .MaxAsync(pt => (double?)pt.Position, cancellationToken) ?? 0.0;
 
@@ -49,10 +53,10 @@ public sealed class AddTrackToPlaylistHandler : IRequestHandler<AddTrackToPlayli
 
         var playlistTrack = new PlaylistTrack(request.PlaylistId, request.TrackId, newPosition, userId, utcNow);
 
-        _context.PlaylistTracks.Add(playlistTrack);
+        _libraryContext.Add(playlistTrack);
         playlist.NotifyContentChanged(utcNow); 
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _cache.SortedSetAddAsync($"playlist:{request.PlaylistId}:tracks", request.TrackId.ToString(), newPosition, cancellationToken);
     }

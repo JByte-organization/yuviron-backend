@@ -32,7 +32,7 @@ public class AccountSettingsHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = Mock.Of<ICurrentUserService>(s => s.UserId == userId);
@@ -46,7 +46,7 @@ public class AccountSettingsHandlerTests
 
         await handler.Handle(new UpdateThemeCommand(ThemeMode.Dark), CancellationToken.None);
 
-        var updated = await dbContext.UserSettings.FindAsync(userId);
+        var updated = await dbContext.Set<UserSettings>().FindAsync(userId);
         updated.Should().NotBeNull();
         updated!.ThemeMode.Should().Be(ThemeMode.Dark.ToString());
     }
@@ -56,7 +56,7 @@ public class AccountSettingsHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -72,7 +72,7 @@ public class AccountSettingsHandlerTests
 
         await handler.Handle(new UpdateAudioQualityCommand(320), CancellationToken.None);
 
-        var updated = await dbContext.UserSettings.FindAsync(userId);
+        var updated = await dbContext.Set<UserSettings>().FindAsync(userId);
         updated.Should().NotBeNull();
         updated!.AudioQualityPreference.Should().Be(128);
         updated.CrossfadeMs.Should().Be(0);
@@ -83,7 +83,7 @@ public class AccountSettingsHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -93,7 +93,7 @@ public class AccountSettingsHandlerTests
 
         await handler.Handle(new UpdateCrossfadeCommand(1500), CancellationToken.None);
 
-        var updated = await dbContext.UserSettings.FindAsync(userId);
+        var updated = await dbContext.Set<UserSettings>().FindAsync(userId);
         updated.Should().NotBeNull();
         updated!.AudioQualityPreference.Should().Be(128);
         updated.CrossfadeMs.Should().Be(1500);
@@ -104,7 +104,7 @@ public class AccountSettingsHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -130,7 +130,7 @@ public class AccountSettingsHandlerTests
         await using var dbContext = new AppDbContext(CreateOptions());
         var utcNow = DateTime.UtcNow;
         var user = User.Create("user@example.com", "hash", "Alex", acceptMarketing: false, acceptTerms: true, utcNow: utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -140,7 +140,7 @@ public class AccountSettingsHandlerTests
 
         await handler.Handle(new UpdateMarketingPreferencesCommand(true), CancellationToken.None);
 
-        var updated = await dbContext.Users.FindAsync(user.Id);
+        var updated = await dbContext.Set<User>().FindAsync(user.Id);
         updated.Should().NotBeNull();
         updated!.AcceptMarketing.Should().BeTrue();
     }
@@ -152,11 +152,11 @@ public class AccountSettingsHandlerTests
         var utcNow = DateTime.UtcNow;
         var user = User.Create("old@example.com", "hash", "Alex", acceptMarketing: false, acceptTerms: true, utcNow: utcNow);
         user.SetProfile(UserProfile.Create(user.Id, "Alex", null, null, "MD", null, null, utcNow.AddYears(-20), Gender.Male, utcNow));
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
 
         var other = User.Create("taken@example.com", "hash2", "Bob", acceptMarketing: false, acceptTerms: true, utcNow: utcNow);
         other.SetProfile(UserProfile.Create(other.Id, "Bob", null, null, "MD", null, null, utcNow.AddYears(-22), Gender.Male, utcNow));
-        dbContext.Users.Add(other);
+        dbContext.Add(other);
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -186,11 +186,11 @@ public class AccountSettingsHandlerTests
         var utcNow = DateTime.UtcNow;
         var user = User.Create("old@example.com", "hash", "Alex", acceptMarketing: false, acceptTerms: true, utcNow: utcNow);
         user.SetProfile(UserProfile.Create(user.Id, "Alex", null, null, "MD", null, null, utcNow.AddYears(-20), Gender.Male, utcNow));
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
 
         var other = User.Create("taken@example.com", "hash2", "Bob", acceptMarketing: false, acceptTerms: true, utcNow: utcNow);
         other.SetProfile(UserProfile.Create(other.Id, "Bob", null, null, "MD", null, null, utcNow.AddYears(-22), Gender.Male, utcNow));
-        dbContext.Users.Add(other);
+        dbContext.Add(other);
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();

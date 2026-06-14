@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -6,11 +8,11 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsersAutocomplete;
 
 public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutocompleteQuery, List<UserAutocompleteDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
 
-    public GetUsersAutocompleteHandler(IApplicationDbContext context)
+    public GetUsersAutocompleteHandler(IIdentityContext identityContext)
     {
-        _context = context;
+        _identityContext = identityContext;
     }
 
     public async Task<List<UserAutocompleteDto>> Handle(GetUsersAutocompleteQuery request, CancellationToken cancellationToken)
@@ -22,7 +24,7 @@ public sealed class GetUsersAutocompleteHandler : IRequestHandler<GetUsersAutoco
 
         var searchTerm = request.SearchTerm.Trim();
 
-        var users = await _context.Users
+        var users = await _identityContext.Users
             .AsNoTracking()
             .Where(u => !u.IsDeleted && 
                         (u.Email.Contains(searchTerm) || u.Profile.FirstName.Contains(searchTerm))) 

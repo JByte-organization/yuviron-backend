@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,18 +15,24 @@ namespace Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.ClaimPr
 
 public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfileCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IAuditingContext _auditingContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ArtistLimitsOptions _limits;
     private readonly ICurrentUserService _currentUser;
 
     public ClaimArtistProfileHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, IAuditingContext auditingContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         IOptions<ArtistLimitsOptions> options,
         ICurrentUserService currentUser) 
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _auditingContext = auditingContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _limits = options.Value; 
         _currentUser = currentUser;
@@ -35,7 +43,7 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .Include(a => a.TeamMembers)
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken);
 
@@ -45,7 +53,7 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
         if (artist.TeamMembers.Any(tm => tm.Role == ArtistTeamRole.Owner))
             throw new InvalidOperationException("This artist profile has already been verified and claimed by someone else.");
 
-        var existingRequest = await _context.VerificationRequests
+        var existingRequest = await _auditingContext.VerificationRequests
             .AnyAsync(vr => vr.ArtistId == request.ArtistId 
                             && vr.SubmittedByUserId == userId 
                             && vr.Status == VerificationRequestStatus.Pending, 
@@ -54,11 +62,11 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
         if (existingRequest)
             throw new InvalidOperationException("You already have a pending verification request for this artist.");
 
-        var ownedArtistsCount = await _context.ArtistTeamMembers
+        var ownedArtistsCount = await _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .CountAsync(atm => atm.UserId == userId && atm.Role == ArtistTeamRole.Owner, cancellationToken);
 
-        var isPremium = await _context.Users
+        var isPremium = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Id == userId && u.Subscriptions.Any(s => s.Status == SubscriptionStatus.Active && s.EndAt > utcNow), cancellationToken);
 
@@ -70,7 +78,7 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
         ClaimedFileResult? proofFileClaim = null;
         if (request.ProofFileId.HasValue)
         {
-            proofFileClaim = await _context.ClaimFileAsync(
+            proofFileClaim = await _systemContext.ClaimFileAsync(
                 request.ProofFileId.Value, userId, "image/", "proofs", cancellationToken);
         }
 
@@ -85,8 +93,8 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
             utcNow: utcNow
         );
 
-        _context.VerificationRequests.Add(verificationReq);
+        _auditingContext.Add(verificationReq);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
     }
 }

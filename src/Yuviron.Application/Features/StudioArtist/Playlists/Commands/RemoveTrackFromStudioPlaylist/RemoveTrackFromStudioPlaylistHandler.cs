@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,23 +18,25 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.RemoveTra
 
 public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<RemoveTrackFromStudioPlaylistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly IEventBus _eventBus;
 
     public RemoveTrackFromStudioPlaylistHandler(
-        IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
+        ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache, IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext; _currentUser = currentUser; _timeProvider = timeProvider; _cache = cache; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(RemoveTrackFromStudioPlaylistCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlistInfo = await _context.Playlists
+        var playlistInfo = await _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.Id == request.PlaylistId)
             .Select(p => new { p.Id, p.ArtistId, p.Title })
@@ -41,25 +45,25 @@ public sealed class RemoveTrackFromStudioPlaylistHandler : IRequestHandler<Remov
 
         if (playlistInfo.ArtistId == null) throw new ForbiddenException("This is not a studio artist playlist.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(playlistInfo.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage this playlist.");
 
-        var trackTitle = await _context.Tracks
+        var trackTitle = await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => t.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var deletedRows = await _context.PlaylistTracks
+        var deletedRows = await _libraryContext.PlaylistTracks
             .Where(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId)
             .ExecuteDeleteAsync(cancellationToken);
             
         if (deletedRows > 0)
         {
-            await _context.Playlists
+            await _libraryContext.Playlists
                 .Where(p => p.Id == request.PlaylistId)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UpdatedAt, _timeProvider.GetUtcNow().UtcDateTime), cancellationToken);
 

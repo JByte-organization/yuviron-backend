@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.Client.Notifications.Queries.GetNotificat
 
 public sealed class GetNotificationsHandler : IRequestHandler<GetNotificationsQuery, PaginatedList<NotificationDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetNotificationsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetNotificationsHandler(ISystemContext systemContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
     }
 
@@ -23,7 +25,7 @@ public sealed class GetNotificationsHandler : IRequestHandler<GetNotificationsQu
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var query = _context.Notifications
+        var query = _systemContext.Notifications
             .AsNoTracking()
             .Where(n => n.UserId == userId);
 

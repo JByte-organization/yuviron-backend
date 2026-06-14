@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +18,8 @@ namespace Yuviron.MediaWorker.Consumers;
 public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent>
 {
     private readonly IJamendoApiService _jamendoApi;
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly ILogger<JamendoTrackSyncConsumer> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly IJamendoMetadataResolver _metadataResolver;
@@ -24,29 +27,30 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
 
     public JamendoTrackSyncConsumer(
         IJamendoApiService jamendoApi,
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ISystemContext systemContext,
         ILogger<JamendoTrackSyncConsumer> logger,
         TimeProvider timeProvider,
         IJamendoMetadataResolver metadataResolver,
         IAudioMetadataService audioMetadataService)
     {
         _jamendoApi = jamendoApi;
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _logger = logger;
         _timeProvider = timeProvider;
         _metadataResolver = metadataResolver;
         _audioMetadataService = audioMetadataService;
     }
 
-    public async Task Consume(ConsumeContext<JamendoTrackSyncRequestedEvent> context)
+    public async Task Consume(ConsumeContext<JamendoTrackSyncRequestedEvent> catalogContext)
     {
-        var message = context.Message;
+        var message = catalogContext.Message;
         _logger.LogInformation("Starting background sync for Jamendo track: {TrackName} ({JamendoId})", message.TrackName, message.JamendoId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         // 1. Download audio
-        var audioDownloaded = await _jamendoApi.DownloadFileToTempAsync(message.AudioDownloadUrl!, ".mp3", context.CancellationToken);
+        var audioDownloaded = await _jamendoApi.DownloadFileToTempAsync(message.AudioDownloadUrl!, ".mp3", catalogContext.CancellationToken);
         if (audioDownloaded == null)
         {
             throw new Exception($"Failed to download audio from Jamendo for track {message.JamendoId}.");
@@ -61,14 +65,14 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
             audioDownloaded.TempKey, 
             utcNow);
         
-        _context.FileMetadata.Add(audioMeta);
-        await _context.SaveChangesAsync(context.CancellationToken);
+        _systemContext.Add(audioMeta);
+        await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
 
         // 2. Download cover (optional)
         Guid? coverFileId = null;
         if (!string.IsNullOrWhiteSpace(message.CoverUrl))
         {
-            var coverDownloaded = await _jamendoApi.DownloadFileToTempAsync(message.CoverUrl, ".jpg", context.CancellationToken);
+            var coverDownloaded = await _jamendoApi.DownloadFileToTempAsync(message.CoverUrl, ".jpg", catalogContext.CancellationToken);
             if (coverDownloaded != null)
             {
                 coverFileId = coverDownloaded.FileId;
@@ -81,30 +85,30 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
                     coverDownloaded.TempKey, 
                     utcNow);
                 
-                _context.FileMetadata.Add(coverMeta);
-                await _context.SaveChangesAsync(context.CancellationToken);
+                _systemContext.Add(coverMeta);
+                await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
             }
         }
 
         // 3. Resolve metadata
-        var genreIds = await _metadataResolver.ResolveGenresAsync(message.Genres, context.CancellationToken);
-        var moodIds = await _metadataResolver.ResolveMoodsAsync(message.Moods, context.CancellationToken);
+        var genreIds = await _metadataResolver.ResolveGenresAsync(message.Genres, catalogContext.CancellationToken);
+        var moodIds = await _metadataResolver.ResolveMoodsAsync(message.Moods, catalogContext.CancellationToken);
 
         // 4. Create Track (Logic extracted from CreateTrackHandler to bypass AuthorizationBehavior)
         var trackId = Guid.NewGuid();
         var targetAudioFolder = $"tracks/{trackId}";
 
-        var audioClaim = await _context.ClaimFileAsync(
-            audioDownloaded.FileId, message.AdminId, "audio/", targetAudioFolder, context.CancellationToken);
+        var audioClaim = await _systemContext.ClaimFileAsync(
+            audioDownloaded.FileId, message.AdminId, "audio/", targetAudioFolder, catalogContext.CancellationToken);
 
         ClaimedFileResult? coverClaim = null;
         if (coverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
-                coverFileId.Value, message.AdminId, "image/", "covers", context.CancellationToken);
+            coverClaim = await _systemContext.ClaimFileAsync(
+                coverFileId.Value, message.AdminId, "image/", "covers", catalogContext.CancellationToken);
         }
 
-        var audioMetadata = await _audioMetadataService.GetAudioMetadataAsync(audioClaim.SourceKey, context.CancellationToken);
+        var audioMetadata = await _audioMetadataService.GetAudioMetadataAsync(audioClaim.SourceKey, catalogContext.CancellationToken);
 
         var track = Track.Create(
             trackId, 
@@ -127,12 +131,12 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
             track.RegisterFileSwapEvents(coverClaim);
         }
 
-        _context.Tracks.Add(track);
+        _catalogContext.Add(track);
         
         // 5. External Mapping
-        _context.ExternalMappings.Add(ExternalMapping.Create(trackId, nameof(Track), ExternalProvider.Jamendo, message.JamendoId));
+        _systemContext.Add(ExternalMapping.Create(trackId, nameof(Track), ExternalProvider.Jamendo, message.JamendoId));
         
-        await _context.SaveChangesAsync(context.CancellationToken);
+        await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
 
         _logger.LogInformation("Successfully synced Jamendo track: {TrackName}", message.TrackName);
     }

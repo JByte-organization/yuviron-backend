@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -12,18 +14,18 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUsers;
 
 public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginatedList<UserListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly TimeProvider _timeProvider;
 
-    public GetUsersHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetUsersHandler(IIdentityContext identityContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<PaginatedList<UserListItemDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Users
+        var query = _identityContext.Users
             .AsNoTracking()
             ;
 

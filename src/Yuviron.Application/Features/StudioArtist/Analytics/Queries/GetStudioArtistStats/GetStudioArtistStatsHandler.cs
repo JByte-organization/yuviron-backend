@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -16,16 +18,16 @@ namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetStudioA
 
 public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtistStatsQuery, ArtistAnalyticsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService; 
 
     public GetStudioArtistStatsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser,
         ICacheService cacheService)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
         _cacheService = cacheService;
     }
@@ -34,7 +36,7 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -45,16 +47,16 @@ public sealed class GetStudioArtistStatsHandler : IRequestHandler<GetStudioArtis
         var cachedStats = await _cacheService.GetAsync<ArtistAnalyticsDto>(cacheKey, cancellationToken);
         if (cachedStats != null) return cachedStats;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var totalAlbums = await _context.Albums
+        var totalAlbums = await _catalogContext.Albums
             .AsNoTracking()
             .CountAsync(a => a.AlbumArtists.Any(aa => aa.ArtistId == request.ArtistId), cancellationToken);
 
-        var tracksQuery = _context.Tracks
+        var tracksQuery = _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId));
 

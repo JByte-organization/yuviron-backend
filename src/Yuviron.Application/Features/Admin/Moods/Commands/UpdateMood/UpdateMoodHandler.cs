@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,18 @@ namespace Yuviron.Application.Features.Admin.Moods.Commands.UpdateMood;
 
 public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateMoodHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -28,7 +32,7 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var mood = await _context.Moods
+        var mood = await _catalogContext.Moods
             .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
         if (mood == null)
@@ -38,7 +42,7 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
 
         if (!mood.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
         {
-            var isDuplicate = await _context.Moods
+            var isDuplicate = await _catalogContext.Moods
                 .AnyAsync(m => m.Name == request.Name , cancellationToken);
 
             if (isDuplicate)
@@ -52,7 +56,7 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
 
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
                 
             mood.RegisterFileSwapEvents(coverClaim, mood.CoverUrl);
@@ -61,7 +65,7 @@ public sealed class UpdateMoodHandler : IRequestHandler<UpdateMoodCommand, Unit>
 
         mood.Update(request.Name, finalCoverUrl, utcNow); 
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

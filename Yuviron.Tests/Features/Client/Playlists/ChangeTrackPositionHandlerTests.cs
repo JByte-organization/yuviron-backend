@@ -40,14 +40,14 @@ public class ChangeTrackPositionHandlerTests
         _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var playlist = Playlist.Create(currentUserId, null, "Mix", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
-        dbContext.Playlists.Add(playlist);
+        dbContext.Add(playlist);
         await dbContext.SaveChangesAsync();
 
         var track3Id = Guid.NewGuid();
-        dbContext.Tracks.Add(Track.Create(track3Id, Guid.NewGuid(), 1, "Track 3", 1000, false, null, "key", VisibilityStatus.Published, null, [], [], [], DateTime.UtcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, Guid.NewGuid(), 1000, currentUserId, DateTime.UtcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, Guid.NewGuid(), 2000, currentUserId, DateTime.UtcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, track3Id, 3000, currentUserId, DateTime.UtcNow));
+        dbContext.Add(Track.Create(track3Id, Guid.NewGuid(), 1, "Track 3", 1000, false, null, "key", VisibilityStatus.Published, null, [], [], [], DateTime.UtcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, Guid.NewGuid(), 1000, currentUserId, DateTime.UtcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, Guid.NewGuid(), 2000, currentUserId, DateTime.UtcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, track3Id, 3000, currentUserId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var handler = new ChangeTrackPositionHandler(dbContext, _currentUserMock.Object, _timeProvider, _cacheMock.Object);

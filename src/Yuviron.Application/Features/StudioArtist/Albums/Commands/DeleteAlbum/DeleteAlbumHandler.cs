@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,16 @@ namespace Yuviron.Application.Features.StudioArtist.Albums.Commands.DeleteAlbum;
 
 public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public DeleteAlbumHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -29,7 +31,7 @@ public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand>
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .Include(a => a.AlbumArtists)
             .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken);
 
@@ -40,7 +42,7 @@ public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand>
 
         var albumArtistIds = album.AlbumArtists.Select(aa => aa.ArtistId).ToList();
         
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(albumArtistIds, userId)
             .AnyAsync(cancellationToken);
 
@@ -51,6 +53,6 @@ public sealed class DeleteAlbumHandler : IRequestHandler<DeleteAlbumCommand>
 
         album.Delete(utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
     }
 }

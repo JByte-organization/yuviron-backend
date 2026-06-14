@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,12 +11,12 @@ namespace Yuviron.Application.Features.Client.Search.Queries.SearchGenres;
 
 public sealed class SearchGenresHandler : IRequestHandler<SearchGenresQuery, PaginatedList<SearchGenreMoodDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public SearchGenresHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public SearchGenresHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -27,8 +29,8 @@ public sealed class SearchGenresHandler : IRequestHandler<SearchGenresQuery, Pag
         var requiredExactResults = (long)page * pageSize;
         var take = requiredExactResults > int.MaxValue ? int.MaxValue : (int)requiredExactResults;
 
-        var exactGenresQuery = _context.BuildPublicGenreSearchQuery(searchTerm, utcNow);
-        var exactMoodsQuery = _context.BuildPublicMoodSearchQuery(searchTerm, utcNow);
+        var exactGenresQuery = _catalogContext.BuildPublicGenreSearchQuery(searchTerm, utcNow);
+        var exactMoodsQuery = _catalogContext.BuildPublicMoodSearchQuery(searchTerm, utcNow);
 
         if (!SearchFuzzyMatcher.ShouldUseFuzzy(searchTerm))
         {
@@ -100,12 +102,12 @@ public sealed class SearchGenresHandler : IRequestHandler<SearchGenresQuery, Pag
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
 
-        var fuzzyGenreRows = await _context
+        var fuzzyGenreRows = await _catalogContext
             .BuildPublicGenreFuzzyCandidateQuery(fragments, utcNow)
             .SelectGenreSearchRows()
             .ToListAsync(cancellationToken);
 
-        var fuzzyMoodRows = await _context
+        var fuzzyMoodRows = await _catalogContext
             .BuildPublicMoodFuzzyCandidateQuery(fragments, utcNow)
             .SelectMoodSearchRows()
             .ToListAsync(cancellationToken);

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,13 +16,13 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.AddSocialLi
 
 public sealed class AddSocialLinkHandler : IRequestHandler<AddSocialLinkCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public AddSocialLinkHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public AddSocialLinkHandler(ICatalogContext catalogContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _catalogContext = catalogContext; _currentUser = currentUser; _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(AddSocialLinkCommand request, CancellationToken cancellationToken)
@@ -28,21 +30,21 @@ public sealed class AddSocialLinkHandler : IRequestHandler<AddSocialLinkCommand,
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasEditorAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to update this artist profile.");
 
-        var exists = await _context.ArtistSocialLinks
+        var exists = await _catalogContext.ArtistSocialLinks
             .AnyAsync(l => l.ArtistId == request.ArtistId && l.Type == request.Type, cancellationToken);
             
         if (exists) throw new SocialLinkAlreadyExistsException(request.Type);
 
         var newLink = ArtistSocialLink.Create(request.ArtistId, request.Type, request.Url, utcNow);
-        _context.ArtistSocialLinks.Add(newLink);
+        _catalogContext.Add(newLink);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

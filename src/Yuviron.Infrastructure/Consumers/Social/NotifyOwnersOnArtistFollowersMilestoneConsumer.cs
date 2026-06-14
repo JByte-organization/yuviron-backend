@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +14,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public sealed class NotifyOwnersOnArtistFollowersMilestoneConsumer : NotifyArtistOwnersConsumerBase<ArtistFollowersMilestoneReachedEvent>
 {
-    public NotifyOwnersOnArtistFollowersMilestoneConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyOwnersOnArtistFollowersMilestoneConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override Task SendNotificationAsync(ArtistFollowersMilestoneReachedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
         NotificationService.SendToUsersAsync(

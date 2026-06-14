@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -14,12 +16,12 @@ namespace Yuviron.Application.Features.Client.Marketing.Queries.ResolveSmartLink
 
 public sealed class ResolveSmartLinkHandler : IRequestHandler<ResolveSmartLinkQuery, ResolveSmartLinkResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
     private readonly TimeProvider _timeProvider;
 
-    public ResolveSmartLinkHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public ResolveSmartLinkHandler(IContentContext contentContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _contentContext = contentContext;
         _timeProvider = timeProvider;
     }
 
@@ -27,7 +29,7 @@ public sealed class ResolveSmartLinkHandler : IRequestHandler<ResolveSmartLinkQu
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var smartLink = await _context.SmartLinks
+        var smartLink = await _contentContext.SmartLinks
                             .FirstOrDefaultAsync(sl => sl.Code == request.Code.ToLowerInvariant(), cancellationToken)
                         ?? throw new NotFoundException("SmartLink", request.Code);
 
@@ -37,7 +39,7 @@ public sealed class ResolveSmartLinkHandler : IRequestHandler<ResolveSmartLinkQu
         }
 
         smartLink.RecordClick(request.CountryCode, request.Referrer, request.DeviceType, utcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _contentContext.SaveChangesAsync(cancellationToken);
 
         string relativePath = smartLink.EntityType switch
         {

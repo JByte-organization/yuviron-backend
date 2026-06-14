@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
@@ -10,22 +13,22 @@ namespace Yuviron.Infrastructure.Identity;
 
 public sealed class IdentityManager : IIdentityManager
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _identityContext;
 
-    public IdentityManager(IApplicationDbContext context)
+    public IdentityManager(AppDbContext identityContext)
     {
-        _context = context;
+        _identityContext = identityContext;
     }
 
     public async Task EnsureManagementRoleAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users
+        var user = await _identityContext.Users
                        .Include(u => u.UserRoles)
                        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
                    ?? throw new NotFoundException(nameof(User), userId);
 
         var managementRoleStr = nameof(RoleName.ManagementUser);
-        var managementRole = await _context.Roles
+        var managementRole = await _identityContext.Roles
                                  .FirstOrDefaultAsync(r => r.Name == managementRoleStr, cancellationToken)
                              ?? throw new InvalidOperationException($"Role '{managementRoleStr}' not found.");
 

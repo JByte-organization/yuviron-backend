@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,24 +15,24 @@ namespace Yuviron.Application.Features.StudioArtist.Team.Queries.GetTeamMembers;
 
 public sealed class GetTeamMembersHandler : IRequestHandler<GetTeamMembersQuery, List<TeamMemberDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetTeamMembersHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetTeamMembersHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context; _currentUser = currentUser;
+        _catalogContext = catalogContext; _currentUser = currentUser;
     }
 
     public async Task<List<TeamMemberDto>> Handle(GetTeamMembersQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId, cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to this artist's team.");
 
-        var members = await _context.ArtistTeamMembers
+        var members = await _catalogContext.ArtistTeamMembers
             .AsNoTracking()
             .Include(tm => tm.User)
             .ThenInclude(u => u!.Profile)

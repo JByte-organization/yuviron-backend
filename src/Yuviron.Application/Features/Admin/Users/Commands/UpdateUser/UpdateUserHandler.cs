@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,16 +14,18 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.UpdateUser;
 
 public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateUserHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser) 
     {
-        _context = context;
+        _identityContext = identityContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -32,7 +36,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
 
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var emailTaken = await _context.Users
+        var emailTaken = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Id != request.UserId && u.Email == normalizedEmail, cancellationToken);
 
@@ -41,7 +45,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
             throw new UserAlreadyExistsException(normalizedEmail);
         }
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Profile)
             .Include(u => u.UserRoles)
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
@@ -56,7 +60,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         string? finalAvatarUrl = user.Profile!.AvatarUrl;
         if (request.AvatarFileId.HasValue)
         {
-            var avatarClaim = await _context.ClaimFileAsync(
+            var avatarClaim = await _systemContext.ClaimFileAsync(
                 request.AvatarFileId.Value, currentAdminId, "image/", "avatars", cancellationToken);
 
             user.RegisterFileSwapEvents(avatarClaim, user.Profile.AvatarUrl);
@@ -66,7 +70,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         string? finalBannerUrl = user.Profile!.BannerUrl;
         if (request.BannerFileId.HasValue)
         {
-            var bannerClaim = await _context.ClaimFileAsync(
+            var bannerClaim = await _systemContext.ClaimFileAsync(
                 request.BannerFileId.Value, currentAdminId, "image/", "banners", cancellationToken);
 
             user.RegisterFileSwapEvents(bannerClaim, user.Profile.BannerUrl);
@@ -90,7 +94,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         {
             var requestedRoleIds = request.RoleIds.Where(id => id != Guid.Empty).Distinct().ToHashSet();
 
-            var existingRoleIds = await _context.Roles
+            var existingRoleIds = await _identityContext.Roles
                 .AsNoTracking()
                 .Where(r => requestedRoleIds.Contains(r.Id))
                 .Select(r => r.Id)
@@ -107,7 +111,7 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand, Unit>
         try
         {
             user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id)); 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _identityContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {

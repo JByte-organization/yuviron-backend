@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 
@@ -9,13 +11,13 @@ public record AdDeliveryResult(Guid AdId, string AudioUrl, string ImageUrl,  str
 public static class AdDeliveryExtensions
 {
     public static async Task<AdDeliveryResult?> GetAdIfCooldownPassedAsync(
-        this IApplicationDbContext context,
+        this IMonetizationContext monetizationContext,
         Guid userId,
         DateTime utcNow,
         int cooldownMinutes,
         CancellationToken ct)
     {
-        var lastImpression = await context.AdImpressions
+        var lastImpression = await monetizationContext.AdImpressions
             .AsNoTracking()
             .Where(x => x.UserId == userId)
             .OrderByDescending(x => x.ShownAt)
@@ -23,7 +25,7 @@ public static class AdDeliveryExtensions
 
         if (lastImpression == null || (utcNow - lastImpression.ShownAt).TotalMinutes >= cooldownMinutes)
         {
-            var randomAd = await context.Ads
+            var randomAd = await monetizationContext.Ads
                 .AsNoTracking()
                 .Where(a => a.IsActive && !a.IsDeleted)
                 .OrderBy(a => Guid.NewGuid()) 

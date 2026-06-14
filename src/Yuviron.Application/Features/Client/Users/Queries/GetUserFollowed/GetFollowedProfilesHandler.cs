@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Linq;
 using System.Threading;
@@ -15,12 +17,14 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFollowed;
 
 public sealed class GetFollowedProfilesHandler : IRequestHandler<GetFollowedProfilesQuery, PaginatedList<FollowedProfileDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetFollowedProfilesHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetFollowedProfilesHandler(IIdentityContext identityContext, ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -31,11 +35,11 @@ public sealed class GetFollowedProfilesHandler : IRequestHandler<GetFollowedProf
 
         if (request.TargetUserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == targetId , cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(u => u.Id == targetId , cancellationToken);
             if (!userExists) throw new NotFoundException(nameof(User), targetId);
         }
 
-        var artistsQuery = _context.UserFollowArtists
+        var artistsQuery = _libraryContext.UserFollowArtists
             .AsNoTracking()
             .Where(ufa => ufa.UserId == targetId && !ufa.Artist.IsDeleted)
             .Select(ufa => new
@@ -47,7 +51,7 @@ public sealed class GetFollowedProfilesHandler : IRequestHandler<GetFollowedProf
                 FollowedAt = ufa.FollowedAt
             });
 
-        var usersQuery = _context.UserFollowUsers
+        var usersQuery = _libraryContext.UserFollowUsers
             .AsNoTracking()
             .Where(ufu => ufu.FollowerId == targetId && !ufu.Followee.IsDeleted)
             .Select(ufu => new

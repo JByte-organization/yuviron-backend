@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,14 @@ namespace Yuviron.Application.Features.Client.Search.Queries.SearchPlaylists;
 
 public sealed class SearchPlaylistsHandler : IRequestHandler<SearchPlaylistsQuery, PaginatedList<SearchPlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly TimeProvider _timeProvider;
 
-    public SearchPlaylistsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public SearchPlaylistsHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _timeProvider = timeProvider;
     }
 
@@ -25,7 +29,7 @@ public sealed class SearchPlaylistsHandler : IRequestHandler<SearchPlaylistsQuer
         var pageSize = request.PageSize;
         var searchTerm = SearchQueryNormalizer.Normalize(request.SearchTerm);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var exactQuery = _context.BuildPublicPlaylistSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicPlaylistSearchQuery(_libraryContext, searchTerm, utcNow);
 
         if (!SearchFuzzyMatcher.ShouldUseFuzzy(searchTerm))
         {
@@ -61,8 +65,7 @@ public sealed class SearchPlaylistsHandler : IRequestHandler<SearchPlaylistsQuer
             .ToHashSet();
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
-            .BuildPublicPlaylistFuzzyCandidateQuery(fragments, utcNow)
+        var fuzzyRows = await _libraryContext.BuildPublicPlaylistFuzzyCandidateQuery(_catalogContext, fragments, utcNow)
             .SelectPlaylistSearchRows()
             .ToListAsync(cancellationToken);
 

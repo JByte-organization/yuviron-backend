@@ -33,7 +33,7 @@ public class MarkNotificationAsReadHandlerTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var notification = Notification.Create(currentUserId, NotificationCategory.System, "test", "Title", "Body", null, null, DateTime.UtcNow);
-        dbContext.Notifications.Add(notification);
+        dbContext.Add(notification);
         await dbContext.SaveChangesAsync();
 
         var handler = new MarkNotificationAsReadHandler(dbContext, _currentUserServiceMock.Object);
@@ -43,7 +43,7 @@ public class MarkNotificationAsReadHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var updatedNotif = await dbContext.Notifications.FindAsync(notification.Id);
+        var updatedNotif = await dbContext.Set<Notification>().FindAsync(notification.Id);
         updatedNotif!.IsRead.Should().BeTrue();
     }
 
@@ -56,7 +56,7 @@ public class MarkNotificationAsReadHandlerTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var notification = Notification.Create(victimUserId, NotificationCategory.System, "test", "Secret Info", "Body", null, null, DateTime.UtcNow);
-        dbContext.Notifications.Add(notification);
+        dbContext.Add(notification);
         await dbContext.SaveChangesAsync();
 
         var handler = new MarkNotificationAsReadHandler(dbContext, _currentUserServiceMock.Object);

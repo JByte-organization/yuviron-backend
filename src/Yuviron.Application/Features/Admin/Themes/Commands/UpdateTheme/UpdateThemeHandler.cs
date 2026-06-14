@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,22 +10,24 @@ namespace Yuviron.Application.Features.Admin.Themes.Commands.UpdateTheme;
 
 public sealed class UpdateThemeHandler : IRequestHandler<UpdateThemeCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly IProfileContext _profileContext;
 
-    public UpdateThemeHandler(IApplicationDbContext context)
+    public UpdateThemeHandler(IIdentityContext identityContext, IProfileContext profileContext)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _profileContext = profileContext;
     }
 
     public async Task<Unit> Handle(UpdateThemeCommand request, CancellationToken cancellationToken)
     {
-        var theme = await _context.Themes
+        var theme = await _profileContext.Themes
             .FirstOrDefaultAsync(x => x.Id == request.ThemeId, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.ThemeId);
 
         if (request.UserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(x => x.Id == request.UserId.Value, cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(x => x.Id == request.UserId.Value, cancellationToken);
             if (!userExists)
             {
                 throw new NotFoundException(nameof(User), request.UserId.Value);
@@ -31,7 +35,7 @@ public sealed class UpdateThemeHandler : IRequestHandler<UpdateThemeCommand, Uni
         }
 
         var normalizedName = request.Name.Trim();
-        var duplicateExists = await _context.Themes
+        var duplicateExists = await _profileContext.Themes
             .AnyAsync(x =>
                 x.Id != request.ThemeId &&
                 x.UserId == request.UserId &&
@@ -52,7 +56,7 @@ public sealed class UpdateThemeHandler : IRequestHandler<UpdateThemeCommand, Uni
             isPremiumOnly: request.IsPremiumOnly,
             userId: request.UserId);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

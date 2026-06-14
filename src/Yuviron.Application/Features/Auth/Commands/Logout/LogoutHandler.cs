@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,20 +11,20 @@ namespace Yuviron.Application.Features.Auth.Commands.Logout;
 
 public sealed class LogoutHandler : IRequestHandler<LogoutCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly TimeProvider _timeProvider; 
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<LogoutHandler> _logger;
 
     public LogoutHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         IJwtTokenGenerator jwtTokenGenerator, 
         TimeProvider timeProvider,
         ICurrentUserService currentUserService,
         ILogger<LogoutHandler> logger) 
     {
-        _context = context;
+        _identityContext = identityContext;
         _jwtTokenGenerator = jwtTokenGenerator;
         _timeProvider = timeProvider;
         _currentUserService = currentUserService;
@@ -40,7 +42,7 @@ public sealed class LogoutHandler : IRequestHandler<LogoutCommand, Unit>
 
         var tokenHash = _jwtTokenGenerator.HashRefreshToken(request.RefreshToken);
 
-        var token = await _context.RefreshTokens
+        var token = await _identityContext.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, cancellationToken);
 
         if (token != null)
@@ -53,7 +55,7 @@ public sealed class LogoutHandler : IRequestHandler<LogoutCommand, Unit>
             }
 
             token.Revoke(_timeProvider.GetUtcNow().UtcDateTime);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _identityContext.SaveChangesAsync(cancellationToken);
         }
 
         return Unit.Value;

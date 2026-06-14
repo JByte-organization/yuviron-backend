@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -15,18 +17,18 @@ namespace Yuviron.Application.Features.Client.Albums.Queries.GetAlbumTracks;
 
 public sealed class GetAlbumTracksHandler : IRequestHandler<GetAlbumTracksQuery, List<AlbumTrackItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetAlbumTracksHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -36,10 +38,10 @@ public sealed class GetAlbumTracksHandler : IRequestHandler<GetAlbumTracksQuery,
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var albumExists = await _context.Albums.AsNoTracking().AvailableForPublic(utcNow).AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
+        var albumExists = await _catalogContext.Albums.AsNoTracking().AvailableForPublic(utcNow).AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
         if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
-        var tracks = await _context.Tracks
+        var tracks = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => t.AlbumId == request.AlbumId)

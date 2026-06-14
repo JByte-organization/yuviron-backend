@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,12 +16,12 @@ namespace Yuviron.Application.Features.Client.Playlists.Queries.GetDeletedPlayli
 
 public sealed class GetDeletedPlaylistsHandler : IRequestHandler<GetDeletedPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetDeletedPlaylistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetDeletedPlaylistsHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -27,7 +29,7 @@ public sealed class GetDeletedPlaylistsHandler : IRequestHandler<GetDeletedPlayl
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var query = _context.Playlists
+        var query = _libraryContext.Playlists
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(p => p.UserId == userId && p.IsDeleted)

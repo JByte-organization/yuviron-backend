@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,10 +10,10 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class CancelUserSubscriptionsConsumer : IConsumer<UserDeletedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public CancelUserSubscriptionsConsumer(IApplicationDbContext context, TimeProvider timeProvider)
+    public CancelUserSubscriptionsConsumer(AppDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

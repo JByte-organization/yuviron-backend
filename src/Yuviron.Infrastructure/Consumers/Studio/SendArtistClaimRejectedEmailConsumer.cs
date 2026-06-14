@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,13 +13,13 @@ public record ArtistClaimRejectedEmailModel(string FirstName, string ArtistName,
 
 public class SendArtistClaimRejectedEmailConsumer : IConsumer<ArtistClaimRejectedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
     private readonly ILogger<SendArtistClaimRejectedEmailConsumer> _logger;
 
     public SendArtistClaimRejectedEmailConsumer(
-        IApplicationDbContext context, 
+        AppDbContext context, 
         IEmailService emailService, 
         ITemplateService templateService, 
         ILogger<SendArtistClaimRejectedEmailConsumer> logger)

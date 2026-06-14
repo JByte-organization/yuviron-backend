@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,9 +9,9 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class RevokeTokensOnPasswordChangedConsumer : IConsumer<UserPasswordChangedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
 
-    public RevokeTokensOnPasswordChangedConsumer(IApplicationDbContext context)
+    public RevokeTokensOnPasswordChangedConsumer(AppDbContext context)
     {
         _context = context;
     }
@@ -22,7 +24,7 @@ public class RevokeTokensOnPasswordChangedConsumer : IConsumer<UserPasswordChang
 
         if (!tokensToRemove.Any()) return; 
 
-        _context.RefreshTokens.RemoveRange(tokensToRemove);
+        _context.RemoveRange(tokensToRemove);
         
         await _context.SaveChangesAsync(context.CancellationToken);
     }

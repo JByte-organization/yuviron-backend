@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,15 +10,15 @@ namespace Yuviron.Application.Extensions;
 public static class MoodSearchQueryExtensions
 {
     public static IQueryable<Mood> BuildPublicMoodSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         string searchTerm,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        return context.Moods
+        return catalogContext.Moods
             .AsNoTracking()
             .Where(m => !m.IsDeleted)
             .Where(m => publicTracks.Any(t => t.TrackMoods.Any(tm => tm.MoodId == m.Id)))
@@ -24,15 +26,15 @@ public static class MoodSearchQueryExtensions
     }
 
     public static IQueryable<Mood> BuildPublicMoodFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        var baseQuery = context.Moods
+        var baseQuery = catalogContext.Moods
             .AsNoTracking()
             .Where(m => !m.IsDeleted)
             .Where(m => publicTracks.Any(t => t.TrackMoods.Any(tm => tm.MoodId == m.Id)));

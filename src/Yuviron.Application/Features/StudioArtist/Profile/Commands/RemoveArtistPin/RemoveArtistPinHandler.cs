@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,13 +16,13 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.RemoveArtis
 
 public sealed class RemoveArtistPinHandler : IRequestHandler<RemoveArtistPinCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public RemoveArtistPinHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public RemoveArtistPinHandler(ICatalogContext catalogContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider;
+        _catalogContext = catalogContext; _currentUser = currentUser; _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(RemoveArtistPinCommand request, CancellationToken cancellationToken)
@@ -28,12 +30,12 @@ public sealed class RemoveArtistPinHandler : IRequestHandler<RemoveArtistPinComm
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
                          .Include(a => a.Pins) 
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasEditorAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -41,7 +43,7 @@ public sealed class RemoveArtistPinHandler : IRequestHandler<RemoveArtistPinComm
 
         artist.RemovePin(request.Position, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

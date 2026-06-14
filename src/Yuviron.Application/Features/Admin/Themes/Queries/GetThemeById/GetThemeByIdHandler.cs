@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,16 @@ namespace Yuviron.Application.Features.Admin.Themes.Queries.GetThemeById;
 
 public sealed class GetThemeByIdHandler : IRequestHandler<GetThemeByIdQuery, ThemeDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
 
-    public GetThemeByIdHandler(IApplicationDbContext context)
+    public GetThemeByIdHandler(IProfileContext profileContext)
     {
-        _context = context;
+        _profileContext = profileContext;
     }
 
     public async Task<ThemeDetailsDto> Handle(GetThemeByIdQuery request, CancellationToken cancellationToken)
     {
-        var theme = await _context.Themes
+        var theme = await _profileContext.Themes
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.Id);

@@ -43,11 +43,11 @@ public class FollowArtistHandlerTests
         _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
 
         var artist = Artist.Create(artistId, "The Weekend", null, null, null, VerificationStatus.Verified, _timeProvider.GetUtcNow().UtcDateTime);
-        dbContext.Artists.Add(artist);
+        dbContext.Add(artist);
         await dbContext.SaveChangesAsync();
 
         var cacheServiceMock = new Mock<ICacheService>();
-        var handler = new FollowArtistHandler(dbContext, _currentUserMock.Object, _eventBusMock.Object, _timeProvider, cacheServiceMock.Object);
+        var handler = new FollowArtistHandler(dbContext, dbContext, _currentUserMock.Object, _eventBusMock.Object, _timeProvider, cacheServiceMock.Object);
     
         // Act
         await handler.Handle(new FollowArtistCommand(artist.Id), CancellationToken.None);

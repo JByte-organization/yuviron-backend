@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,26 +15,30 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.UpdatePla
 
 public sealed class UpdateStudioPlaylistHandler : IRequestHandler<UpdateStudioPlaylistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
-    public UpdateStudioPlaylistHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUser)
+    public UpdateStudioPlaylistHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext, TimeProvider timeProvider, ICurrentUserService currentUser)
     {
-        _context = context; _timeProvider = timeProvider; _currentUser = currentUser;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext; _timeProvider = timeProvider; _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateStudioPlaylistCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Playlist), request.PlaylistId);
 
         if (playlist.ArtistId == null) throw new ForbiddenException("This is not a studio artist playlist.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(playlist.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 
@@ -43,7 +49,7 @@ public sealed class UpdateStudioPlaylistHandler : IRequestHandler<UpdateStudioPl
 
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
             playlist.RegisterFileSwapEvents(coverClaim, playlist.CoverUrl);
             finalCoverUrl = coverClaim.FinalPath;
@@ -60,7 +66,7 @@ public sealed class UpdateStudioPlaylistHandler : IRequestHandler<UpdateStudioPl
             utcNow: utcNow
         );
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

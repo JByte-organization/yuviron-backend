@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Domain.Entities;
@@ -17,30 +18,30 @@ public record TeamInvitationData(Guid ArtistId, string UserEmail, ArtistTeamRole
 
 public sealed class AddTeamMemberHandler : IRequestHandler<AddTeamMemberCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cache;
     private readonly IEventBus _eventBus; // MassTransit
 
     public AddTeamMemberHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser, 
         ICacheService cache, 
         IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _cache = cache; _eventBus = eventBus;
+        _catalogContext = catalogContext; _currentUser = currentUser; _cache = cache; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(AddTeamMemberCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var isOwner = await _context.ArtistTeamMembers
+        var isOwner = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == currentUserId && tm.Role == ArtistTeamRole.Owner, cancellationToken);
         
         if (!isOwner) throw new ForbiddenException("Only the Owner can invite team members.");
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
                          .AsNoTracking()
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);

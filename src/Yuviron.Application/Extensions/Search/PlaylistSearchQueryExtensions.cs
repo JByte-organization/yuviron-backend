@@ -1,3 +1,5 @@
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,35 +12,35 @@ namespace Yuviron.Application.Extensions;
 public static class PlaylistSearchQueryExtensions
 {
     public static IQueryable<DomainPlaylist> BuildPublicPlaylistSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
+        ILibraryContext libraryContext,
         string searchTerm,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        return context.Playlists
+        return libraryContext.Playlists
             .AsNoTracking()
-            .Where(p => !p.IsDeleted &&
-                        p.Visibility == PlaylistVisibility.Public &&
+            .Where(p => p.Visibility == PlaylistVisibility.Public &&
                         p.PlaylistTracks.Any(pt => publicTracks.Any(t => t.Id == pt.TrackId)) &&
                         p.Title.ToLower().Contains(searchTerm));
     }
 
     public static IQueryable<DomainPlaylist> BuildPublicPlaylistFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ILibraryContext libraryContext,
+        ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        var baseQuery = context.Playlists
+        var baseQuery = libraryContext.Playlists
             .AsNoTracking()
-            .Where(p => !p.IsDeleted &&
-                        p.Visibility == PlaylistVisibility.Public &&
+            .Where(p => p.Visibility == PlaylistVisibility.Public &&
                         p.PlaylistTracks.Any(pt => publicTracks.Any(t => t.Id == pt.TrackId)));
 
         if (fragments.Count == 0)

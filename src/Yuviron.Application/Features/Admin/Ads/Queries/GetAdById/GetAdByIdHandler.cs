@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,16 @@ namespace Yuviron.Application.Features.Admin.Ads.Queries.GetAdById;
 
 public sealed class GetAdByIdHandler : IRequestHandler<GetAdByIdQuery, AdDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetAdByIdHandler(IApplicationDbContext context)
+    public GetAdByIdHandler(IMonetizationContext monetizationContext)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
     }
 
     public async Task<AdDetailsDto> Handle(GetAdByIdQuery request, CancellationToken cancellationToken)
     {
-        var ad = await _context.Ads
+        var ad = await _monetizationContext.Ads
             .AsNoTracking()
             .Where(a => a.Id == request.AdId)
             .Select(a => new AdDetailsDto(

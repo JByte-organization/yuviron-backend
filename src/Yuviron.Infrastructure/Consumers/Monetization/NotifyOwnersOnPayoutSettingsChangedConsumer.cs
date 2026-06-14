@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -12,7 +14,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class NotifyOwnersOnPayoutSettingsChangedConsumer : NotifyArtistOwnersConsumerBase<PayoutSettingsChangedEvent>
 {
-    public NotifyOwnersOnPayoutSettingsChangedConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyOwnersOnPayoutSettingsChangedConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override async Task SendNotificationAsync(PayoutSettingsChangedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
         await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.System, "payout_settings_changed", 

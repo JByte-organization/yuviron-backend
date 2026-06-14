@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,16 +9,16 @@ namespace Yuviron.Application.Features.Auth.Commands.ConfirmEmail;
 
 public sealed class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IOtpService _otpService;
     private readonly TimeProvider _timeProvider;
 
     public ConfirmEmailHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         IOtpService otpService, 
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _otpService = otpService;
         _timeProvider = timeProvider;
     }
@@ -32,7 +34,7 @@ public sealed class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, U
         }
 
         // 2. Достаем юзера из базы (обязательно Include Profile, чтобы взять FirstName для письма!)
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Profile)
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
             
@@ -51,7 +53,7 @@ public sealed class ConfirmEmailHandler : IRequestHandler<ConfirmEmailCommand, U
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         user.ConfirmEmail(user.Profile.FirstName, utcNow);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         // 5. Удаляем токен из Redis, чтобы он стал одноразовым
         await _otpService.RemoveConfirmationTokenAsync(request.Token, cancellationToken);

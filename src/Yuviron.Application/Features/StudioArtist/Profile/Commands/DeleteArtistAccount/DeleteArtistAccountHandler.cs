@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,20 +20,22 @@ namespace Yuviron.Application.Features.StudioArtist.Profile.Commands.DeleteArtis
 
 public sealed class DeleteArtistAccountHandler : IRequestHandler<DeleteArtistAccountCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
     private readonly ILogger<DeleteArtistAccountHandler> _logger;
 
     public DeleteArtistAccountHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
         IPermissionService permissionService,
         ILogger<DeleteArtistAccountHandler> _logger)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _permissionService = permissionService;
@@ -43,13 +47,13 @@ public sealed class DeleteArtistAccountHandler : IRequestHandler<DeleteArtistAcc
         var currentUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
         // CHECK PERMISSION: Only Owner can delete artist account
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasFullAccess(request.ArtistId, currentUserId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("Only the Artist Owner can delete the account.");
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .Include(a => a.TeamMembers)
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
             ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
@@ -59,7 +63,7 @@ public sealed class DeleteArtistAccountHandler : IRequestHandler<DeleteArtistAcc
 
         // REVOKE ROLES logic (same as in Admin handler)
         var memberUserIds = artist.TeamMembers.Select(tm => tm.UserId).ToList();
-        var usersWithOtherArtists = await _context.ArtistTeamMembers
+        var usersWithOtherArtists = await _catalogContext.ArtistTeamMembers
             .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId) 
             .Select(tm => tm.UserId).Distinct().ToListAsync(cancellationToken);
 
@@ -67,10 +71,10 @@ public sealed class DeleteArtistAccountHandler : IRequestHandler<DeleteArtistAcc
 
         if (userIdsToRevokeRole.Any())
         {
-            var managementRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
+            var managementRole = await _identityContext.Roles.FirstOrDefaultAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
             if (managementRole != null)
             {
-                var users = await _context.Users.Include(u => u.UserRoles).Where(u => userIdsToRevokeRole.Contains(u.Id)).ToListAsync(cancellationToken);
+                var users = await _identityContext.Users.Include(u => u.UserRoles).Where(u => userIdsToRevokeRole.Contains(u.Id)).ToListAsync(cancellationToken);
                 foreach (var user in users)
                 {
                     user.SyncRoles(user.UserRoles.Where(ur => ur.RoleId != managementRole.Id).Select(ur => ur.RoleId));
@@ -79,7 +83,7 @@ public sealed class DeleteArtistAccountHandler : IRequestHandler<DeleteArtistAcc
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         
         foreach (var userId in userIdsToRevokeRole)
         {

@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -12,7 +14,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class NotifyOwnersOnArtistSubscriptionCanceledConsumer : NotifyArtistOwnersConsumerBase<ArtistSubscriptionCanceledEvent>
 {
-    public NotifyOwnersOnArtistSubscriptionCanceledConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyOwnersOnArtistSubscriptionCanceledConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override async Task SendNotificationAsync(ArtistSubscriptionCanceledEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
         await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.Billing, "subscription_canceled", 

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.Client.Search.Queries.SearchTracks;
 
 public sealed class SearchTracksHandler : IRequestHandler<SearchTracksQuery, PaginatedList<SearchTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public SearchTracksHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public SearchTracksHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -25,7 +27,7 @@ public sealed class SearchTracksHandler : IRequestHandler<SearchTracksQuery, Pag
         var pageSize = request.PageSize;
         var searchTerm = SearchQueryNormalizer.Normalize(request.SearchTerm);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var exactQuery = _context.BuildPublicTrackSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicTrackSearchQuery(searchTerm, utcNow);
 
         if (!SearchFuzzyMatcher.ShouldUseFuzzy(searchTerm))
         {
@@ -61,7 +63,7 @@ public sealed class SearchTracksHandler : IRequestHandler<SearchTracksQuery, Pag
             .ToHashSet();
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicTrackFuzzyCandidateQuery(fragments, utcNow)
             .SelectTrackSearchRows()
             .ToListAsync(cancellationToken);

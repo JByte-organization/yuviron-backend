@@ -46,11 +46,7 @@ public class NotificationServiceTests
 
         var loggerMock = new Mock<ILogger<NotificationService>>();
 
-        var service = new NotificationService(
-            dbContext, 
-            TimeProvider.System, 
-            hubContextMock.Object, 
-            loggerMock.Object);
+        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, hubContextMock.Object, loggerMock.Object);
 
         // Act
         await service.SendToUserAsync(userId, category, type, title, body, NotificationEntityType.Artist, entityId, CancellationToken.None);
@@ -81,7 +77,7 @@ public class NotificationServiceTests
     {
         var dbContext = new AppDbContext(_dbOptions);
         var userId = Guid.NewGuid();
-        dbContext.UserNotificationPreferences.Add(UserNotificationPreference.Create(
+        dbContext.Add(UserNotificationPreference.Create(
             userId,
             NotificationCategory.Social,
             NotificationPreferenceCatalog.CategoryAllCode,
@@ -98,11 +94,7 @@ public class NotificationServiceTests
 
         var loggerMock = new Mock<ILogger<NotificationService>>();
 
-        var service = new NotificationService(
-            dbContext,
-            TimeProvider.System,
-            hubContextMock.Object,
-            loggerMock.Object);
+        var service = new NotificationService(dbContext, dbContext, TimeProvider.System, hubContextMock.Object, loggerMock.Object);
 
         await service.SendToUserAsync(
             userId,

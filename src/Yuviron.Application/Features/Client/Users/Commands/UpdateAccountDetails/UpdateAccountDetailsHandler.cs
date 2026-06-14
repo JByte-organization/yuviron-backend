@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.Client.Users.Commands.UpdateAccountDetail
 
 public sealed class UpdateAccountDetailsHandler : IRequestHandler<UpdateAccountDetailsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
 
-    public UpdateAccountDetailsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public UpdateAccountDetailsHandler(IIdentityContext identityContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
         _currentUser = currentUser;
     }
 
@@ -25,7 +27,7 @@ public sealed class UpdateAccountDetailsHandler : IRequestHandler<UpdateAccountD
         var utcNow = DateTime.UtcNow;
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var emailTaken = await _context.Users
+        var emailTaken = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Id != userId && u.Email == normalizedEmail, cancellationToken);
 
@@ -34,7 +36,7 @@ public sealed class UpdateAccountDetailsHandler : IRequestHandler<UpdateAccountD
             throw new UserAlreadyExistsException(normalizedEmail);
         }
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Profile)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
@@ -46,7 +48,7 @@ public sealed class UpdateAccountDetailsHandler : IRequestHandler<UpdateAccountD
         user.UpdateAccountDetails(normalizedEmail, request.AcceptMarketing, utcNow);
         user.Profile.UpdateAccountDetails(request.Country, request.DateOfBirth, request.Gender, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

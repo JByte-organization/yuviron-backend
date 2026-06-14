@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Linq;
 using System.Threading;
@@ -19,18 +21,18 @@ public sealed class GetAdminTrackPreviewUrlHandler : IRequestHandler<GetAdminTra
     internal const int PreviewQualitySentinel = -1;
     private const int TokenLifetimeMinutes = 15;
 
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly IStreamTokenService _streamTokenService;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
     public GetAdminTrackPreviewUrlHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         IStreamTokenService streamTokenService,
         ICurrentUserService currentUser,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _streamTokenService = streamTokenService;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
@@ -40,7 +42,7 @@ public sealed class GetAdminTrackPreviewUrlHandler : IRequestHandler<GetAdminTra
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var exists = await _context.Tracks
+        var exists = await _catalogContext.Tracks
             .AsNoTracking()
             .AnyAsync(t => t.Id == request.TrackId, cancellationToken);
 

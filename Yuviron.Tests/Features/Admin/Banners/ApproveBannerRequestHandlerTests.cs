@@ -42,9 +42,9 @@ public class ApproveBannerRequestHandlerTests
             utcNow);
         bannerRequest.MarkAsPaid("intent", utcNow);
 
-        dbContext.Users.Add(user);
-        dbContext.Artists.Add(artist);
-        dbContext.BannerRequests.Add(bannerRequest);
+        dbContext.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(bannerRequest);
         await dbContext.SaveChangesAsync();
 
         var currentUserMock = new Mock<ICurrentUserService>();
@@ -66,11 +66,11 @@ public class ApproveBannerRequestHandlerTests
 
         var bannerId = await handler.Handle(new ApproveBannerRequestCommand(bannerRequest.Id, IsActive: true), CancellationToken.None);
 
-        var approvedRequest = await dbContext.BannerRequests.FindAsync(bannerRequest.Id);
+        var approvedRequest = await dbContext.Set<BannerRequest>().FindAsync(bannerRequest.Id);
         approvedRequest!.Status.Should().Be(BannerRequestStatus.Approved);
         approvedRequest.EndsAtUtc.Should().Be(utcNow.AddDays(10));
 
-        var banner = await dbContext.Banners.FindAsync(bannerId);
+        var banner = await dbContext.Set<Banner>().FindAsync(bannerId);
         banner.Should().NotBeNull();
         banner!.EndsAtUtc.Should().Be(utcNow.AddDays(10));
         banner.TargetCountries.Should().Be("US");
@@ -92,8 +92,8 @@ public class ApproveBannerRequestHandlerTests
         var bannerRequest = BannerRequest.Create(artist.Id, user.Id, null, "Title", "url", 7, null, null, utcNow);
         bannerRequest.MarkAsPaid("intent", utcNow);
 
-        dbContext.Artists.Add(artist);
-        dbContext.BannerRequests.Add(bannerRequest);
+        dbContext.Add(artist);
+        dbContext.Add(bannerRequest);
         await dbContext.SaveChangesAsync();
 
         var currentUserMock = new Mock<ICurrentUserService>();
@@ -109,7 +109,7 @@ public class ApproveBannerRequestHandlerTests
             new ApproveBannerRequestCommand(bannerRequest.Id, IsActive: true, EndsAtUtc: customEndsAt), 
             CancellationToken.None);
 
-        var banner = await dbContext.Banners.FindAsync(bannerId);
+        var banner = await dbContext.Set<Banner>().FindAsync(bannerId);
         banner!.EndsAtUtc.Should().Be(customEndsAt);
     }
 }

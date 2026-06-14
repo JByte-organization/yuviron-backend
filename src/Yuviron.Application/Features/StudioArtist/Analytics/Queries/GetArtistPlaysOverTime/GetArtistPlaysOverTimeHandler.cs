@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,20 +19,20 @@ namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetArtistP
 
 public sealed class GetArtistPlaysOverTimeHandler : IRequestHandler<GetArtistPlaysOverTimeQuery, List<PlaysOverTimePointDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
     private readonly IAnalyticsRepository _analyticsRepository;
 
     public GetArtistPlaysOverTimeHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser,
         ICacheService cacheService,
         TimeProvider timeProvider,
         IAnalyticsRepository analyticsRepository)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
         _cacheService = cacheService;
         _timeProvider = timeProvider;
@@ -41,13 +43,13 @@ public sealed class GetArtistPlaysOverTimeHandler : IRequestHandler<GetArtistPla
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");
 
-        var trackIds = await _context.TrackArtists
+        var trackIds = await _catalogContext.TrackArtists
             .AsNoTracking()
             .Where(ta => ta.ArtistId == request.ArtistId && !ta.Track.IsDeleted)
             .Select(ta => ta.TrackId)

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -11,11 +13,11 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTracksAutocomplet
 
 public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAutocompleteQuery, List<TrackAutocompleteDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetTracksAutocompleteHandler(IApplicationDbContext context)
+    public GetTracksAutocompleteHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<List<TrackAutocompleteDto>> Handle(GetTracksAutocompleteQuery request, CancellationToken cancellationToken)
@@ -25,7 +27,7 @@ public sealed class GetTracksAutocompleteHandler : IRequestHandler<GetTracksAuto
 
         var searchTerm = request.SearchTerm.Trim(); 
 
-        return await _context.Tracks
+        return await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Title.Contains(searchTerm)) 
             .OrderBy(t => t.Title)

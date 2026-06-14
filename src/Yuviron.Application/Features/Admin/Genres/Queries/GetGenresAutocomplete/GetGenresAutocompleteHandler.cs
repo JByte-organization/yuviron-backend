@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,11 +12,11 @@ namespace Yuviron.Application.Features.Admin.Genres.Queries.GetGenresAutocomplet
 
 public sealed class GetGenresAutocompleteHandler : IRequestHandler<GetGenresAutocompleteQuery, List<GenreAutocompleteDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetGenresAutocompleteHandler(IApplicationDbContext context)
+    public GetGenresAutocompleteHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<List<GenreAutocompleteDto>> Handle(GetGenresAutocompleteQuery request, CancellationToken cancellationToken)
@@ -24,7 +26,7 @@ public sealed class GetGenresAutocompleteHandler : IRequestHandler<GetGenresAuto
 
         var searchTerm = request.SearchTerm.Trim();
 
-        return await _context.Genres
+        return await _catalogContext.Genres
             .AsNoTracking()
             .Where(g => !g.IsDeleted && g.Name.Contains(searchTerm)) 
             .OrderBy(g => g.Name)

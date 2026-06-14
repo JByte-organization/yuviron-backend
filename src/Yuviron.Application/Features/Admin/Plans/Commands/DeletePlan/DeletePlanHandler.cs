@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,17 +14,17 @@ namespace Yuviron.Application.Features.Admin.Plans.Commands.DeletePlan;
 
 public sealed class DeletePlanHandler : IRequestHandler<DeletePlanCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public DeletePlanHandler(IApplicationDbContext context) => _context = context;
+    public DeletePlanHandler(IMonetizationContext monetizationContext) => _monetizationContext = monetizationContext;
 
     public async Task<Unit> Handle(DeletePlanCommand request, CancellationToken cancellationToken)
     {
-        var plan = await _context.Plans
+        var plan = await _monetizationContext.Plans
                        .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
                    ?? throw new NotFoundException(nameof(Plan), request.Id);
 
-        var hasActiveSubscriptions = await _context.Subscriptions
+        var hasActiveSubscriptions = await _monetizationContext.Subscriptions
             .AnyAsync(s => s.PlanId == request.Id && s.Status == SubscriptionStatus.Active, cancellationToken);
 
         if (hasActiveSubscriptions)
@@ -30,8 +32,8 @@ public sealed class DeletePlanHandler : IRequestHandler<DeletePlanCommand, Unit>
             throw new InvalidOperationException("Cannot delete this plan because it has active subscriptions.");
         }
 
-        _context.Plans.Remove(plan);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.Remove(plan);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

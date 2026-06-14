@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -12,16 +14,16 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTracks;
 
 public sealed class GetTracksHandler : IRequestHandler<GetTracksQuery, PaginatedList<TrackListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetTracksHandler(IApplicationDbContext context)
+    public GetTracksHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<PaginatedList<TrackListItemDto>> Handle(GetTracksQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Tracks
+        var query = _catalogContext.Tracks
             .AsNoTracking()
             ;
 

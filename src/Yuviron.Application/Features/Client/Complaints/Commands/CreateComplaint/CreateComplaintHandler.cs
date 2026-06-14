@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,22 @@ namespace Yuviron.Application.Features.Client.Complaints.Commands.CreateComplain
 
 public sealed class CreateComplaintHandler : IRequestHandler<CreateComplaintCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly IAuditingContext _auditingContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
     public CreateComplaintHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ICatalogContext catalogContext, ILibraryContext libraryContext, IAuditingContext auditingContext,
         ICurrentUserService currentUser,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _auditingContext = auditingContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -38,21 +46,21 @@ public sealed class CreateComplaintHandler : IRequestHandler<CreateComplaintComm
             request.Comment,
             utcNow);
 
-        _context.Complaints.Add(complaint);
+        _auditingContext.Add(complaint);
 
-        var counter = await _context.ComplaintCounters
+        var counter = await _auditingContext.ComplaintCounters
             .FirstOrDefaultAsync(x => x.TargetType == request.TargetType && x.TargetId == request.TargetId, cancellationToken);
 
         if (counter == null)
         {
-            _context.ComplaintCounters.Add(ComplaintCounter.Create(request.TargetType, request.TargetId, utcNow));
+            _auditingContext.Add(ComplaintCounter.Create(request.TargetType, request.TargetId, utcNow));
         }
         else
         {
             counter.IncrementNew(utcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         return complaint.Id;
     }
 
@@ -60,11 +68,11 @@ public sealed class CreateComplaintHandler : IRequestHandler<CreateComplaintComm
     {
         var exists = targetType switch
         {
-            ComplaintTargetType.Track => await _context.Tracks.AnyAsync(x => x.Id == targetId, cancellationToken),
-            ComplaintTargetType.Album => await _context.Albums.AnyAsync(x => x.Id == targetId, cancellationToken),
-            ComplaintTargetType.Artist => await _context.Artists.AnyAsync(x => x.Id == targetId, cancellationToken),
-            ComplaintTargetType.User => await _context.Users.AnyAsync(x => x.Id == targetId, cancellationToken),
-            ComplaintTargetType.Playlist => await _context.Playlists.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.Track => await _catalogContext.Tracks.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.Album => await _catalogContext.Albums.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.Artist => await _catalogContext.Artists.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.User => await _identityContext.Users.AnyAsync(x => x.Id == targetId, cancellationToken),
+            ComplaintTargetType.Playlist => await _libraryContext.Playlists.AnyAsync(x => x.Id == targetId, cancellationToken),
             _ => false
         };
 

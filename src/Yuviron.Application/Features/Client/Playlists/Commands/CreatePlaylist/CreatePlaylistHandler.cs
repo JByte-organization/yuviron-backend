@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using System;
 using System.Threading;
@@ -11,16 +13,18 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.CreatePlaylist;
 
 public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public CreatePlaylistHandler(
-        IApplicationDbContext context, 
+        ILibraryContext libraryContext, ISystemContext systemContext, 
         TimeProvider timeProvider, 
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -34,7 +38,7 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
 
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
         }
         
@@ -54,8 +58,8 @@ public sealed class CreatePlaylistHandler : IRequestHandler<CreatePlaylistComman
             playlist.RegisterFileSwapEvents(coverClaim);
         }
 
-        _context.Playlists.Add(playlist);
-        await _context.SaveChangesAsync(cancellationToken);
+        _libraryContext.Add(playlist);
+        await _libraryContext.SaveChangesAsync(cancellationToken);
 
         return playlist.Id;
     }

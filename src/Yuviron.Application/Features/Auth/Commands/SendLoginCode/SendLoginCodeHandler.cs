@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using System.Security.Cryptography;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +16,7 @@ public record AccountNotFoundModel(string Email);
 
 public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IEmailService _emailService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<SendLoginCodeHandler> _logger;
@@ -22,14 +24,14 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
     private readonly ITemplateService _templateService;
 
     public SendLoginCodeHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IEmailService emailService,
         IPasswordHasher passwordHasher,
         ILogger<SendLoginCodeHandler> logger,
         IOtpService otpService,
         ITemplateService templateService)
     {
-        _context = context;
+        _identityContext = identityContext;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _logger = logger;
@@ -41,7 +43,7 @@ public sealed class SendLoginCodeHandler : IRequestHandler<SendLoginCodeCommand,
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var userExists = await _context.Users
+        var userExists = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
 

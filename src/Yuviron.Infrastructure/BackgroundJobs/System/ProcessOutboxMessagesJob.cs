@@ -51,7 +51,7 @@ public class ProcessOutboxMessagesJob : BackgroundService
 
                     using (SuppressInstrumentationScope.Begin())
                     {
-                        messages = await dbContext.OutboxMessages
+                        messages = await ((DbSet<OutboxMessage>)dbContext.OutboxMessages)
                             .FromSqlInterpolated($@"
                                 SELECT * FROM outbox_messages 
                                 WHERE ProcessedOnUtc IS NULL 

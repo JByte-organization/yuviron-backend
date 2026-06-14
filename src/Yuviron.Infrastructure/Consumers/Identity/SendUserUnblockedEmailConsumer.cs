@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,13 +13,13 @@ namespace Yuviron.Infrastructure.Consumers;
 public record UserUnblockedEmailModel(string FirstName);
 public sealed class SendUserUnblockedEmailConsumer : IConsumer<UserUnblockedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
     private readonly ITemplateService _templateService;
     private readonly ILogger<SendUserUnblockedEmailConsumer> _logger;
 
     public SendUserUnblockedEmailConsumer(
-        IApplicationDbContext context, 
+        AppDbContext context, 
         IEmailService emailService, 
         ITemplateService templateService,
         ILogger<SendUserUnblockedEmailConsumer> logger)

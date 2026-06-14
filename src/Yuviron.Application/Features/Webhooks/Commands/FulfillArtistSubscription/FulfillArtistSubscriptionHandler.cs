@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,18 +16,18 @@ namespace Yuviron.Application.Features.Webhooks.Commands.FulfillArtistSubscripti
 
 public sealed class FulfillArtistSubscriptionHandler : IRequestHandler<FulfillArtistSubscriptionCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
     private readonly IEventBus _eventBus;
 
     public FulfillArtistSubscriptionHandler(
-        IApplicationDbContext context, 
+        IMonetizationContext monetizationContext, 
         TimeProvider timeProvider,
         IPermissionService permissionService,
         IEventBus eventBus)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
         _eventBus = eventBus;
@@ -33,12 +35,12 @@ public sealed class FulfillArtistSubscriptionHandler : IRequestHandler<FulfillAr
 
     public async Task<Unit> Handle(FulfillArtistSubscriptionCommand request, CancellationToken cancellationToken)
     {
-        var existingSub = await _context.ArtistSubscriptions
+        var existingSub = await _monetizationContext.ArtistSubscriptions
             .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId && s.Status == SubscriptionStatus.Active, cancellationToken);
 
         if (existingSub != null) return Unit.Value;
 
-        var plan = await _context.Plans.FirstOrDefaultAsync(p => p.Id == request.PlanId, cancellationToken);
+        var plan = await _monetizationContext.Plans.FirstOrDefaultAsync(p => p.Id == request.PlanId, cancellationToken);
         if (plan == null) throw new InvalidOperationException("Plan not found.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -55,8 +57,8 @@ public sealed class FulfillArtistSubscriptionHandler : IRequestHandler<FulfillAr
             request.StripeSubscriptionId 
         );
 
-        _context.ArtistSubscriptions.Add(subscription);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.Add(subscription);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         await _permissionService.InvalidatePermissionsAsync(request.PayerUserId, cancellationToken);
 

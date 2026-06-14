@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,16 +10,16 @@ namespace Yuviron.Application.Features.Auth.Commands.ForgotPassword;
 
 public sealed class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IOtpService _otpService;
     private readonly TimeProvider _timeProvider;
 
     public ForgotPasswordHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         IOtpService otpService, 
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _otpService = otpService;
         _timeProvider = timeProvider;
     }
@@ -26,7 +28,7 @@ public sealed class ForgotPasswordHandler : IRequestHandler<ForgotPasswordComman
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Profile)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
@@ -43,7 +45,7 @@ public sealed class ForgotPasswordHandler : IRequestHandler<ForgotPasswordComman
 
         user.RequestPasswordReset(token, user.Profile.FirstName, utcNow);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

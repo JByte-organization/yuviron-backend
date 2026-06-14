@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -16,18 +18,18 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistPopularRe
 
 public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistPopularReleasesQuery, List<ArtistAlbumDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetArtistPopularReleasesHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -35,7 +37,7 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
 
     public async Task<List<ArtistAlbumDto>> Handle(GetArtistPopularReleasesQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
+        var artistExists = await _catalogContext.Artists
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
@@ -45,9 +47,9 @@ public sealed class GetArtistPopularReleasesHandler : IRequestHandler<GetArtistP
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var publicTracks = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow);
+        var publicTracks = _catalogContext.Tracks.AsNoTracking().AvailableForPublic(utcNow);
 
-        var albums = await _context.Albums
+        var albums = await _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)

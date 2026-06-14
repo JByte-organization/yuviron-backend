@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,11 +10,13 @@ namespace Yuviron.Application.Features.Admin.Themes.Commands.CreateTheme;
 
 public sealed class CreateThemeHandler : IRequestHandler<CreateThemeCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly IProfileContext _profileContext;
 
-    public CreateThemeHandler(IApplicationDbContext context)
+    public CreateThemeHandler(IIdentityContext identityContext, IProfileContext profileContext)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _profileContext = profileContext;
     }
 
     public async Task<Guid> Handle(CreateThemeCommand request, CancellationToken cancellationToken)
@@ -21,14 +25,14 @@ public sealed class CreateThemeHandler : IRequestHandler<CreateThemeCommand, Gui
 
         if (request.UserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(x => x.Id == request.UserId.Value, cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(x => x.Id == request.UserId.Value, cancellationToken);
             if (!userExists)
             {
                 throw new NotFoundException(nameof(User), request.UserId.Value);
             }
         }
 
-        var duplicateExists = await _context.Themes
+        var duplicateExists = await _profileContext.Themes
             .AnyAsync(x => x.UserId == request.UserId && x.Name == normalizedName, cancellationToken);
 
         if (duplicateExists)
@@ -45,8 +49,8 @@ public sealed class CreateThemeHandler : IRequestHandler<CreateThemeCommand, Gui
             isPremiumOnly: request.IsPremiumOnly,
             userId: request.UserId);
 
-        _context.Themes.Add(theme);
-        await _context.SaveChangesAsync(cancellationToken);
+        _profileContext.Add(theme);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return theme.Id;
     }
