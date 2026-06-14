@@ -59,7 +59,7 @@ public class NotificationService : INotificationService
         CancellationToken cancellationToken = default)
     {
         var usersList = userIds.Distinct().ToList();
-        if (!usersList.Any()) return;
+        if (!usersList.Any()) return; type = type.Trim('"');
 
         var preferences = await _profileContext.UserNotificationPreferences
             .AsNoTracking()
@@ -81,12 +81,31 @@ public class NotificationService : INotificationService
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
+        // Idempotency: Check if similar notifications were sent in the last 5 minutes to avoid spam on restarts/redeliveries
+        var idempotencyCutoff = utcNow.AddMinutes(-5);
+        var existingNotifications = await _systemContext.Notifications
+            .AsNoTracking()
+            .Where(n => targetUserIds.Contains(n.UserId) && 
+                        n.Type == type && 
+                        n.EntityId == entityId && 
+                        n.CreatedAt >= idempotencyCutoff)
+            .Select(n => n.UserId)
+            .ToListAsync(cancellationToken);
+
+        targetUserIds = targetUserIds.Except(existingNotifications).ToList();
+
+        if (!targetUserIds.Any())
+        {
+            _logger.LogInformation("Skipped duplicate notification '{Type}' (already sent recently).", type);
+            return;
+        }
+
         var notifications = targetUserIds.Select(userId =>
-            Notification.Create(userId, category, type, title, body, entityType, entityId, utcNow)
+            Notification.Create(userId, category, type.Trim('"'), title, body, entityType, entityId, utcNow)
         ).ToList();
 
         _systemContext.AddRange(notifications);
-        await _profileContext.SaveChangesAsync(cancellationToken);
+        await _systemContext.SaveChangesAsync(cancellationToken);
 
         var sampleNotif = notifications.First();
         var dto = new NotificationDto(
@@ -130,3 +149,5 @@ public class NotificationService : INotificationService
         return categoryDefault?.Enabled ?? true;
     }
 }
+
+
