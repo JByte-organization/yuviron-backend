@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,12 +11,12 @@ namespace Yuviron.Application.Features.Client.Notifications.Queries.GetPreferenc
 
 public sealed class GetNotificationPreferencesHandler : IRequestHandler<GetNotificationPreferencesQuery, NotificationPreferencesDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetNotificationPreferencesHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetNotificationPreferencesHandler(IProfileContext profileContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
     }
 
@@ -22,7 +24,7 @@ public sealed class GetNotificationPreferencesHandler : IRequestHandler<GetNotif
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var preferences = await _context.UserNotificationPreferences
+        var preferences = await _profileContext.UserNotificationPreferences
             .AsNoTracking()
             .Where(x => x.UserId == userId)
             .ToListAsync(cancellationToken);

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,16 +14,16 @@ namespace Yuviron.Application.Features.Admin.Artists.Queries.GetArtists;
 
 public sealed class GetArtistsHandler : IRequestHandler<GetArtistsQuery, PaginatedList<ArtistListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetArtistsHandler(IApplicationDbContext context)
+    public GetArtistsHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<PaginatedList<ArtistListItemDto>> Handle(GetArtistsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Artists.AsNoTracking();
+        var query = _catalogContext.Artists.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(a => a.Name.StartsWith(request.SearchTerm));

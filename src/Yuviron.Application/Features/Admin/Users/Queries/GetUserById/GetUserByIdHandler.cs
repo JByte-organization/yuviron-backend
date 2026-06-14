@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.Admin.Users.Queries.GetUserById;
 
 public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly TimeProvider _timeProvider; 
 
-    public GetUserByIdHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetUserByIdHandler(IIdentityContext identityContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _timeProvider = timeProvider;
     }
 
@@ -23,7 +25,7 @@ public sealed class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, UserD
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .AsNoTracking()
             .Where(u => u.Id == request.UserId )
             .Select(u => new UserDetailsDto(

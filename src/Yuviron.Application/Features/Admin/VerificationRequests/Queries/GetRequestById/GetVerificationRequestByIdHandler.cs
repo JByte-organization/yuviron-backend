@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,16 +10,16 @@ namespace Yuviron.Application.Features.Admin.VerificationRequests.Queries.GetReq
 
 public sealed class GetVerificationRequestByIdHandler : IRequestHandler<GetVerificationRequestByIdQuery, VerificationRequestDetailDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IAuditingContext _auditingContext;
 
-    public GetVerificationRequestByIdHandler(IApplicationDbContext context)
+    public GetVerificationRequestByIdHandler(IAuditingContext auditingContext)
     {
-        _context = context;
+        _auditingContext = auditingContext;
     }
 
     public async Task<VerificationRequestDetailDto> Handle(GetVerificationRequestByIdQuery request, CancellationToken cancellationToken)
     {
-        var vr = await _context.VerificationRequests
+        var vr = await _auditingContext.VerificationRequests
             .AsNoTracking()
             .Include(vr => vr.Artist)
             .Include(vr => vr.SubmittedByUser)

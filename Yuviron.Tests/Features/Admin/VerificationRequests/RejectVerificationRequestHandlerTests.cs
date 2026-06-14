@@ -35,12 +35,12 @@ public class RejectVerificationRequestHandlerTests
         var artist = Artist.Create(null, "Test Band", null, null, null, VerificationStatus.None, utcNow);
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
         
-        dbContext.Artists.Add(artist);
-        dbContext.Users.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(user);
         
         var request = VerificationRequest.Create(
             artist.Id, user.Id, ClaimRole.Manager, "bad@mail.com", "bad-link", null, null, utcNow);
-        dbContext.VerificationRequests.Add(request);
+        dbContext.Add(request);
         await dbContext.SaveChangesAsync();
 
         // ПЕРЕДАЛИ eventBusMock.Object В КОНСТРУКТОР
@@ -53,7 +53,7 @@ public class RejectVerificationRequestHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var updatedReq = await dbContext.VerificationRequests.FindAsync(request.Id);
+        var updatedReq = await dbContext.Set<VerificationRequest>().FindAsync(request.Id);
         updatedReq!.Status.Should().Be(VerificationRequestStatus.Rejected);
         updatedReq.AdminId.Should().Be(adminId);
         updatedReq.AdminNote.Should().Be("Fake links provided");
@@ -82,14 +82,14 @@ public class RejectVerificationRequestHandlerTests
         var artist = Artist.Create(null, "Test Band", null, null, null, VerificationStatus.None, utcNow);
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
         
-        dbContext.Artists.Add(artist);
-        dbContext.Users.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(user);
         
         var request = VerificationRequest.Create(
             artist.Id, user.Id, ClaimRole.Manager, "bad@mail.com", "bad-link", null, null, utcNow);
         
         request.Approve(adminId, "Approved by someone else", utcNow); 
-        dbContext.VerificationRequests.Add(request);
+        dbContext.Add(request);
         await dbContext.SaveChangesAsync();
 
         // ПЕРЕДАЛИ eventBusMock.Object В КОНСТРУКТОР

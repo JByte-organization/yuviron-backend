@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,13 +18,13 @@ namespace Yuviron.Application.Features.Admin.Plans.Queries.GetPlans;
 
 public sealed class GetPlansHandler : IRequestHandler<GetPlansQuery, PaginatedList<PlanListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetPlansHandler(IApplicationDbContext context) => _context = context;
+    public GetPlansHandler(IMonetizationContext monetizationContext) => _monetizationContext = monetizationContext;
 
     public async Task<PaginatedList<PlanListItemDto>> Handle(GetPlansQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Plans.AsNoTracking();
+        var query = _monetizationContext.Plans.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
@@ -36,7 +38,7 @@ public sealed class GetPlansHandler : IRequestHandler<GetPlansQuery, PaginatedLi
             defaultDesc: false,
             mapping: new Dictionary<string, Expression<Func<Plan, object>>>
             {
-                [nameof(PlanListItemDto.ActiveSubscribersCount)] = p => _context.Subscriptions.Count(s => s.PlanId == p.Id && s.Status == SubscriptionStatus.Active)
+                [nameof(PlanListItemDto.ActiveSubscribersCount)] = p => _monetizationContext.Subscriptions.Count(s => s.PlanId == p.Id && s.Status == SubscriptionStatus.Active)
             });
 
         var projectedQuery = sortedQuery.Select(p => new PlanListItemDto(
@@ -45,7 +47,7 @@ public sealed class GetPlansHandler : IRequestHandler<GetPlansQuery, PaginatedLi
             p.Price,
             p.Currency,
             p.Period,
-            _context.Subscriptions.Count(s => s.PlanId == p.Id && s.Status == SubscriptionStatus.Active),
+            _monetizationContext.Subscriptions.Count(s => s.PlanId == p.Id && s.Status == SubscriptionStatus.Active),
             p.CreatedAt,
             p.UpdatedAt
         ));

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,12 +16,14 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Queries.GetStudioP
 
 public sealed class GetStudioPlaylistByIdHandler : IRequestHandler<GetStudioPlaylistByIdQuery, StudioPlaylistDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioPlaylistByIdHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioPlaylistByIdHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
     }
 
@@ -27,7 +31,7 @@ public sealed class GetStudioPlaylistByIdHandler : IRequestHandler<GetStudioPlay
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlistData = await _context.Playlists
+        var playlistData = await _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.Id == request.PlaylistId && !p.IsDeleted)
             .Select(p => new 
@@ -50,7 +54,7 @@ public sealed class GetStudioPlaylistByIdHandler : IRequestHandler<GetStudioPlay
         if (playlistData is null) throw new NotFoundException(nameof(Playlist), request.PlaylistId);
         if (playlistData.ArtistId == null) throw new ForbiddenException("Not an artist playlist.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(playlistData.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 

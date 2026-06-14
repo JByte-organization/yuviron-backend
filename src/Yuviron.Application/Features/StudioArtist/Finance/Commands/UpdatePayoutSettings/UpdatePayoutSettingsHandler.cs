@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,18 +17,20 @@ namespace Yuviron.Application.Features.StudioArtist.Finance.Commands.UpdatePayou
 
 public sealed class UpdatePayoutSettingsHandler : IRequestHandler<UpdatePayoutSettingsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
     public UpdatePayoutSettingsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, IMonetizationContext monetizationContext, 
         ICurrentUserService currentUser, 
         TimeProvider timeProvider,
         IEventBus eventBus)
     {
-        _context = context; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext; _currentUser = currentUser; _timeProvider = timeProvider; _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(UpdatePayoutSettingsCommand request, CancellationToken cancellationToken)
@@ -35,25 +38,25 @@ public sealed class UpdatePayoutSettingsHandler : IRequestHandler<UpdatePayoutSe
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var isOwner = await _context.ArtistTeamMembers
+        var isOwner = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId && tm.Role == ArtistTeamRole.Owner, cancellationToken);
         
         if (!isOwner) throw new ForbiddenException("Only the Owner can update payout settings.");
 
-        var settings = await _context.ArtistPayoutSettings
+        var settings = await _monetizationContext.ArtistPayoutSettings
             .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId, cancellationToken);
 
         if (settings == null)
         {
             settings = ArtistPayoutSettings.Create(request.ArtistId, 50m, 5000m, 30, request.Method, request.AccountDetails, null, utcNow);
-            _context.ArtistPayoutSettings.Add(settings);
+            _monetizationContext.Add(settings);
         }
         else
         {
             settings.UpdatePayoutMethod(request.Method, request.AccountDetails, utcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new PayoutSettingsChangedEvent(request.ArtistId), cancellationToken);
 

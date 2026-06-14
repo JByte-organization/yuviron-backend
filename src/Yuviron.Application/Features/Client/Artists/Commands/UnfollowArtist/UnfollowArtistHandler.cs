@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,12 +9,12 @@ namespace Yuviron.Application.Features.Client.Artists.Commands.UnfollowArtist;
 
 public sealed class UnfollowArtistHandler : IRequestHandler<UnfollowArtistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public UnfollowArtistHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public UnfollowArtistHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -20,13 +22,13 @@ public sealed class UnfollowArtistHandler : IRequestHandler<UnfollowArtistComman
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var followRecord = await _context.UserFollowArtists
+        var followRecord = await _libraryContext.UserFollowArtists
             .FirstOrDefaultAsync(f => f.UserId == userId && f.ArtistId == request.ArtistId, cancellationToken);
 
         if (followRecord != null)
         {
-            _context.UserFollowArtists.Remove(followRecord);
-            await _context.SaveChangesAsync(cancellationToken);
+            _libraryContext.Remove(followRecord);
+            await _libraryContext.SaveChangesAsync(cancellationToken);
         }
 
         return Unit.Value;

@@ -90,7 +90,7 @@ public class AppDbContextInitializer
 
         if (newPerms.Any())
         {
-            await _context.Permissions.AddRangeAsync(newPerms);
+            await _context.AddRangeAsync(newPerms);
             await _context.SaveChangesAsync();
         }
 
@@ -100,7 +100,7 @@ public class AppDbContextInitializer
 
         if (missingRoles.Any())
         {
-            await _context.Roles.AddRangeAsync(missingRoles);
+            await _context.AddRangeAsync(missingRoles);
             await _context.SaveChangesAsync();
         }
 
@@ -128,7 +128,7 @@ public class AppDbContextInitializer
                 var perm = allDbPerms.FirstOrDefault(p => p.Name == permName);
                 if (perm != null && !role.RolePermissions.Any(rp => rp.PermissionId == perm.Id))
                 {
-                    _context.RolePermissions.Add(new RolePermission(role.Id, perm.Id));
+                    _context.Add(new RolePermission(role.Id, perm.Id));
                 }
             }
         }
@@ -139,7 +139,7 @@ public class AppDbContextInitializer
         {
             var utcNow = DateTime.UtcNow;
             
-            await _context.Plans.AddRangeAsync(
+            await _context.AddRangeAsync(
                 Plan.Create("Premium Monthly", 9.99m, "USD", PlanPeriod.Month, PlanType.Listener, utcNow),
                 Plan.Create("Premium Yearly", 99.99m, "USD", PlanPeriod.Year, PlanType.Listener, utcNow),
                 Plan.Create("Lifetime Access", 0m, "USD", PlanPeriod.Year, PlanType.Listener, utcNow),
@@ -151,7 +151,7 @@ public class AppDbContextInitializer
 
         if (!await _context.Themes.AnyAsync())
         {
-            await _context.Themes.AddRangeAsync(
+            await _context.AddRangeAsync(
                 Theme.Create("Ocean", "#2DD4BF", "#0F766E", "#042F2E", isSystem: true, isPremiumOnly: false),
                 Theme.Create("Midnight", "#60A5FA", "#1D4ED8", "#020617", isSystem: true, isPremiumOnly: false),
                 Theme.Create("Aurora", "#A78BFA", "#14B8A6", "#0F172A", isSystem: false, isPremiumOnly: true),
@@ -180,15 +180,15 @@ public class AppDbContextInitializer
             var utcNow = DateTime.UtcNow;
 
             var user = User.Create(email, _passwordHasher.Hash(password), firstName, false, true, utcNow);
-            await _context.Users.AddAsync(user);
-            await _context.UserRoles.AddAsync(new UserRole(user.Id, role.Id));
+            await _context.AddAsync(user);
+            await _context.AddAsync(new UserRole(user.Id, role.Id));
             user.SetProfile(UserProfile.Create(user.Id, firstName, null, null, null, null, null, utcNow.AddYears(ageOffset), gender, utcNow));
 
             if (isPremium)
             {
                 var lifetimePlan = await _context.Plans.FirstAsync(p => p.Name == "Lifetime Access");
                 var infiniteSubscription = Subscription.Create(user.Id, lifetimePlan.Id, utcNow, utcNow.AddYears(100), SubscriptionStatus.Active, utcNow);
-                await _context.Subscriptions.AddAsync(infiniteSubscription);
+                await _context.AddAsync(infiniteSubscription);
             }
 
             await _context.SaveChangesAsync();

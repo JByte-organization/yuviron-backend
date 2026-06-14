@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,12 +18,12 @@ namespace Yuviron.Application.Features.StudioArtist.Albums.Queries.GetStudioAlbu
 
 public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumByIdQuery, StudioAlbumDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioAlbumByIdHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioAlbumByIdHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -29,7 +31,7 @@ public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumBy
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var albumData = await _context.Albums
+        var albumData = await _catalogContext.Albums
             .AsNoTracking()
             .Where(a => a.Id == request.AlbumId && !a.IsDeleted)
             .Select(a => new 
@@ -56,7 +58,7 @@ public sealed class GetStudioAlbumByIdHandler : IRequestHandler<GetStudioAlbumBy
 
         if (albumData is null) throw new NotFoundException(nameof(Album), request.AlbumId);
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .Where(tm => albumData.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 

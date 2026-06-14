@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -13,18 +16,20 @@ namespace Yuviron.Infrastructure.Services;
 public sealed class AnalyticsService : IAnalyticsService
 {
     private readonly IConnectionMultiplexer _redis;
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _catalogContext;
+    private readonly AppDbContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AnalyticsService> _logger;
 
     public AnalyticsService(
         IConnectionMultiplexer redis, 
-        IApplicationDbContext context, 
+        AppDbContext catalogContext, AppDbContext systemContext, 
         TimeProvider timeProvider, 
         ILogger<AnalyticsService> logger)
     {
         _redis = redis;
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -67,7 +72,7 @@ public sealed class AnalyticsService : IAnalyticsService
                 return msPlayed; 
             }
             
-            var artistIds = await _context.TrackArtists
+            var artistIds = await _catalogContext.TrackArtists
                 .AsNoTracking()
                 .Where(ta => ta.TrackId == trackId)
                 .Select(ta => ta.ArtistId)
@@ -103,8 +108,8 @@ public sealed class AnalyticsService : IAnalyticsService
                 _timeProvider.GetUtcNow().UtcDateTime,
                 traceId);
 
-            _context.OutboxMessages.Add(message);
-            await _context.SaveChangesAsync(ct);
+            _systemContext.Add(message);
+            await _catalogContext.SaveChangesAsync(ct);
             return 0;
         }
     }

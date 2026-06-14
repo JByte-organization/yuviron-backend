@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,14 +12,14 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.RemoveTrackFrom
 
 public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrackFromPlaylistCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
 
-    public RemoveTrackFromPlaylistHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
+    public RemoveTrackFromPlaylistHandler(ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider, ICacheService cache)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
         _cache = cache;
@@ -27,18 +29,18 @@ public sealed class RemoveTrackFromPlaylistHandler : IRequestHandler<RemoveTrack
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var isOwner = await _context.Playlists
+        var isOwner = await _libraryContext.Playlists
             .AnyAsync(p => p.Id == request.PlaylistId && p.UserId == userId , cancellationToken);
 
         if (!isOwner) throw new ForbiddenException("Playlist not found or access denied.");
 
-        var deletedRows = await _context.PlaylistTracks
+        var deletedRows = await _libraryContext.PlaylistTracks
             .Where(pt => pt.PlaylistId == request.PlaylistId && pt.TrackId == request.TrackId)
             .ExecuteDeleteAsync(cancellationToken);
             
         if (deletedRows > 0)
         {
-            await _context.Playlists
+            await _libraryContext.Playlists
                 .Where(p => p.Id == request.PlaylistId)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.UpdatedAt, _timeProvider.GetUtcNow().UtcDateTime), cancellationToken);
 

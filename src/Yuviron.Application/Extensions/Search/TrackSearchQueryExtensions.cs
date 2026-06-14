@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,11 +12,11 @@ namespace Yuviron.Application.Extensions;
 public static class TrackSearchQueryExtensions
 {
     public static IQueryable<Track> BuildPublicTrackSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         string searchTerm,
         DateTime utcNow)
     {
-        return context.Tracks
+        return catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => t.Title.ToLower().Contains(searchTerm) ||
@@ -22,11 +24,11 @@ public static class TrackSearchQueryExtensions
     }
 
     public static IQueryable<Track> BuildPublicTrackFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments,
         DateTime utcNow)
     {
-        var baseQuery = context.Tracks
+        var baseQuery = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 

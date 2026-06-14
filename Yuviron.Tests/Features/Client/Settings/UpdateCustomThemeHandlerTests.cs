@@ -27,7 +27,7 @@ public class UpdateCustomThemeHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -54,7 +54,7 @@ public class UpdateCustomThemeHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -72,11 +72,11 @@ public class UpdateCustomThemeHandlerTests
             new UpdateCustomThemeCommand("#111111", "#222222", "#000000"),
             CancellationToken.None);
 
-        var settings = await dbContext.UserSettings.FindAsync(userId);
+        var settings = await dbContext.Set<UserSettings>().FindAsync(userId);
         settings.Should().NotBeNull();
         settings!.CustomThemeId.Should().NotBeNull();
 
-        var theme = await dbContext.CustomThemes.FindAsync(settings.CustomThemeId!.Value);
+        var theme = await dbContext.Set<CustomTheme>().FindAsync(settings.CustomThemeId!.Value);
         theme.Should().NotBeNull();
         theme!.UserId.Should().Be(userId);
         theme.PrimaryColor.Should().Be("#111111");

@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading;
@@ -13,12 +16,12 @@ namespace Yuviron.Infrastructure.Services;
 
 public class UserDeviceTracker : IUserDeviceTracker
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _identityContext;
     private readonly IEventBus _eventBus;
 
-    public UserDeviceTracker(IApplicationDbContext context, IEventBus eventBus)
+    public UserDeviceTracker(AppDbContext identityContext, IEventBus eventBus)
     {
-        _context = context;
+        _identityContext = identityContext;
         _eventBus = eventBus;
     }
 
@@ -28,7 +31,7 @@ public class UserDeviceTracker : IUserDeviceTracker
         DateTime utcNow, 
         CancellationToken cancellationToken)
     {
-        var knownDevice = await _context.UserDevices
+        var knownDevice = await _identityContext.UserDevices
             .FirstOrDefaultAsync(d => d.UserId == userId 
                                       && d.Fingerprint == clientInfo.Fingerprint, cancellationToken);
 
@@ -45,14 +48,14 @@ public class UserDeviceTracker : IUserDeviceTracker
                 clientInfo.IpAddress, 
                 utcNow);
                 
-            _context.UserDevices.Add(newDevice);
+            _identityContext.Add(newDevice);
         }
         else
         {
             knownDevice.UpdateLastUsed(clientInfo.IpAddress, utcNow);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         if (isNewDevice)
         {

@@ -29,12 +29,12 @@ public class GetStudioPlaylistsHandlerTests
         var artist = Artist.Create(null, "Studio Artist", null, null, null, VerificationStatus.None, utcNow);
         var playlist = Playlist.Create(null, artist.Id, "Studio Picks", null, null, PlaylistVisibility.Public, false, utcNow);
 
-        dbContext.Users.Add(user);
-        dbContext.Artists.Add(artist);
-        dbContext.ArtistTeamMembers.Add(ArtistTeamMember.Create(artist.Id, userId, ArtistTeamRole.Owner, utcNow));
-        dbContext.Playlists.Add(playlist);
-        dbContext.Tracks.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), utcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, utcNow));
+        dbContext.Add(user);
+        dbContext.Add(artist);
+        dbContext.Add(ArtistTeamMember.Create(artist.Id, userId, ArtistTeamRole.Owner, utcNow));
+        dbContext.Add(playlist);
+        dbContext.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), utcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, utcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -42,7 +42,7 @@ public class GetStudioPlaylistsHandlerTests
 
         (await dbContext.ArtistTeamMembers.HasManagementAccess(artist.Id, userId).AnyAsync()).Should().BeTrue();
 
-        var handler = new GetStudioPlaylistsHandler(dbContext, currentUser.Object);
+        var handler = new GetStudioPlaylistsHandler(dbContext, dbContext, currentUser.Object);
 
         var result = await handler.Handle(new GetStudioPlaylistsQuery(artist.Id, TrackId: trackId), CancellationToken.None);
 

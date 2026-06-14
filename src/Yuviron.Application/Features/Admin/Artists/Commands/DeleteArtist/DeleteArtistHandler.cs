@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,18 +14,20 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.DeleteArtist;
 
 public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
     private readonly ILogger<DeleteArtistHandler> _logger;
 
     public DeleteArtistHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         IPermissionService permissionService,
         ILogger<DeleteArtistHandler> logger)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
         _logger = logger;
@@ -31,13 +35,13 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 
     public async Task<Unit> Handle(DeleteArtistCommand request, CancellationToken cancellationToken)
     {
-        var artist = await _context.Artists.Include(a => a.TeamMembers).FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
+        var artist = await _catalogContext.Artists.Include(a => a.TeamMembers).FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         artist.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
         var memberUserIds = artist.TeamMembers.Select(tm => tm.UserId).ToList();
-        var usersWithOtherArtists = await _context.ArtistTeamMembers
+        var usersWithOtherArtists = await _catalogContext.ArtistTeamMembers
             .Where(tm => memberUserIds.Contains(tm.UserId) && tm.ArtistId != request.ArtistId) 
             .Select(tm => tm.UserId).Distinct().ToListAsync(cancellationToken);
 
@@ -45,10 +49,10 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
 
         if (userIdsToRevokeRole.Any())
         {
-            var managementRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
+            var managementRole = await _identityContext.Roles.FirstOrDefaultAsync(r => r.Name == nameof(RoleName.ManagementUser), cancellationToken);
             if (managementRole != null)
             {
-                var users = await _context.Users.Include(u => u.UserRoles).Where(u => userIdsToRevokeRole.Contains(u.Id)).ToListAsync(cancellationToken);
+                var users = await _identityContext.Users.Include(u => u.UserRoles).Where(u => userIdsToRevokeRole.Contains(u.Id)).ToListAsync(cancellationToken);
                 foreach (var user in users)
                 {
                     user.SyncRoles(user.UserRoles.Where(ur => ur.RoleId != managementRole.Id).Select(ur => ur.RoleId));
@@ -57,7 +61,7 @@ public sealed class DeleteArtistHandler : IRequestHandler<DeleteArtistCommand, U
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
         
         foreach (var userId in userIdsToRevokeRole)
         {

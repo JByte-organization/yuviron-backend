@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,12 +13,12 @@ namespace Yuviron.Application.Features.Client.Moods.Queries.GetMoods;
 
 public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, List<MoodItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public GetMoodsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetMoodsHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -24,9 +26,9 @@ public sealed class GetMoodsHandler : IRequestHandler<GetMoodsQuery, List<MoodIt
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var availableTracks = _context.Tracks.AvailableForPublic(utcNow);
+        var availableTracks = _catalogContext.Tracks.AvailableForPublic(utcNow);
 
-        return await _context.Moods
+        return await _catalogContext.Moods
             .AsNoTracking()
             
             .Where(m => availableTracks.Any(t => t.TrackMoods.Any(tm => tm.MoodId == m.Id)))

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -13,18 +15,18 @@ namespace Yuviron.Application.Features.Admin.VerificationRequests.Commands.Rejec
 
 public sealed class RejectVerificationRequestHandler : IRequestHandler<RejectVerificationRequestCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IAuditingContext _auditingContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
 
     public RejectVerificationRequestHandler(
-        IApplicationDbContext context, 
+        IAuditingContext auditingContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser,
         IEventBus eventBus) 
     {
-        _context = context;
+        _auditingContext = auditingContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
         _eventBus = eventBus;
@@ -35,7 +37,7 @@ public sealed class RejectVerificationRequestHandler : IRequestHandler<RejectVer
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var verificationReq = await _context.VerificationRequests
+        var verificationReq = await _auditingContext.VerificationRequests
             .Include(vr => vr.Artist) 
             .FirstOrDefaultAsync(vr => vr.Id == request.RequestId, cancellationToken);
 
@@ -47,7 +49,7 @@ public sealed class RejectVerificationRequestHandler : IRequestHandler<RejectVer
 
         verificationReq.Reject(adminId, request.AdminNote, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _auditingContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new ArtistClaimRejectedEvent(
             verificationReq.SubmittedByUserId,

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,18 @@ namespace Yuviron.Application.Features.Admin.Genres.Commands.UpdateGenre;
 
 public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateGenreHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -28,7 +32,7 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var genre = await _context.Genres
+        var genre = await _catalogContext.Genres
             .FirstOrDefaultAsync(g => g.Id == request.GenreId, cancellationToken);
 
         if (genre == null)
@@ -38,7 +42,7 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
 
         if (!genre.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
         {
-            var isDuplicate = await _context.Genres
+            var isDuplicate = await _catalogContext.Genres
                 .AnyAsync(g => g.Name == request.Name , cancellationToken);
 
             if (isDuplicate)
@@ -52,7 +56,7 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
         
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
             
             genre.RegisterFileSwapEvents(coverClaim, genre.CoverUrl);
@@ -61,7 +65,7 @@ public sealed class UpdateGenreHandler : IRequestHandler<UpdateGenreCommand, Uni
         
         genre.Update(request.Name, finalCoverUrl, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

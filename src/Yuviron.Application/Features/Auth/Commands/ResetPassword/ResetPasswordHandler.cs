@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,20 +11,20 @@ namespace Yuviron.Application.Features.Auth.Commands.ResetPassword;
 
 public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IOtpService _otpService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
     public ResetPasswordHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         IOtpService otpService, 
         IPasswordHasher passwordHasher, 
         TimeProvider timeProvider,
         IEventBus eventBus)
     {
-        _context = context;
+        _identityContext = identityContext;
         _otpService = otpService;
         _passwordHasher = passwordHasher;
         _timeProvider = timeProvider;
@@ -38,7 +40,7 @@ public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand,
             throw new UnauthorizedAccessException("The message is ineffective or its term has passed.");
         }
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        var user = await _identityContext.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         if (user == null) 
         {
             throw new UnauthorizedAccessException("User not found.");
@@ -49,7 +51,7 @@ public sealed class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand,
         
         user.SetPasswordHash(newHash, utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new UserPasswordResetCompletedEvent(user.Id), cancellationToken);
         

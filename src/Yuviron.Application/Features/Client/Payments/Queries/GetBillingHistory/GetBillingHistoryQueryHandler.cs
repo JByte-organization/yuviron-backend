@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,16 +16,16 @@ namespace Yuviron.Application.Features.Client.Payments.Queries.GetBillingHistory
 
 public class GetBillingHistoryQueryHandler : IRequestHandler<GetBillingHistoryQuery, List<BillingInvoiceDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
 
     public GetBillingHistoryQueryHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         ICurrentUserService currentUser,
         IPaymentService paymentService)
     {
-        _context = context;
+        _identityContext = identityContext;
         _currentUser = currentUser;
         _paymentService = paymentService;
     }
@@ -32,7 +34,7 @@ public class GetBillingHistoryQueryHandler : IRequestHandler<GetBillingHistoryQu
     {
         var userId = _currentUser.UserId!.Value;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 

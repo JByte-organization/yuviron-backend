@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -15,20 +17,22 @@ namespace Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistTrack
 
 public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracksQuery, PaginatedList<PlaylistTrackItemClientDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
-    public GetPlaylistTracksHandler(IApplicationDbContext context, ICacheService cache, ICurrentUserService currentUser)
+    public GetPlaylistTracksHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICacheService cache, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _cache = cache;
         _currentUser = currentUser;
     }
 
     public async Task<PaginatedList<PlaylistTrackItemClientDto>> Handle(GetPlaylistTracksQuery request, CancellationToken cancellationToken)
     {
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken)
             ?? throw new NotFoundException("Playlist", request.PlaylistId);
@@ -57,7 +61,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
         }
 
         var trackIds = tracksWithScores.Keys.Select(id => Guid.Parse(id)).ToList();
-        var tracks = await _context.Tracks
+        var tracks = await _catalogContext.Tracks
             .AsNoTracking()
             .Include(t => t.Album)
             .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
@@ -80,7 +84,7 @@ public sealed class GetPlaylistTracksHandler : IRequestHandler<GetPlaylistTracks
 
     private async Task<PaginatedList<PlaylistTrackItemClientDto>> GetTracksFromDbAsync(GetPlaylistTracksQuery request, CancellationToken ct)
     {
-        var query = _context.PlaylistTracks
+        var query = _libraryContext.PlaylistTracks
             .AsNoTracking()
             .Where(pt => pt.PlaylistId == request.PlaylistId && !pt.Track.IsDeleted);
 

@@ -1,3 +1,4 @@
+using Yuviron.Domain.Entities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -35,7 +36,7 @@ public class CreatePlaylistHandlerTests
         var currentUserId = Guid.NewGuid();
         _currentUserMock.Setup(x => x.UserId).Returns(currentUserId);
 
-        var handler = new CreatePlaylistHandler(dbContext, _timeProvider, _currentUserMock.Object);
+        var handler = new CreatePlaylistHandler(dbContext, dbContext, _timeProvider, _currentUserMock.Object);
         
         // ИСПРАВЛЕНО: Убрали Description. Используем только те параметры, которые есть в команде.
         var command = new CreatePlaylistCommand(
@@ -46,7 +47,7 @@ public class CreatePlaylistHandlerTests
         var newPlaylistId = await handler.Handle(command, CancellationToken.None);
 
         newPlaylistId.Should().NotBeEmpty();
-        var playlistInDb = await dbContext.Playlists.FindAsync(newPlaylistId);
+        var playlistInDb = await dbContext.Set<Playlist>().FindAsync(newPlaylistId);
         playlistInDb.Should().NotBeNull();
         playlistInDb!.Title.Should().Be("My Summer Hits");
         playlistInDb.UserId.Should().Be(currentUserId);

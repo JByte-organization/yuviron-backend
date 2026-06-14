@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services.Jamendo;
@@ -7,14 +9,14 @@ namespace Yuviron.Application.Features.Admin.Jamendo.Services;
 
 public class JamendoMetadataResolver : IJamendoMetadataResolver
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly Dictionary<string, Guid> _genreCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Guid> _moodCache = new(StringComparer.OrdinalIgnoreCase);
 
-    public JamendoMetadataResolver(IApplicationDbContext context, TimeProvider timeProvider)
+    public JamendoMetadataResolver(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -56,24 +58,24 @@ public class JamendoMetadataResolver : IJamendoMetadataResolver
 
     private async Task<Guid> GetOrCreateGenreAsync(string name, CancellationToken ct)
     {
-        var genre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == name, ct);
+        var genre = await _catalogContext.Genres.FirstOrDefaultAsync(g => g.Name == name, ct);
         if (genre == null)
         {
             genre = Genre.Create(name, null, _timeProvider.GetUtcNow().UtcDateTime);
-            _context.Genres.Add(genre);
-            await _context.SaveChangesAsync(ct); 
+            _catalogContext.Add(genre);
+            await _catalogContext.SaveChangesAsync(ct); 
         }
         return genre.Id;
     }
 
     private async Task<Guid> GetOrCreateMoodAsync(string name, CancellationToken ct)
     {
-        var mood = await _context.Moods.FirstOrDefaultAsync(m => m.Name == name, ct);
+        var mood = await _catalogContext.Moods.FirstOrDefaultAsync(m => m.Name == name, ct);
         if (mood == null)
         {
             mood = Mood.Create(name, null, _timeProvider.GetUtcNow().UtcDateTime);
-            _context.Moods.Add(mood);
-            await _context.SaveChangesAsync(ct);
+            _catalogContext.Add(mood);
+            await _catalogContext.SaveChangesAsync(ct);
         }
         return mood.Id;
     }

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,20 +13,22 @@ namespace Yuviron.Application.Features.StudioArtist.Payments.Commands.CancelArti
 
 public sealed class CancelArtistSubscriptionHandler : IRequestHandler<CancelArtistSubscriptionCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus; 
 
     public CancelArtistSubscriptionHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, IMonetizationContext monetizationContext, 
         ICurrentUserService currentUser, 
         IPaymentService paymentService,
         TimeProvider timeProvider,
         IEventBus eventBus) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _paymentService = paymentService;
         _timeProvider = timeProvider;
@@ -35,10 +39,10 @@ public sealed class CancelArtistSubscriptionHandler : IRequestHandler<CancelArti
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         
-        var ownsArtist = await _context.Artists.AnyAsync(a => a.Id == request.ArtistId && a.TeamMembers.Any(tm => tm.UserId == userId), cancellationToken);
+        var ownsArtist = await _catalogContext.Artists.AnyAsync(a => a.Id == request.ArtistId && a.TeamMembers.Any(tm => tm.UserId == userId), cancellationToken);
         if (!ownsArtist) throw new InvalidOperationException("You do not own this artist profile.");
 
-        var sub = await _context.ArtistSubscriptions
+        var sub = await _monetizationContext.ArtistSubscriptions
             .FirstOrDefaultAsync(s => s.ArtistId == request.ArtistId && s.Status == SubscriptionStatus.Active && s.IsAutoRenewing, cancellationToken);
 
         if (sub == null || string.IsNullOrEmpty(sub.StripeSubscriptionId))
@@ -47,7 +51,7 @@ public sealed class CancelArtistSubscriptionHandler : IRequestHandler<CancelArti
         await _paymentService.CancelSubscriptionAsync(sub.StripeSubscriptionId, cancellationToken);
 
         sub.CancelRenewal(_timeProvider.GetUtcNow().UtcDateTime);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         await _eventBus.PublishAsync(new ArtistSubscriptionCanceledEvent(request.ArtistId), cancellationToken);
 

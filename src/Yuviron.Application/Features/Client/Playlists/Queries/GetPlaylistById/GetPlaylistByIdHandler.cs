@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -12,18 +14,18 @@ namespace Yuviron.Application.Features.Client.Playlists.Queries.GetPlaylistById;
 
 public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuery, PlaylistDetailsClientDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetPlaylistByIdHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetPlaylistByIdHandler(ILibraryContext libraryContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
     }
 
     public async Task<PlaylistDetailsClientDto> Handle(GetPlaylistByIdQuery request, CancellationToken cancellationToken)
     {
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .AsNoTracking()
             .Include(p => p.User).ThenInclude(u => u!.Profile)
             .Include(p => p.Artist) 

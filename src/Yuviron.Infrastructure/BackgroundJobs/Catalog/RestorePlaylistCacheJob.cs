@@ -1,3 +1,4 @@
+using Yuviron.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,7 +46,7 @@ public class RestorePlaylistCacheJob : BackgroundService
         if (playlistIdsRaw.Length == 0) return;
 
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         foreach (var idRaw in playlistIdsRaw)
         {

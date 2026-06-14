@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,13 +18,15 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoriteAlb
 
 public sealed class GetUserFavoriteAlbumsHandler : IRequestHandler<GetUserFavoriteAlbumsQuery, PaginatedList<UserFavoriteAlbumDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
-    public GetUserFavoriteAlbumsHandler(IApplicationDbContext context, ICurrentUserService currentUserService, TimeProvider timeProvider)
+    public GetUserFavoriteAlbumsHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUserService, TimeProvider timeProvider)
     {
-        _context = context; _currentUserService = currentUserService; _timeProvider = timeProvider;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext; _currentUserService = currentUserService; _timeProvider = timeProvider;
     }
 
     public async Task<PaginatedList<UserFavoriteAlbumDto>> Handle(GetUserFavoriteAlbumsQuery request, CancellationToken cancellationToken)
@@ -30,8 +34,8 @@ public sealed class GetUserFavoriteAlbumsHandler : IRequestHandler<GetUserFavori
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var query = _context.UserSavedAlbums.AsNoTracking()
-            .Where(usa => usa.UserId == userId && _context.Albums.AvailableForPublic(utcNow).Any(a => a.Id == usa.AlbumId));
+        var query = _libraryContext.UserSavedAlbums.AsNoTracking()
+            .Where(usa => usa.UserId == userId && _catalogContext.Albums.AvailableForPublic(utcNow).Any(a => a.Id == usa.AlbumId));
 
         var sortedQuery = query.ApplySorting(
             request.SortBy, 

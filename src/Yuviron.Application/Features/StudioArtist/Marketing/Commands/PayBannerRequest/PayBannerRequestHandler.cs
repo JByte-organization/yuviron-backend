@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,18 +19,22 @@ namespace Yuviron.Application.Features.StudioArtist.Marketing.Commands.PayBanner
 
 public sealed class PayBannerRequestHandler : IRequestHandler<PayBannerRequestCommand, PayBannerResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IContentContext _contentContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
     private readonly MarketingOptions _options;
 
     public PayBannerRequestHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ICatalogContext catalogContext, IContentContext contentContext,
         ICurrentUserService currentUser,
         IPaymentService paymentService,
         IOptions<MarketingOptions> options)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _contentContext = contentContext;
         _currentUser = currentUser;
         _paymentService = paymentService;
         _options = options.Value;
@@ -38,15 +44,15 @@ public sealed class PayBannerRequestHandler : IRequestHandler<PayBannerRequestCo
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var user = await _context.Users.FirstAsync(u => u.Id == userId, cancellationToken);
+        var user = await _identityContext.Users.FirstAsync(u => u.Id == userId, cancellationToken);
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to manage marketing for this artist.");
 
-        var bannerRequest = await _context.BannerRequests
+        var bannerRequest = await _contentContext.BannerRequests
             .FirstOrDefaultAsync(br => br.Id == request.RequestId && br.ArtistId == request.ArtistId, cancellationToken);
 
         if (bannerRequest == null)
@@ -62,7 +68,7 @@ public sealed class PayBannerRequestHandler : IRequestHandler<PayBannerRequestCo
 
         bannerRequest.SetCheckoutSession(stripeSession.SessionId);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return new PayBannerResponse(stripeSession.CheckoutUrl);
     }

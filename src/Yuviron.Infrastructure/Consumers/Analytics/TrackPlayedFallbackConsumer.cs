@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,10 +11,10 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class TrackPlayedFallbackConsumer : IConsumer<TrackPlayedFallbackEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public TrackPlayedFallbackConsumer(IApplicationDbContext context, TimeProvider timeProvider)
+    public TrackPlayedFallbackConsumer(AppDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;
@@ -46,7 +48,7 @@ public class TrackPlayedFallbackConsumer : IConsumer<TrackPlayedFallbackEvent>
             utcNow: utcNow
         );
         
-        _context.ListeningEvents.Add(listeningEvent);
+        _context.Add(listeningEvent);
 
         var track = await _context.Tracks
             .Include(t => t.TrackArtists)

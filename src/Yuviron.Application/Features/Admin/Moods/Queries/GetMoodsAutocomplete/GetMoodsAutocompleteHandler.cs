@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,11 +12,11 @@ namespace Yuviron.Application.Features.Admin.Moods.Queries.GetMoodsAutocomplete;
 
 public sealed class GetMoodsAutocompleteHandler : IRequestHandler<GetMoodsAutocompleteQuery, List<MoodAutocompleteDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetMoodsAutocompleteHandler(IApplicationDbContext context)
+    public GetMoodsAutocompleteHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<List<MoodAutocompleteDto>> Handle(GetMoodsAutocompleteQuery request, CancellationToken cancellationToken)
@@ -24,7 +26,7 @@ public sealed class GetMoodsAutocompleteHandler : IRequestHandler<GetMoodsAutoco
 
         var searchTerm = request.SearchTerm.Trim();
 
-        return await _context.Moods
+        return await _catalogContext.Moods
             .AsNoTracking()
             .Where(m => !m.IsDeleted && m.Name.Contains(searchTerm))
             .OrderBy(m => m.Name)

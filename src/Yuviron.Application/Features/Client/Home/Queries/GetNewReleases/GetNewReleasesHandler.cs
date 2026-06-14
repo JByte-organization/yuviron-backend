@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -15,18 +17,18 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetNewReleases;
 
 public sealed class GetNewReleasesHandler : IRequestHandler<GetNewReleasesQuery, List<NewReleaseDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetNewReleasesHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -36,7 +38,7 @@ public sealed class GetNewReleasesHandler : IRequestHandler<GetNewReleasesQuery,
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var releases = await _context.Albums
+        var releases = await _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(a => a.Tracks.Any(t => !t.IsDeleted 

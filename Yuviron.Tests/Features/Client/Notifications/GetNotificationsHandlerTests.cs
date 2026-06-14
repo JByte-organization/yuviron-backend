@@ -36,13 +36,13 @@ public class GetNotificationsHandlerTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
         // 1. Уведомление текущего юзера (Музыка)
-        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "New Track", "Body", NotificationEntityType.Track, Guid.NewGuid(), utcNow));
+        dbContext.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "New Track", "Body", NotificationEntityType.Track, Guid.NewGuid(), utcNow));
         
         // 2. Уведомление текущего юзера (Система)
-        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "welcome", "Welcome", "Body", NotificationEntityType.System, null, utcNow.AddDays(-1)));
+        dbContext.Add(Notification.Create(currentUserId, NotificationCategory.System, "welcome", "Welcome", "Body", NotificationEntityType.System, null, utcNow.AddDays(-1)));
 
         // 3. Чужое уведомление (не должно попасть в выдачу)
-        dbContext.Notifications.Add(Notification.Create(otherUserId, NotificationCategory.Music, "new_track", "Other", "Body", NotificationEntityType.Track, null, utcNow));
+        dbContext.Add(Notification.Create(otherUserId, NotificationCategory.Music, "new_track", "Other", "Body", NotificationEntityType.Track, null, utcNow));
 
         await dbContext.SaveChangesAsync();
 
@@ -70,9 +70,9 @@ public class GetNotificationsHandlerTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(currentUserId);
 
         // Добавляем разные категории
-        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "Track 1", "Body", NotificationEntityType.Track, null, utcNow));
-        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_release", "Album 1", "Body", NotificationEntityType.Album, null, utcNow));
-        dbContext.Notifications.Add(Notification.Create(currentUserId, NotificationCategory.System, "alert", "System", "Body", NotificationEntityType.System, null, utcNow));
+        dbContext.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_track", "Track 1", "Body", NotificationEntityType.Track, null, utcNow));
+        dbContext.Add(Notification.Create(currentUserId, NotificationCategory.Music, "new_release", "Album 1", "Body", NotificationEntityType.Album, null, utcNow));
+        dbContext.Add(Notification.Create(currentUserId, NotificationCategory.System, "alert", "System", "Body", NotificationEntityType.System, null, utcNow));
 
         await dbContext.SaveChangesAsync();
 

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,7 +14,8 @@ namespace Yuviron.Application.Features.Finance.Commands.CalculateDailyRoyalties;
 
 public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDailyRoyaltiesCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
+    private readonly ISystemContext _systemContext;
     private readonly ILogger<CalculateDailyRoyaltiesHandler> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus; 
@@ -20,12 +23,13 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
     private const decimal GlobalRatePerStream = 0.003m; 
 
     public CalculateDailyRoyaltiesHandler(
-        IApplicationDbContext context, 
+        IMonetizationContext monetizationContext, ISystemContext systemContext, 
         ILogger<CalculateDailyRoyaltiesHandler> logger, 
         TimeProvider timeProvider,
         IEventBus eventBus) 
     {
-        _context = context; 
+        _monetizationContext = monetizationContext;
+        _systemContext = systemContext; 
         _logger = logger; 
         _timeProvider = timeProvider;
         _eventBus = eventBus;
@@ -39,7 +43,7 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
         var startDate = request.TargetDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var endDate = startDate.AddDays(1);
 
-        var artistStreamCounts = await _context.ListeningEvents
+        var artistStreamCounts = await _systemContext.ListeningEvents
             .AsNoTracking()
             .Where(e => e.PlayedAt >= startDate && e.PlayedAt < endDate && e.MsPlayed >= 30000)
             .SelectMany(e => e.Track.TrackArtists.Where(ta => ta.Role == ArtistRole.Main)) 
@@ -55,15 +59,15 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
 
         var artistIds = artistStreamCounts.Select(x => x.ArtistId).ToList();
 
-        var settingsDict = await _context.ArtistPayoutSettings
+        var settingsDict = await _monetizationContext.ArtistPayoutSettings
             .Where(s => artistIds.Contains(s.ArtistId))
             .ToDictionaryAsync(s => s.ArtistId, cancellationToken);
 
-        var walletsDict = await _context.ArtistWallets
+        var walletsDict = await _monetizationContext.ArtistWallets
             .Where(w => artistIds.Contains(w.ArtistId))
             .ToDictionaryAsync(w => w.ArtistId, cancellationToken);
 
-        var existingAccruals = await _context.RoyaltyAccrualsDaily
+        var existingAccruals = await _monetizationContext.RoyaltyAccrualsDaily
             .Where(a => artistIds.Contains(a.ArtistId) && a.Date == request.TargetDate)
             .Select(a => a.ArtistId)
             .ToListAsync(cancellationToken);
@@ -91,14 +95,14 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
             if (netAmount <= 0) continue;
 
             var accrual = RoyaltyAccrualDaily.Create(stats.ArtistId, request.TargetDate, stats.ValidStreams, grossAmount, platformFeeAmount);
-            _context.RoyaltyAccrualsDaily.Add(accrual);
+            _monetizationContext.Add(accrual);
 
             bool isFirstRoyalty = false;
 
             if (!walletsDict.TryGetValue(stats.ArtistId, out var wallet))
             {
                 wallet = ArtistWallet.Create(stats.ArtistId, utcNow);
-                _context.ArtistWallets.Add(wallet);
+                _monetizationContext.Add(wallet);
                 isFirstRoyalty = true; 
             }
             else if (wallet.TotalEarned == 0) 
@@ -117,10 +121,10 @@ public sealed class CalculateDailyRoyaltiesHandler : IRequestHandler<CalculateDa
                 wallet.Id, netAmount, WalletTransactionType.RoyaltyAccrual, 
                 $"Daily Royalties: {stats.ValidStreams} streams", null, utcNow);
             
-            _context.WalletTransactions.Add(walletTx);
+            _monetizationContext.Add(walletTx);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         foreach (var evt in eventsToPublish)
         {

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,20 +17,20 @@ namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetArtistA
 
 public sealed class GetArtistAudienceHandler : IRequestHandler<GetArtistAudienceQuery, ArtistAudienceDashboardDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
     private readonly IAnalyticsRepository _analyticsRepository;
 
     public GetArtistAudienceHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser,
         ICacheService cacheService,
         TimeProvider timeProvider,
         IAnalyticsRepository analyticsRepository)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
         _cacheService = cacheService;
         _timeProvider = timeProvider;
@@ -39,7 +41,7 @@ public sealed class GetArtistAudienceHandler : IRequestHandler<GetArtistAudience
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -50,7 +52,7 @@ public sealed class GetArtistAudienceHandler : IRequestHandler<GetArtistAudience
         var cachedStats = await _cacheService.GetAsync<ArtistAudienceDashboardDto>(cacheKey, cancellationToken);
         if (cachedStats != null) return cachedStats;
 
-        var trackIds = await _context.TrackArtists
+        var trackIds = await _catalogContext.TrackArtists
             .AsNoTracking()
             .Where(ta => ta.ArtistId == request.ArtistId && !ta.Track.IsDeleted)
             .Select(ta => ta.TrackId)

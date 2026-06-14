@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,23 +15,23 @@ namespace Yuviron.Application.Features.Admin.Tracks.Commands.MarkTrackAsTranscod
 
 public sealed class MarkTrackAsTranscodedHandler : IRequestHandler<MarkTrackAsTranscodedCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<MarkTrackAsTranscodedHandler> _logger;
 
     public MarkTrackAsTranscodedHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         TimeProvider timeProvider,
         ILogger<MarkTrackAsTranscodedHandler> logger)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _logger = logger;
     }
 
     public async Task<Unit> Handle(MarkTrackAsTranscodedCommand request, CancellationToken cancellationToken)
     {
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
             .Include(t => t.TrackArtists)
             .Include(t => t.Album).ThenInclude(a => a!.AlbumArtists)
             .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken);
@@ -43,7 +45,7 @@ public sealed class MarkTrackAsTranscodedHandler : IRequestHandler<MarkTrackAsTr
             if (track != null && !string.IsNullOrWhiteSpace(request.FinalAudioKey))
             {
                 track.AddDomainEvent(new FileNeedsDeletionEvent(request.FinalAudioKey));
-                await _context.SaveChangesAsync(cancellationToken);
+                await _catalogContext.SaveChangesAsync(cancellationToken);
             }
             
             return Unit.Value;
@@ -61,7 +63,7 @@ public sealed class MarkTrackAsTranscodedHandler : IRequestHandler<MarkTrackAsTr
 
         track.AddDomainEvent(new TrackProcessingCompletedEvent(mainArtistId, track.Id, track.Title));
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

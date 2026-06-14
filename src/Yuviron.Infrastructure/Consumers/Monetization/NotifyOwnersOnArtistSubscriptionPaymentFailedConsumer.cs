@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +14,7 @@ namespace Yuviron.Infrastructure.Consumers.Monetization;
 
 public sealed class NotifyOwnersOnArtistSubscriptionPaymentFailedConsumer : NotifyArtistOwnersConsumerBase<ArtistSubscriptionPaymentFailedEvent>
 {
-    public NotifyOwnersOnArtistSubscriptionPaymentFailedConsumer(IApplicationDbContext context, INotificationService notificationService)
+    public NotifyOwnersOnArtistSubscriptionPaymentFailedConsumer(AppDbContext context, INotificationService notificationService)
         : base(context, notificationService)
     {
     }

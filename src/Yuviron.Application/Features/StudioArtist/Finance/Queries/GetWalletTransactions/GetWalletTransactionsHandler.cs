@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -12,24 +14,26 @@ namespace Yuviron.Application.Features.StudioArtist.Finance.Queries.GetWalletTra
 
 public sealed class GetWalletTransactionsHandler : IRequestHandler<GetWalletTransactionsQuery, PaginatedList<WalletTransactionDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetWalletTransactionsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetWalletTransactionsHandler(ICatalogContext catalogContext, IMonetizationContext monetizationContext, ICurrentUserService currentUser)
     {
-        _context = context; _currentUser = currentUser;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext; _currentUser = currentUser;
     }
 
     public async Task<PaginatedList<WalletTransactionDto>> Handle(GetWalletTransactionsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId, cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to this artist's finances.");
 
-        var query = _context.WalletTransactions
+        var query = _monetizationContext.WalletTransactions
             .AsNoTracking()
             .Where(wt => wt.Wallet.ArtistId == request.ArtistId);
 

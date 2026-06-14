@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options; // <-- Добавили для IOptions
@@ -20,7 +22,9 @@ namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackStreamUrl;
 
 public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrlQuery, TrackStreamUrlResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IStreamTokenService _streamTokenService;
     private readonly TimeProvider _timeProvider;
@@ -30,7 +34,7 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
     private readonly int _adCooldownMinutes; 
 
     public GetTrackStreamUrlHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ICatalogContext catalogContext, IMonetizationContext monetizationContext,
         ICurrentUserService currentUser,
         IStreamTokenService streamTokenService,
         TimeProvider timeProvider,
@@ -38,7 +42,9 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
         IPermissionService permissionService,
         IOptions<AdSettingsOptions> adOptions) 
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _streamTokenService = streamTokenService;
         _timeProvider = timeProvider;
@@ -53,7 +59,7 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
         var currentUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException("You must be logged in.");
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var fileKey = await _context.Tracks
+        var fileKey = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => t.Id == request.TrackId)
@@ -65,7 +71,7 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
         bool hasHighQuality = await _permissionService.HasPermissionAsync(currentUserId, AppPermission.PlayerHighQuality, cancellationToken);
         bool hasNoAds = await _permissionService.HasPermissionAsync(currentUserId, AppPermission.PlayerNoAds, cancellationToken);
 
-        var user = await _context.Users.AsNoTracking().Include(u => u.Settings).FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken); 
+        var user = await _identityContext.Users.AsNoTracking().Include(u => u.Settings).FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken); 
         if (user == null) throw new UnauthorizedAccessException();
 
         int targetQuality = _settingsPolicy.GetAllowedStreamQuality(user.Settings, hasHighQuality);
@@ -87,7 +93,7 @@ public sealed class GetTrackStreamUrlHandler : IRequestHandler<GetTrackStreamUrl
         AdPlaybackDto? pendingAd = null;
         if (!hasNoAds)
         {
-            var adResult = await _context.GetAdIfCooldownPassedAsync(
+            var adResult = await _monetizationContext.GetAdIfCooldownPassedAsync(
                 currentUserId, 
                 utcNow, 
                 _adCooldownMinutes, 

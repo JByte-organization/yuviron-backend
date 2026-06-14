@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,20 +17,20 @@ namespace Yuviron.Application.Features.StudioArtist.Analytics.Queries.GetTrackPl
 
 public sealed class GetTrackPlaysOverTimeHandler : IRequestHandler<GetTrackPlaysOverTimeQuery, List<PlaysOverTimePointDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cacheService;
     private readonly TimeProvider _timeProvider;
     private readonly IAnalyticsRepository _analyticsRepository; 
 
     public GetTrackPlaysOverTimeHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser,
         ICacheService cacheService,
         TimeProvider timeProvider,
         IAnalyticsRepository analyticsRepository)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
         _cacheService = cacheService;
         _timeProvider = timeProvider;
@@ -39,13 +41,13 @@ public sealed class GetTrackPlaysOverTimeHandler : IRequestHandler<GetTrackPlays
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to view this artist's statistics.");
 
-        bool trackBelongsToArtist = await _context.TrackArtists
+        bool trackBelongsToArtist = await _catalogContext.TrackArtists
             .AnyAsync(ta => ta.ArtistId == request.ArtistId && ta.TrackId == request.TrackId, cancellationToken);
             
         if (!trackBelongsToArtist) throw new ForbiddenException("Track does not belong to this artist.");

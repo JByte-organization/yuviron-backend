@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,16 +16,16 @@ namespace Yuviron.Application.Features.Admin.Themes.Queries.GetThemes;
 
 public sealed class GetThemesHandler : IRequestHandler<GetThemesQuery, PaginatedList<ThemeListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
 
-    public GetThemesHandler(IApplicationDbContext context)
+    public GetThemesHandler(IProfileContext profileContext)
     {
-        _context = context;
+        _profileContext = profileContext;
     }
 
     public async Task<PaginatedList<ThemeListItemDto>> Handle(GetThemesQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Themes
+        var query = _profileContext.Themes
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

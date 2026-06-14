@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,12 +16,12 @@ namespace Yuviron.Application.Features.Client.Playlists.Queries.GetUserPlaylists
 
 public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQuery, PaginatedList<UserPlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUserPlaylistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserPlaylistsHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -29,7 +31,7 @@ public sealed class GetUserPlaylistsHandler : IRequestHandler<GetUserPlaylistsQu
                      ?? throw new UnauthorizedAccessException("User is not authenticated.");
         var trackId = request.TrackId;
 
-        var query = _context.Playlists
+        var query = _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.UserId == userId && p.ArtistId == null); 
 

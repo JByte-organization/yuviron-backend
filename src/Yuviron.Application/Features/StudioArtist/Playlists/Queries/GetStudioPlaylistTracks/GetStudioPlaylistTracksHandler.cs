@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,12 +18,14 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Queries.GetStudioP
 
 public sealed class GetStudioPlaylistTracksHandler : IRequestHandler<GetStudioPlaylistTracksQuery, PaginatedList<StudioPlaylistTrackItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioPlaylistTracksHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioPlaylistTracksHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
     }
 
@@ -29,7 +33,7 @@ public sealed class GetStudioPlaylistTracksHandler : IRequestHandler<GetStudioPl
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlistInfo = await _context.Playlists
+        var playlistInfo = await _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.Id == request.PlaylistId && !p.IsDeleted)
             .Select(p => new { p.ArtistId })
@@ -38,13 +42,13 @@ public sealed class GetStudioPlaylistTracksHandler : IRequestHandler<GetStudioPl
 
         if (playlistInfo.ArtistId == null) throw new ForbiddenException("Not an artist playlist.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(playlistInfo.ArtistId.Value, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to view this playlist's tracks.");
 
-        var query = _context.PlaylistTracks
+        var query = _libraryContext.PlaylistTracks
             .AsNoTracking()
             .Where(pt => pt.PlaylistId == request.PlaylistId)
             .OrderBy(pt => pt.Position);

@@ -1,0 +1,2 @@
+namespace Yuviron.Application.Abstractions.Data.Contexts;
+public interface IDataContext : IUnitOfWork { void Add<T>(T entity) where T : class; void Remove<T>(T entity) where T : class; void Update<T>(T entity) where T : class; void AddRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class; void RemoveRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class; void UpdateRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class; }

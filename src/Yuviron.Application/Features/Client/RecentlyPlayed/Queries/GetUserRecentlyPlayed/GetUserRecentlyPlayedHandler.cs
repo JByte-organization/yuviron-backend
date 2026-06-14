@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,18 @@ namespace Yuviron.Application.Features.Client.RecentlyPlayed.Queries.GetUserRece
 
 public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecentlyPlayedQuery, List<RecentlyPlayedTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
     public GetUserRecentlyPlayedHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
         _timeProvider = timeProvider;
     }
@@ -28,7 +32,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
         var userId = _currentUserService.UserId 
                      ?? throw new UnauthorizedAccessException();
 
-        var recentTracksData = await _context.ListeningEvents
+        var recentTracksData = await _systemContext.ListeningEvents
             .AsNoTracking()
             .Where(le => le.UserId == userId && !le.IsPrivate)
             .GroupBy(le => le.TrackId)
@@ -47,7 +51,7 @@ public sealed class GetUserRecentlyPlayedHandler : IRequestHandler<GetUserRecent
         var trackIds = recentTracksData.Select(x => x.TrackId).ToList();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var dbTracksDict = await _context.Tracks
+        var dbTracksDict = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow) 
             .Where(t => trackIds.Contains(t.Id))

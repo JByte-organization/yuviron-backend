@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,16 +15,18 @@ namespace Yuviron.Application.Features.Admin.Ads.Commands.UpdateAd;
 
 public sealed class UpdateAdHandler : IRequestHandler<UpdateAdCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateAdHandler(
-        IApplicationDbContext context, 
+        IMonetizationContext monetizationContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -32,14 +36,14 @@ public sealed class UpdateAdHandler : IRequestHandler<UpdateAdCommand, Unit>
         var adminUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var ad = await _context.Ads
+        var ad = await _monetizationContext.Ads
                      .FirstOrDefaultAsync(a => a.Id == request.AdId, cancellationToken)
                  ?? throw new NotFoundException(nameof(Ad), request.AdId);
 
         string finalAudioUrl = ad.AudioUrl;
         if (request.AudioFileId.HasValue)
         {
-            var audioClaim = await _context.ClaimFileAsync(
+            var audioClaim = await _systemContext.ClaimFileAsync(
                 request.AudioFileId.Value, adminUserId, "audio/", "ads/audio", cancellationToken);
             
             ad.RegisterFileSwapEvents(audioClaim, ad.AudioUrl);
@@ -49,7 +53,7 @@ public sealed class UpdateAdHandler : IRequestHandler<UpdateAdCommand, Unit>
         string finalImageUrl = ad.ImageUrl;
         if (request.ImageFileId.HasValue)
         {
-            var imageClaim = await _context.ClaimFileAsync(
+            var imageClaim = await _systemContext.ClaimFileAsync(
                 request.ImageFileId.Value, adminUserId, "image/", "ads/images", cancellationToken);
             
             ad.RegisterFileSwapEvents(imageClaim, ad.ImageUrl);
@@ -65,7 +69,7 @@ public sealed class UpdateAdHandler : IRequestHandler<UpdateAdCommand, Unit>
             request.IsActive,
             utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

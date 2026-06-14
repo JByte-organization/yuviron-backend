@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,12 +9,12 @@ namespace Yuviron.Application.Features.Client.Notifications.Commands.MarkAllAsRe
 
 public sealed class MarkAllNotificationsAsReadHandler : IRequestHandler<MarkAllNotificationsAsReadCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public MarkAllNotificationsAsReadHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public MarkAllNotificationsAsReadHandler(ISystemContext systemContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
     }
 
@@ -20,7 +22,7 @@ public sealed class MarkAllNotificationsAsReadHandler : IRequestHandler<MarkAllN
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        await _context.Notifications
+        await _systemContext.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), cancellationToken);
 

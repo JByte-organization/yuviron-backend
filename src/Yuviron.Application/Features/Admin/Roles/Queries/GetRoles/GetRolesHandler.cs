@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,16 +9,16 @@ namespace Yuviron.Application.Features.Admin.Roles.Queries.GetRoles;
 
 public sealed class GetRolesHandler : IRequestHandler<GetRolesQuery, List<RoleDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
 
-    public GetRolesHandler(IApplicationDbContext context)
+    public GetRolesHandler(IIdentityContext identityContext)
     {
-        _context = context;
+        _identityContext = identityContext;
     }
 
     public async Task<List<RoleDto>> Handle(GetRolesQuery request, CancellationToken cancellationToken)
     {
-        var rolesFromDb = await _context.Roles
+        var rolesFromDb = await _identityContext.Roles
             .AsNoTracking()
             .OrderBy(r => r.Name) 
             .Select(r => new 

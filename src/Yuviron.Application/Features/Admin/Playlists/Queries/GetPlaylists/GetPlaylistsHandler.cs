@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,14 +12,14 @@ namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylists;
 
 public sealed class GetPlaylistsHandler : IRequestHandler<GetPlaylistsQuery, PaginatedList<PlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
 
-    public GetPlaylistsHandler(IApplicationDbContext context) => _context = context;
+    public GetPlaylistsHandler(ILibraryContext libraryContext) => _libraryContext = libraryContext;
 
     public async Task<PaginatedList<PlaylistDto>> Handle(GetPlaylistsQuery request, CancellationToken cancellationToken)
     {
         var trackId = request.TrackId;
-        var query = _context.Playlists.AsNoTracking();
+        var query = _libraryContext.Playlists.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

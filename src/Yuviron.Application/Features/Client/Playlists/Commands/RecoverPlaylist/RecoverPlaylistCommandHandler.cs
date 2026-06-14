@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,13 +14,13 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.RecoverPlaylist
 
 public class RecoverPlaylistCommandHandler : IRequestHandler<RecoverPlaylistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public RecoverPlaylistCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public RecoverPlaylistCommandHandler(ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -27,7 +29,7 @@ public class RecoverPlaylistCommandHandler : IRequestHandler<RecoverPlaylistComm
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId && p.UserId == userId, cancellationToken);
 
@@ -43,7 +45,7 @@ public class RecoverPlaylistCommandHandler : IRequestHandler<RecoverPlaylistComm
 
         playlist.Recover(_timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _libraryContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

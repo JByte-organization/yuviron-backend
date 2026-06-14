@@ -29,7 +29,7 @@ public class RecoverPlaylistHandlerTests
         var playlist = Playlist.Create(userId, null, "Deleted Playlist", null, null, PlaylistVisibility.Public, false, utcNow);
         playlist.Delete(utcNow);
 
-        dbContext.Playlists.Add(playlist);
+        dbContext.Add(playlist);
         await dbContext.SaveChangesAsync();
 
         var currentUserMock = new Mock<ICurrentUserService>();
@@ -42,7 +42,7 @@ public class RecoverPlaylistHandlerTests
 
         await handler.Handle(new RecoverPlaylistCommand(playlist.Id), CancellationToken.None);
 
-        var recoveredPlaylist = await dbContext.Playlists.FindAsync(playlist.Id);
+        var recoveredPlaylist = await dbContext.Set<Playlist>().FindAsync(playlist.Id);
         recoveredPlaylist.Should().NotBeNull();
         recoveredPlaylist!.IsDeleted.Should().BeFalse();
         recoveredPlaylist.UpdatedAt.Should().Be(utcNow.AddMinutes(5));

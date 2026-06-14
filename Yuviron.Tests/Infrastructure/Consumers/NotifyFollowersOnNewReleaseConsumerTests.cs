@@ -34,10 +34,7 @@ public class NotifyFollowersOnNewReleaseConsumerTests
         // Arrange
         var artistId = Guid.NewGuid();
         var user1Id = Guid.NewGuid();
-        var user2Id = Guid.NewGuid();
-        
-        _context.UserFollowArtists.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow));
-        _context.UserFollowArtists.Add(new UserFollowArtist(user2Id, artistId, true, DateTime.UtcNow));
+        var user2Id = Guid.NewGuid(); _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); _context.Add(new UserFollowArtist(user2Id, artistId, true, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var msg = new NewReleasePublishedEvent(artistId, "The Beatles", Guid.NewGuid(), NotificationEntityType.Album, "Abbey Road", null);
@@ -67,10 +64,7 @@ public class NotifyFollowersOnNewReleaseConsumerTests
         // Arrange
         var artistId = Guid.NewGuid();
         var user1Id = Guid.NewGuid(); 
-        var user2Id = Guid.NewGuid(); 
-        
-        _context.UserFollowArtists.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow));
-        _context.UserFollowArtists.Add(new UserFollowArtist(user2Id, artistId, false, DateTime.UtcNow));
+        var user2Id = Guid.NewGuid(); _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); _context.Add(new UserFollowArtist(user2Id, artistId, false, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var msg = new NewReleasePublishedEvent(artistId, "The Beatles", Guid.NewGuid(), NotificationEntityType.Album, "Abbey Road", null);

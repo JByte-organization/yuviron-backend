@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,7 +19,7 @@ namespace Yuviron.Application.Features.Auth.Commands.LoginWithCode;
 
 public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand, LoginResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly TimeProvider _timeProvider;
@@ -27,7 +29,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
     private readonly IUserDeviceTracker _deviceTracker; 
 
     public LoginWithCodeHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         TimeProvider timeProvider,
@@ -36,7 +38,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
         IClientContextService clientContextService,
         IUserDeviceTracker deviceTracker) 
     {
-        _context = context;
+        _identityContext = identityContext;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _timeProvider = timeProvider;
@@ -56,7 +58,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
 
         await _otpService.RemoveLoginCodeAsync(normalizedEmail, cancellationToken);
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
             .Include(u => u.Subscriptions)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
@@ -65,7 +67,7 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
         if (user.AccountState == AccountState.Deleted) throw new UnauthorizedAccessException("This account has been deleted.");
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        await user.EnsureAllowedToLoginAsync(_context, utcNow, cancellationToken);
+        await user.EnsureAllowedToLoginAsync(_identityContext, utcNow, cancellationToken);
         user.UpdateLastLogin(utcNow);
 
         var clientInfo = _clientContextService.GetClientContext();
@@ -77,9 +79,9 @@ public sealed class LoginWithCodeHandler : IRequestHandler<LoginWithCodeCommand,
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 
         var refreshTokenEntity = RefreshToken.Create(user.Id, hashedRefreshToken, utcNow.AddDays(30), utcNow);
-        _context.RefreshTokens.Add(refreshTokenEntity);
+        _identityContext.Add(refreshTokenEntity);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(user.Id, token, rawRefreshToken, user.Email, permissions);
     }

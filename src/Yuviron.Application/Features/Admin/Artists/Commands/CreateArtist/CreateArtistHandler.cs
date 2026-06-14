@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
@@ -8,18 +10,20 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.CreateArtist;
 
 public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly IIdentityManager _identityManager;
     private readonly ICurrentUserService _currentUser;
     
     public CreateArtistHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         IIdentityManager identityManager,
         ICurrentUserService currentUser) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _identityManager = identityManager;
         _currentUser = currentUser;
@@ -33,14 +37,14 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
         ClaimedFileResult? avatarClaim = null;
         if (request.AvatarFileId.HasValue)
         {
-            avatarClaim = await _context.ClaimFileAsync(
+            avatarClaim = await _systemContext.ClaimFileAsync(
                 request.AvatarFileId.Value, adminId, "image/", "avatars", cancellationToken);
         }
 
         ClaimedFileResult? bannerClaim = null;
         if (request.BannerFileId.HasValue)
         {
-            bannerClaim = await _context.ClaimFileAsync(
+            bannerClaim = await _systemContext.ClaimFileAsync(
                 request.BannerFileId.Value, adminId, "image/", "banners", cancellationToken);
         }
         
@@ -63,14 +67,14 @@ public sealed class CreateArtistHandler : IRequestHandler<CreateArtistCommand, G
             artist.RegisterFileSwapEvents(bannerClaim);
         }
 
-        _context.Artists.Add(artist);
+        _catalogContext.Add(artist);
 
         if (request.OwnerUserId.HasValue)
         {
             await _identityManager.EnsureManagementRoleAsync(request.OwnerUserId.Value, cancellationToken);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return artist.Id;
     }

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -15,16 +17,16 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistSingles;
 
 public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQuery, PaginatedList<ArtistAlbumDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
-    public GetArtistSinglesHandler(IApplicationDbContext context, TimeProvider timeProvider,
+    public GetArtistSinglesHandler(ICatalogContext catalogContext, TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -32,7 +34,7 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
 
     public async Task<PaginatedList<ArtistAlbumDto>> Handle(GetArtistSinglesQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
+        var artistExists = await _catalogContext.Artists
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
@@ -43,7 +45,7 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var query = _context.Albums
+        var query = _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)

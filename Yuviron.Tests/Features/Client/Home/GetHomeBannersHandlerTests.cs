@@ -28,7 +28,7 @@ public class GetHomeBannersHandlerTests
         var b2 = Banner.Create("B2", "url2", "target2", true, utcNow);
         var b3 = Banner.Create("B3", "url3", "target3", true, utcNow);
 
-        dbContext.Banners.AddRange(b1, b2, b3);
+        dbContext.AddRange(b1, b2, b3);
         await dbContext.SaveChangesAsync();
 
         var handler = new GetHomeBannersHandler(dbContext, TimeProvider.System);
@@ -54,7 +54,7 @@ public class GetHomeBannersHandlerTests
         var b2 = Banner.Create("Rock Only", "url2", "target2", true, utcNow, targetGenres: genreId.ToString());
         var b3 = Banner.Create("Global", "url3", "target3", true, utcNow);
 
-        dbContext.Banners.AddRange(b1, b2, b3);
+        dbContext.AddRange(b1, b2, b3);
         await dbContext.SaveChangesAsync();
 
         var handler = new GetHomeBannersHandler(dbContext, TimeProvider.System);

@@ -38,7 +38,7 @@ public class DeletePlaylistHandlerTests
 
         var coverUrl = "s3://bucket/covers/playlist-xyz.jpg";
         var playlist = Playlist.Create(currentUserId, null, "To Be Deleted", null, coverUrl, PlaylistVisibility.Public, false, DateTime.UtcNow);
-        dbContext.Playlists.Add(playlist);
+        dbContext.Add(playlist);
         await dbContext.SaveChangesAsync();
 
         // ИСПРАВЛЕНО: Убран EventBus (3 аргумента)
@@ -46,7 +46,7 @@ public class DeletePlaylistHandlerTests
 
         await handler.Handle(new DeletePlaylistCommand(playlist.Id), CancellationToken.None);
 
-        var deletedPlaylist = await dbContext.Playlists.FindAsync(playlist.Id);
+        var deletedPlaylist = await dbContext.Set<Playlist>().FindAsync(playlist.Id);
         deletedPlaylist!.IsDeleted.Should().BeTrue(); 
     }
 }

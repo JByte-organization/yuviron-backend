@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,18 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetUserTopTracks;
 
 public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQuery, List<TopTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
 
     public GetUserTopTracksHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
         _timeProvider = timeProvider;
     }
@@ -31,7 +35,7 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var minDate = utcNow.AddDays(-30); 
         
-        var topTrackIds = await _context.ListeningEvents
+        var topTrackIds = await _systemContext.ListeningEvents
             .Where(le => le.UserId == userId && 
                          le.PlayedAt >= minDate && 
                          le.MsPlayed >= 30000)
@@ -43,7 +47,7 @@ public sealed class GetUserTopTracksHandler : IRequestHandler<GetUserTopTracksQu
 
         if (!topTrackIds.Any()) return new List<TopTrackDto>();
 
-        var dbTracks = await _context.Tracks
+        var dbTracks = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => topTrackIds.Contains(t.Id))

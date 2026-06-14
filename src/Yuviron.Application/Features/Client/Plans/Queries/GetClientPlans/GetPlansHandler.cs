@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -6,13 +8,13 @@ namespace Yuviron.Application.Features.Client.Plans.Queries.GetClientPlans;
 
 public sealed class GetPlansHandler : IRequestHandler<GetPlansQuery, List<PlanDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetPlansHandler(IApplicationDbContext context) => _context = context;
+    public GetPlansHandler(IMonetizationContext monetizationContext) => _monetizationContext = monetizationContext;
 
     public async Task<List<PlanDto>> Handle(GetPlansQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Plans.AsNoTracking().Where(p => p.Price > 0);
+        var query = _monetizationContext.Plans.AsNoTracking().Where(p => p.Price > 0);
 
         if (request.Type.HasValue)
         {

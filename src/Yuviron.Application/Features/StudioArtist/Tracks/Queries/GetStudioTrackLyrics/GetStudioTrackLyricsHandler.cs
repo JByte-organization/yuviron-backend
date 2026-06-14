@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,12 +16,12 @@ namespace Yuviron.Application.Features.StudioArtist.Tracks.Queries.GetStudioTrac
 
 public sealed class GetStudioTrackLyricsHandler : IRequestHandler<GetStudioTrackLyricsQuery, StudioTrackLyricsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioTrackLyricsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioTrackLyricsHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -27,7 +29,7 @@ public sealed class GetStudioTrackLyricsHandler : IRequestHandler<GetStudioTrack
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var trackData = await _context.Tracks
+        var trackData = await _catalogContext.Tracks
                             .AsNoTracking()
                             .Where(t => t.Id == request.TrackId && !t.IsDeleted)
                             .Select(t => new
@@ -38,7 +40,7 @@ public sealed class GetStudioTrackLyricsHandler : IRequestHandler<GetStudioTrack
                             .FirstOrDefaultAsync(cancellationToken)
                         ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .Where(tm => trackData.ArtistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 

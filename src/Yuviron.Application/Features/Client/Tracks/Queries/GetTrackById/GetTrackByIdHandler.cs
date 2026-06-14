@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,18 +14,18 @@ namespace Yuviron.Application.Features.Client.Tracks.Queries.GetTrackById;
 
 public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, TrackDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser; 
 
     public GetTrackByIdHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -33,7 +35,7 @@ public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, Tra
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var trackData = await _context.Tracks
+        var trackData = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(t => t.Id == request.Id)

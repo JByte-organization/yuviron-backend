@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,18 @@ namespace Yuviron.Application.Features.Admin.Moods.Commands.CreateMood;
 
 public sealed class CreateMoodHandler : IRequestHandler<CreateMoodCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public CreateMoodHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         ICurrentUserService currentUser) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -27,7 +31,7 @@ public sealed class CreateMoodHandler : IRequestHandler<CreateMoodCommand, Guid>
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        if (await _context.Moods.AnyAsync(m => m.Name == request.Name , cancellationToken))
+        if (await _catalogContext.Moods.AnyAsync(m => m.Name == request.Name , cancellationToken))
         {
             throw new InvalidOperationException($"Mood with name '{request.Name}' already exists.");
         }
@@ -37,7 +41,7 @@ public sealed class CreateMoodHandler : IRequestHandler<CreateMoodCommand, Guid>
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
         }
 
@@ -52,8 +56,8 @@ public sealed class CreateMoodHandler : IRequestHandler<CreateMoodCommand, Guid>
             mood.RegisterFileSwapEvents(coverClaim);
         }
 
-        _context.Moods.Add(mood);
-        await _context.SaveChangesAsync(cancellationToken);
+        _catalogContext.Add(mood);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return mood.Id;
     }

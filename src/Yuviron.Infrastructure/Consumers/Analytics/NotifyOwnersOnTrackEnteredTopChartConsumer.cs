@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Services;
@@ -9,7 +11,7 @@ namespace Yuviron.Infrastructure.Consumers.Analytics;
 
 public sealed class NotifyOwnersOnTrackEnteredTopChartConsumer : NotifyArtistOwnersConsumerBase<TrackEnteredTopChartEvent>
 {
-    public NotifyOwnersOnTrackEnteredTopChartConsumer(IApplicationDbContext context, INotificationService notificationService)
+    public NotifyOwnersOnTrackEnteredTopChartConsumer(AppDbContext context, INotificationService notificationService)
         : base(context, notificationService)
     {
     }

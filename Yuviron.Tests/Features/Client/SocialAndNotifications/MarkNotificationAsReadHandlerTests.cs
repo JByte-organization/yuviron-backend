@@ -44,7 +44,7 @@ public class MarkNotificationAsReadHandlerTests
             "Инфо", 
             null, null, DateTime.UtcNow);
         
-        dbContext.Notifications.Add(notification);
+        dbContext.Add(notification);
         await dbContext.SaveChangesAsync();
 
         var handler = new MarkNotificationAsReadHandler(dbContext, _currentUserMock.Object);

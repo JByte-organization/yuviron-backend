@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,7 +15,7 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public class NotifyOwnersOnTeamMemberJoinedConsumer : NotifyArtistOwnersConsumerBase<TeamMemberJoinedEvent>
 {
-    public NotifyOwnersOnTeamMemberJoinedConsumer(IApplicationDbContext context, INotificationService notificationService) : base(context, notificationService) { }
+    public NotifyOwnersOnTeamMemberJoinedConsumer(AppDbContext context, INotificationService notificationService) : base(context, notificationService) { }
 
     protected override async Task SendNotificationAsync(TeamMemberJoinedEvent msg, List<Guid> ownerIds, CancellationToken ct) =>
         await NotificationService.SendToUsersAsync(ownerIds, NotificationCategory.System, "team_joined", 

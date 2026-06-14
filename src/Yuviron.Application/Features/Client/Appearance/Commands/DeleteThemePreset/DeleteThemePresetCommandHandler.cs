@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Client.Appearance.Commands.DeleteThemePre
 
 public sealed class DeleteThemePresetCommandHandler : IRequestHandler<DeleteThemePresetCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
 
     public DeleteThemePresetCommandHandler(
-        IApplicationDbContext context,
+        IProfileContext profileContext,
         ICurrentUserService currentUser,
         IPermissionService permissionService)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
     }
@@ -35,10 +37,10 @@ public sealed class DeleteThemePresetCommandHandler : IRequestHandler<DeleteThem
             throw new ForbiddenException("Theme presets are a premium feature.");
         }
 
-        var settings = await _context.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
+        var settings = await _profileContext.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new NotFoundException(nameof(UserSettings), userId);
 
-        var theme = await _context.Themes
+        var theme = await _profileContext.Themes
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.Id);
 
@@ -52,8 +54,8 @@ public sealed class DeleteThemePresetCommandHandler : IRequestHandler<DeleteThem
             settings.ApplyDesign(null, settings.CustomThemeId, DateTime.UtcNow);
         }
 
-        _context.Themes.Remove(theme);
-        await _context.SaveChangesAsync(cancellationToken);
+        _profileContext.Remove(theme);
+        await _profileContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

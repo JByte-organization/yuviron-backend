@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -10,16 +12,16 @@ namespace Yuviron.Application.Features.Admin.Complaints.Queries.GetComplaints;
 
 public sealed class GetComplaintsHandler : IRequestHandler<GetComplaintsQuery, PaginatedList<ComplaintListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IAuditingContext _auditingContext;
 
-    public GetComplaintsHandler(IApplicationDbContext context)
+    public GetComplaintsHandler(IAuditingContext auditingContext)
     {
-        _context = context;
+        _auditingContext = auditingContext;
     }
 
     public async Task<PaginatedList<ComplaintListItemDto>> Handle(GetComplaintsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Complaints
+        var query = _auditingContext.Complaints
             .AsNoTracking()
             .Include(c => c.CreatedByUser)
             .AsQueryable();

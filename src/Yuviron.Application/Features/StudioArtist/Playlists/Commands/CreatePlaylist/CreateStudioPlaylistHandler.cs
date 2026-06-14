@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,13 +15,17 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Commands.CreatePla
 
 public sealed class CreateStudioPlaylistHandler : IRequestHandler<CreateStudioPlaylistCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
-    public CreateStudioPlaylistHandler(IApplicationDbContext context, TimeProvider timeProvider, ICurrentUserService currentUser)
+    public CreateStudioPlaylistHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext, TimeProvider timeProvider, ICurrentUserService currentUser)
     {
-        _context = context; _timeProvider = timeProvider; _currentUser = currentUser;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext; _timeProvider = timeProvider; _currentUser = currentUser;
     }
 
     public async Task<Guid> Handle(CreateStudioPlaylistCommand request, CancellationToken cancellationToken)
@@ -27,7 +33,7 @@ public sealed class CreateStudioPlaylistHandler : IRequestHandler<CreateStudioPl
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
@@ -36,7 +42,7 @@ public sealed class CreateStudioPlaylistHandler : IRequestHandler<CreateStudioPl
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, userId, "image/", "covers", cancellationToken);
         }
 
@@ -53,8 +59,8 @@ public sealed class CreateStudioPlaylistHandler : IRequestHandler<CreateStudioPl
 
         if (coverClaim != null) playlist.RegisterFileSwapEvents(coverClaim);
 
-        _context.Playlists.Add(playlist);
-        await _context.SaveChangesAsync(cancellationToken);
+        _libraryContext.Add(playlist);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return playlist.Id;
     }

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,16 +13,18 @@ namespace Yuviron.Application.Features.StudioArtist.Albums.Commands.UpdateAlbum;
 
 public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateAlbumHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ISystemContext systemContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -30,7 +34,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .Include(a => a.AlbumArtists)
             .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken);
 
@@ -41,7 +45,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
 
         var albumArtistIds = album.AlbumArtists.Select(aa => aa.ArtistId).ToList();
         
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(albumArtistIds, userId)
             .AnyAsync(cancellationToken);
 
@@ -53,7 +57,7 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, 
                 userId, 
                 "image/", 
@@ -80,6 +84,6 @@ public sealed class UpdateAlbumHandler : IRequestHandler<UpdateAlbumCommand>
             album.RegisterFileSwapEvents(coverClaim);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
     }
 }

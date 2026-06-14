@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.IO;
 using System.Linq;
@@ -16,16 +18,16 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.StreamAdminTrackAudi
 
 public sealed class StreamAdminTrackAudioHandler : IRequestHandler<StreamAdminTrackAudioQuery, StreamAdminTrackAudioResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly IStreamTokenService _streamTokenService;
     private readonly IFileStorageService _fileStorage;
 
     public StreamAdminTrackAudioHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         IStreamTokenService streamTokenService,
         IFileStorageService fileStorage)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _streamTokenService = streamTokenService;
         _fileStorage = fileStorage;
     }
@@ -35,7 +37,7 @@ public sealed class StreamAdminTrackAudioHandler : IRequestHandler<StreamAdminTr
         if (!_streamTokenService.ValidateToken(request.TrackId, GetAdminTrackPreviewUrlHandler.PreviewQualitySentinel, request.Exp, request.Uid, request.Sig))
             throw new UnauthorizedAccessException("Invalid or expired admin preview token.");
 
-        var audioKey = await _context.Tracks
+        var audioKey = await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId)
             .Select(t => t.AudioStorageKey)

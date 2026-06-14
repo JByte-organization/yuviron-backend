@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,12 +9,12 @@ namespace Yuviron.Application.Features.Client.Notifications.Queries.GetUnreadCou
 
 public sealed class GetUnreadNotificationCountHandler : IRequestHandler<GetUnreadNotificationCountQuery, int>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUnreadNotificationCountHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUnreadNotificationCountHandler(ISystemContext systemContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
     }
 
@@ -20,7 +22,7 @@ public sealed class GetUnreadNotificationCountHandler : IRequestHandler<GetUnrea
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        return await _context.Notifications
+        return await _systemContext.Notifications
             .CountAsync(n => n.UserId == userId && !n.IsRead, cancellationToken);
     }
 }

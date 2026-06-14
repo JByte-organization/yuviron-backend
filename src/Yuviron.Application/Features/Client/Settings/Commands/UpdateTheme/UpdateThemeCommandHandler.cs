@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,18 +17,18 @@ namespace Yuviron.Application.Features.Client.Settings.Commands.UpdateTheme;
 
 public class UpdateThemeCommandHandler : IRequestHandler<UpdateThemeCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
     private readonly UserSettingsPolicy _policy;
 
     public UpdateThemeCommandHandler(
-        IApplicationDbContext context,
+        IProfileContext profileContext,
         ICurrentUserService currentUser,
         IPermissionService permissionService,
         UserSettingsPolicy policy)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
         _policy = policy;
@@ -42,11 +44,11 @@ public class UpdateThemeCommandHandler : IRequestHandler<UpdateThemeCommand, Uni
             throw new ForbiddenException("System theme mode is a premium feature.");
         }
 
-        var settings = await _context.UserSettings.FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
+        var settings = await _profileContext.UserSettings.FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
         if (settings == null) throw new NotFoundException(nameof(UserSettings), userId);
 
         settings.UpdateTheme(request.ThemeMode, DateTime.UtcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _profileContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

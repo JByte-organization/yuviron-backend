@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,12 +14,12 @@ namespace Yuviron.Application.Features.Files.Queries.GetTempPreview;
 public sealed class GetTempPreviewHandler : IRequestHandler<GetTempPreviewQuery, GetTempPreviewResponse>
 {
     private readonly IFileStorageService _fileStorage;
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
 
-    public GetTempPreviewHandler(IFileStorageService fileStorage, IApplicationDbContext context)
+    public GetTempPreviewHandler(IFileStorageService fileStorage, ISystemContext systemContext)
     {
         _fileStorage = fileStorage;
-        _context = context;
+        _systemContext = systemContext;
     }
 
     public async Task<GetTempPreviewResponse> Handle(GetTempPreviewQuery request, CancellationToken cancellationToken)
@@ -25,7 +27,7 @@ public sealed class GetTempPreviewHandler : IRequestHandler<GetTempPreviewQuery,
         if (!Guid.TryParse(request.FileName, out var fileId))
             throw new NotFoundException("File", request.FileName);
 
-        var fileMeta = await _context.FileMetadata
+        var fileMeta = await _systemContext.FileMetadata
             .AsNoTracking()
             .FirstOrDefaultAsync(f => 
                 f.Id == fileId && 

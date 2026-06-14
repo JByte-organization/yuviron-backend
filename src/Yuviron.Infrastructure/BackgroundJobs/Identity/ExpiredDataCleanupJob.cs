@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,7 +39,7 @@ public sealed class ExpiredDataCleanupJob : BackgroundService
     private async Task CleanupAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var timeProvider = scope.ServiceProvider.GetRequiredService<TimeProvider>();
         
         var utcNow = timeProvider.GetUtcNow().UtcDateTime;

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,25 +10,25 @@ namespace Yuviron.Application.Features.Client.Library.Commands.RemoveAlbumFromFa
 
 public sealed class RemoveAlbumFromFavoritesHandler : IRequestHandler<RemoveAlbumFromFavoritesCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICacheService _cacheService;
 
-    public RemoveAlbumFromFavoritesHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICacheService cacheService)
+    public RemoveAlbumFromFavoritesHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService, ICacheService cacheService)
     {
-        _context = context; _currentUserService = currentUserService; _cacheService = cacheService;
+        _libraryContext = libraryContext; _currentUserService = currentUserService; _cacheService = cacheService;
     }
 
     public async Task<Unit> Handle(RemoveAlbumFromFavoritesCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var entity = await _context.UserSavedAlbums.FirstOrDefaultAsync(usa => usa.UserId == userId && usa.AlbumId == request.AlbumId, cancellationToken);
+        var entity = await _libraryContext.UserSavedAlbums.FirstOrDefaultAsync(usa => usa.UserId == userId && usa.AlbumId == request.AlbumId, cancellationToken);
 
         if (entity != null)
         {
-            _context.UserSavedAlbums.Remove(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            _libraryContext.Remove(entity);
+            await _libraryContext.SaveChangesAsync(cancellationToken);
             
             await _cacheService.SetRemoveAsync($"user:{userId}:saved_albums", request.AlbumId.ToString(), cancellationToken);
         }

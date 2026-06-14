@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,12 +12,12 @@ namespace Yuviron.Application.Features.Client.Search.Queries.SearchAlbums;
 
 public sealed class SearchAlbumsHandler : IRequestHandler<SearchAlbumsQuery, PaginatedList<SearchAlbumDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public SearchAlbumsHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public SearchAlbumsHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -25,7 +27,7 @@ public sealed class SearchAlbumsHandler : IRequestHandler<SearchAlbumsQuery, Pag
         var pageSize = request.PageSize;
         var searchTerm = SearchQueryNormalizer.Normalize(request.SearchTerm);
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var exactQuery = _context.BuildPublicAlbumSearchQuery(searchTerm, utcNow);
+        var exactQuery = _catalogContext.BuildPublicAlbumSearchQuery(searchTerm, utcNow);
 
         if (!SearchFuzzyMatcher.ShouldUseFuzzy(searchTerm))
         {
@@ -61,7 +63,7 @@ public sealed class SearchAlbumsHandler : IRequestHandler<SearchAlbumsQuery, Pag
             .ToHashSet();
 
         var fragments = SearchFuzzyMatcher.BuildCandidateFragments(searchTerm);
-        var fuzzyRows = await _context
+        var fuzzyRows = await _catalogContext
             .BuildPublicAlbumFuzzyCandidateQuery(fragments, utcNow)
             .SelectAlbumSearchRows()
             .ToListAsync(cancellationToken);

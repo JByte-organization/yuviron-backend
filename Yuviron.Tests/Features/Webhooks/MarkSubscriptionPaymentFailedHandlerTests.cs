@@ -25,9 +25,9 @@ public class MarkSubscriptionPaymentFailedHandlerTests
 
         var user = User.Create("user@mail.com", "hash", "User", true, true, utcNow);
         var plan = Plan.Create("Premium", 9.99m, "USD", PlanPeriod.Month, PlanType.Listener, utcNow);
-        dbContext.Users.Add(user);
-        dbContext.Plans.Add(plan);
-        dbContext.Subscriptions.Add(Subscription.Create(user.Id, plan.Id, utcNow.AddMonths(-1), utcNow.AddDays(10), SubscriptionStatus.Active, utcNow, "sub_123"));
+        dbContext.Add(user);
+        dbContext.Add(plan);
+        dbContext.Add(Subscription.Create(user.Id, plan.Id, utcNow.AddMonths(-1), utcNow.AddDays(10), SubscriptionStatus.Active, utcNow, "sub_123"));
         await dbContext.SaveChangesAsync();
 
         var handler = new MarkSubscriptionPaymentFailedHandler(dbContext, TimeProvider.System, eventBusMock.Object);
@@ -59,10 +59,10 @@ public class MarkSubscriptionPaymentFailedHandlerTests
         var payer = User.Create("payer@mail.com", "hash", "Payer", true, true, utcNow);
         var artist = Artist.Create(payer.Id, "Studio", null, null, null, VerificationStatus.None, utcNow);
         var plan = Plan.Create("Artist Pro", 19.99m, "USD", PlanPeriod.Month, PlanType.Artist, utcNow);
-        dbContext.Users.Add(payer);
-        dbContext.Artists.Add(artist);
-        dbContext.Plans.Add(plan);
-        dbContext.ArtistSubscriptions.Add(ArtistSubscription.Create(artist.Id, payer.Id, plan.Id, utcNow.AddMonths(-1), utcNow.AddDays(10), SubscriptionStatus.Active, utcNow, "sub_artist_123"));
+        dbContext.Add(payer);
+        dbContext.Add(artist);
+        dbContext.Add(plan);
+        dbContext.Add(ArtistSubscription.Create(artist.Id, payer.Id, plan.Id, utcNow.AddMonths(-1), utcNow.AddDays(10), SubscriptionStatus.Active, utcNow, "sub_artist_123"));
         await dbContext.SaveChangesAsync();
 
         var handler = new MarkSubscriptionPaymentFailedHandler(dbContext, TimeProvider.System, eventBusMock.Object);

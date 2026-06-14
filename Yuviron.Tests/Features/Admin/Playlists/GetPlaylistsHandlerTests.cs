@@ -23,10 +23,10 @@ public class GetPlaylistsHandlerTests
         var trackId = Guid.NewGuid();
         var playlist = Playlist.Create(userId, null, "Admin Picks", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
 
-        dbContext.Users.Add(User.Create("admin-playlists@test.com", "hash", "Admin", true, true, DateTime.UtcNow));
-        dbContext.Playlists.Add(playlist);
-        dbContext.Tracks.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, DateTime.UtcNow));
+        dbContext.Add(User.Create("admin-playlists@test.com", "hash", "Admin", true, true, DateTime.UtcNow));
+        dbContext.Add(playlist);
+        dbContext.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var handler = new GetPlaylistsHandler(dbContext);

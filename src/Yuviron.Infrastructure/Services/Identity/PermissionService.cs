@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -14,16 +17,16 @@ namespace Yuviron.Infrastructure.Identity;
 public class PermissionService : IPermissionService
 {
     private readonly ICacheService _cacheService;
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _identityContext;
     private readonly TimeProvider _timeProvider;
 
     public PermissionService(
         ICacheService cacheService,
-        IApplicationDbContext context,
+        AppDbContext identityContext,
         TimeProvider timeProvider)
     {
         _cacheService = cacheService;
-        _context = context;
+        _identityContext = identityContext;
         _timeProvider = timeProvider;
     }
 
@@ -40,7 +43,7 @@ public class PermissionService : IPermissionService
 
         if (cachedPerms != null) return cachedPerms;
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .AsNoTracking()
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
             .Include(u => u.Subscriptions)

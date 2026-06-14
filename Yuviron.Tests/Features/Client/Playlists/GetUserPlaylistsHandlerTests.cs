@@ -25,9 +25,9 @@ public class GetUserPlaylistsHandlerTests
         var userId = Guid.NewGuid();
         var trackId = Guid.NewGuid();
         var playlist = Playlist.Create(userId, null, "Music", null, null, PlaylistVisibility.Public, false, DateTime.UtcNow);
-        dbContext.Playlists.Add(playlist);
-        dbContext.Tracks.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
-        dbContext.PlaylistTracks.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, DateTime.UtcNow));
+        dbContext.Add(playlist);
+        dbContext.Add(Track.Create(trackId, Guid.NewGuid(), 1, "Jamando", 180000, false, null, "key", VisibilityStatus.Published, null, Array.Empty<(Guid, ArtistRole)>(), Array.Empty<Guid>(), Array.Empty<Guid>(), DateTime.UtcNow));
+        dbContext.Add(new PlaylistTrack(playlist.Id, trackId, 1, userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();

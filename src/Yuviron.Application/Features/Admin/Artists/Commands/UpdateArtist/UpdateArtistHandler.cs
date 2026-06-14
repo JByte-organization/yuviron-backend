@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,18 +14,22 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateArtist;
 
 public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly IIdentityManager _identityManager;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateArtistHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         IIdentityManager identityManager,
         ICurrentUserService currentUser) 
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _identityManager = identityManager;
         _currentUser = currentUser;
@@ -33,7 +39,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
             .Include(a => a.TeamMembers) 
             .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken);
 
@@ -44,7 +50,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
 
         if (request.OwnerUserId.HasValue)
         {
-            var ownerExists = await _context.Users.AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
+            var ownerExists = await _identityContext.Users.AnyAsync(u => u.Id == request.OwnerUserId.Value, cancellationToken);
             if (!ownerExists)
             {
                 throw new NotFoundException(nameof(User), request.OwnerUserId.Value);
@@ -56,7 +62,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
         string? finalAvatarUrl = artist.AvatarUrl;
         if (request.AvatarFileId.HasValue)
         {
-            var avatarClaim = await _context.ClaimFileAsync(
+            var avatarClaim = await _systemContext.ClaimFileAsync(
                 request.AvatarFileId.Value, adminId, "image/", "avatars", cancellationToken);
             
             artist.RegisterFileSwapEvents(avatarClaim, artist.AvatarUrl);
@@ -66,7 +72,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
         string? finalBannerUrl = artist.BannerUrl;
         if (request.BannerFileId.HasValue)
         {
-            var bannerClaim = await _context.ClaimFileAsync(
+            var bannerClaim = await _systemContext.ClaimFileAsync(
                 request.BannerFileId.Value, adminId, "image/", "banners", cancellationToken);
             
             artist.RegisterFileSwapEvents(bannerClaim, artist.BannerUrl);
@@ -90,7 +96,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             {
                 artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
                 
-                var oldOwnerUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentOwner.UserId, cancellationToken);
+                var oldOwnerUser = await _identityContext.Users.FirstOrDefaultAsync(u => u.Id == currentOwner.UserId, cancellationToken);
                 if (oldOwnerUser != null)
                 {
                     oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
@@ -114,7 +120,7 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

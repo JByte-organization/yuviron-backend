@@ -37,7 +37,7 @@ public class ToggleArtistNotificationsHandlerTests
 
         // ИСПРАВЛЕНО: Конструктор UserFollowArtist принимает 4 аргумента
         var followRecord = new UserFollowArtist(currentUserId, artistId, false, DateTime.UtcNow);
-        dbContext.UserFollowArtists.Add(followRecord);
+        dbContext.Add(followRecord);
         await dbContext.SaveChangesAsync();
 
         var handler = new ToggleArtistNotificationsHandler(dbContext, _currentUserMock.Object);

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,12 +11,12 @@ namespace Yuviron.Application.Features.Client.Notifications.Commands.MarkAsRead;
 
 public sealed class MarkNotificationAsReadHandler : IRequestHandler<MarkNotificationAsReadCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public MarkNotificationAsReadHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public MarkNotificationAsReadHandler(ISystemContext systemContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
     }
 
@@ -22,7 +24,7 @@ public sealed class MarkNotificationAsReadHandler : IRequestHandler<MarkNotifica
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
+        var notification = await _systemContext.Notifications.FirstOrDefaultAsync(n => n.Id == request.NotificationId, cancellationToken);
     
         if (notification == null) 
             throw new NotFoundException(nameof(Notification), request.NotificationId);
@@ -32,7 +34,7 @@ public sealed class MarkNotificationAsReadHandler : IRequestHandler<MarkNotifica
             throw new ForbiddenException("You cannot mark this notification as read.");
 
         notification.MarkAsRead();
-        await _context.SaveChangesAsync(cancellationToken);
+        await _systemContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 }

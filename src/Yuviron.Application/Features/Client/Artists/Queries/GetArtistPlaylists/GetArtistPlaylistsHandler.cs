@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,18 +19,20 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistPlaylists
 
 public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylistsQuery, PaginatedList<ArtistPlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetArtistPlaylistsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ILibraryContext libraryContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -36,18 +40,18 @@ public sealed class GetArtistPlaylistsHandler : IRequestHandler<GetArtistPlaylis
 
     public async Task<PaginatedList<ArtistPlaylistDto>> Handle(GetArtistPlaylistsQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
+        var artistExists = await _catalogContext.Artists
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId , cancellationToken);
 
         if (!artistExists) throw new NotFoundException(nameof(Artist), request.ArtistId);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var publicTracks = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow);
-        var publicArtistTrackIds = _context.Tracks.AsNoTracking().AvailableForPublic(utcNow)
+        var publicTracks = _catalogContext.Tracks.AsNoTracking().AvailableForPublic(utcNow);
+        var publicArtistTrackIds = _catalogContext.Tracks.AsNoTracking().AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId).Select(t => t.Id);
 
-        var baseQuery = _context.Playlists
+        var baseQuery = _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.Visibility == PlaylistVisibility.Public )
             .Where(p => p.PlaylistTracks.Any(pt => publicArtistTrackIds.Contains(pt.TrackId)))

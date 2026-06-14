@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,13 +10,13 @@ namespace Yuviron.Application.Features.Admin.Playlists.Queries.GetPlaylistById;
 
 public sealed class GetPlaylistByIdHandler : IRequestHandler<GetPlaylistByIdQuery, PlaylistDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
 
-    public GetPlaylistByIdHandler(IApplicationDbContext context) => _context = context;
+    public GetPlaylistByIdHandler(ILibraryContext libraryContext) => _libraryContext = libraryContext;
 
     public async Task<PlaylistDetailsDto> Handle(GetPlaylistByIdQuery request, CancellationToken cancellationToken)
     {
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
                            .AsNoTracking()
                            .Where(p => p.Id == request.Id)
                            .Select(p => new PlaylistDetailsDto(

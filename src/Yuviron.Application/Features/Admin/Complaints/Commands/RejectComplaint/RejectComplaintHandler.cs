@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,18 +14,22 @@ namespace Yuviron.Application.Features.Admin.Complaints.Commands.RejectComplaint
 
 public sealed class RejectComplaintHandler : IRequestHandler<RejectComplaintCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IProfileContext _profileContext;
+    private readonly IAuditingContext _auditingContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
     private readonly IEventBus _eventBus;
 
     public RejectComplaintHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, IProfileContext profileContext, IAuditingContext auditingContext,
         ICurrentUserService currentUser,
         TimeProvider timeProvider,
         IEventBus eventBus)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _profileContext = profileContext;
+        _auditingContext = auditingContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
         _eventBus = eventBus;
@@ -33,7 +39,7 @@ public sealed class RejectComplaintHandler : IRequestHandler<RejectComplaintComm
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var complaint = await _context.Complaints
+        var complaint = await _auditingContext.Complaints
             .FirstOrDefaultAsync(x => x.Id == request.ComplaintId, cancellationToken)
             ?? throw new NotFoundException(nameof(Complaint), request.ComplaintId);
 
@@ -46,12 +52,12 @@ public sealed class RejectComplaintHandler : IRequestHandler<RejectComplaintComm
         complaint.MarkAsInReview(adminId, utcNow);
         complaint.Reject(adminId, request.AdminNote, utcNow);
 
-        var counter = await _context.ComplaintCounters
+        var counter = await _auditingContext.ComplaintCounters
             .FirstOrDefaultAsync(x => x.TargetType == complaint.TargetType && x.TargetId == complaint.TargetId, cancellationToken);
 
         counter?.ResolveOpen(utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         var targetTitle = await ResolveTargetTitleAsync(complaint.TargetType, complaint.TargetId, cancellationToken);
 
@@ -71,10 +77,10 @@ public sealed class RejectComplaintHandler : IRequestHandler<RejectComplaintComm
     private async Task<string> ResolveTargetTitleAsync(ComplaintTargetType targetType, Guid targetId, CancellationToken ct) =>
         targetType switch
         {
-            ComplaintTargetType.Track => await _context.Tracks.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Title).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
-            ComplaintTargetType.Album => await _context.Albums.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Title).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
-            ComplaintTargetType.Artist => await _context.Artists.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Name).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
-            ComplaintTargetType.User => await _context.UserProfiles.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.FirstName).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
+            ComplaintTargetType.Track => await _catalogContext.Tracks.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Title).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
+            ComplaintTargetType.Album => await _catalogContext.Albums.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Title).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
+            ComplaintTargetType.Artist => await _catalogContext.Artists.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.Name).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
+            ComplaintTargetType.User => await _profileContext.UserProfiles.AsNoTracking().Where(x => x.Id == targetId).Select(x => x.FirstName).FirstOrDefaultAsync(ct) ?? targetType.ToString(),
             _ => targetType.ToString()
         };
 }

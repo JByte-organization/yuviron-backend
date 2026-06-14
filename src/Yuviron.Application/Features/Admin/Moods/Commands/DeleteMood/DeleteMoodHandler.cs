@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,22 +10,22 @@ namespace Yuviron.Application.Features.Admin.Moods.Commands.DeleteMood;
 
 public sealed class DeleteMoodHandler : IRequestHandler<DeleteMoodCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public DeleteMoodHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public DeleteMoodHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(DeleteMoodCommand request, CancellationToken cancellationToken)
     {
-        var mood = await _context.Moods
+        var mood = await _catalogContext.Moods
                        .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken)
                    ?? throw new NotFoundException(nameof(Mood), request.Id);
 
-        var hasAssociatedTracks = await _context.TrackMoods
+        var hasAssociatedTracks = await _catalogContext.TrackMoods
             .AnyAsync(tm => tm.MoodId == request.Id && !tm.Track.IsDeleted, cancellationToken);
 
         if (hasAssociatedTracks)
@@ -33,7 +35,7 @@ public sealed class DeleteMoodHandler : IRequestHandler<DeleteMoodCommand, Unit>
 
         mood.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

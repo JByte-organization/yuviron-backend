@@ -1,3 +1,4 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using System.Diagnostics;
 using System.Text;
 using MassTransit;
@@ -67,7 +68,7 @@ public static class DependencyInjection
         });
         
         services.AddSingleton(new ActivitySource("Yuviron.Infrastructure"));
-        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddScoped<AppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<AppDbContextInitializer>();
 
         // 2. AUTHENTICATION AND JWT

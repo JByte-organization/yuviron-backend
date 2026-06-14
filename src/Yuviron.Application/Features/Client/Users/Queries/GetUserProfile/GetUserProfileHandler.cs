@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Linq;
 using System.Threading;
@@ -14,12 +16,14 @@ namespace Yuviron.Application.Features.Client.Users.Queries.GetUserProfile;
 
 public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserProfileDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUserProfileHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserProfileHandler(IIdentityContext identityContext, ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -27,7 +31,7 @@ public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery,
     {
         var currentUserId = _currentUserService.UserId;
 
-        var profile = await _context.Users
+        var profile = await _identityContext.Users
             .AsNoTracking()
             .Where(u => u.Id == request.UserId )
             .Select(u => new UserProfileDto(
@@ -37,14 +41,14 @@ public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery,
                 u.Profile != null ? u.Profile.BannerUrl : null, 
                 u.Profile != null ? u.Profile.Bio : null,
                 
-                _context.UserFollowUsers.Count(ufu => ufu.FolloweeId == u.Id), 
+                _libraryContext.UserFollowUsers.Count(ufu => ufu.FolloweeId == u.Id), 
                 
-                _context.UserFollowUsers.Count(ufu => ufu.FollowerId == u.Id) + 
-                _context.UserFollowArtists.Count(ufa => ufa.UserId == u.Id),   
+                _libraryContext.UserFollowUsers.Count(ufu => ufu.FollowerId == u.Id) + 
+                _libraryContext.UserFollowArtists.Count(ufa => ufa.UserId == u.Id),   
                 
-                _context.Playlists.Count(p => p.UserId == u.Id && p.Visibility == PlaylistVisibility.Public ), 
+                _libraryContext.Playlists.Count(p => p.UserId == u.Id && p.Visibility == PlaylistVisibility.Public ), 
                 
-                currentUserId != null && _context.UserFollowUsers.Any(ufu => ufu.FollowerId == currentUserId && ufu.FolloweeId == u.Id)
+                currentUserId != null && _libraryContext.UserFollowUsers.Any(ufu => ufu.FollowerId == currentUserId && ufu.FolloweeId == u.Id)
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

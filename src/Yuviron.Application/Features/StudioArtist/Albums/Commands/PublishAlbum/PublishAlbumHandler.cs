@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -13,18 +15,18 @@ namespace Yuviron.Application.Features.StudioArtist.Albums.Commands.PublishAlbum
 
 public sealed class PublishAlbumHandler : IRequestHandler<PublishAlbumCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IEventBus _eventBus;
     private readonly TimeProvider _timeProvider;
 
     public PublishAlbumHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         ICurrentUserService currentUser, 
         IEventBus eventBus,
         TimeProvider timeProvider)
     {
-        _context = context; _currentUser = currentUser; _eventBus = eventBus; _timeProvider = timeProvider;
+        _catalogContext = catalogContext; _currentUser = currentUser; _eventBus = eventBus; _timeProvider = timeProvider;
     }
 
     public async Task<Unit> Handle(PublishAlbumCommand request, CancellationToken cancellationToken)
@@ -32,7 +34,7 @@ public sealed class PublishAlbumHandler : IRequestHandler<PublishAlbumCommand, U
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .Include(a => a.AlbumArtists)
                 .ThenInclude(aa => aa.Artist) 
             .FirstOrDefaultAsync(a => a.Id == request.AlbumId, cancellationToken)
@@ -41,7 +43,7 @@ public sealed class PublishAlbumHandler : IRequestHandler<PublishAlbumCommand, U
         if (album.VisibilityStatus == VisibilityStatus.Published)
             throw new InvalidOperationException("Album is already published.");
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasManagementAccess(album.AlbumArtists.Select(aa => aa.ArtistId), userId)
             .AnyAsync(cancellationToken);
 
@@ -50,7 +52,7 @@ public sealed class PublishAlbumHandler : IRequestHandler<PublishAlbumCommand, U
         album.UpdateDetails(album.Title, album.Description, album.CoverUrl, album.ReleaseDate, album.ReleaseType, 
             VisibilityStatus.Published, album.ScheduledPublishAt, album.AlbumArtists.Select(aa => aa.ArtistId).ToList(), utcNow);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         var mainArtist = album.AlbumArtists.FirstOrDefault(aa => aa.Role == ArtistRole.Main)?.Artist 
                          ?? album.AlbumArtists.First().Artist;

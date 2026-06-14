@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,12 +13,12 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetHomeBanners;
 
 public sealed class GetHomeBannersHandler : IRequestHandler<GetHomeBannersQuery, List<HomeBannerDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
     private readonly TimeProvider _timeProvider;
 
-    public GetHomeBannersHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetHomeBannersHandler(IContentContext contentContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _contentContext = contentContext;
         _timeProvider = timeProvider;
     }
 
@@ -24,7 +26,7 @@ public sealed class GetHomeBannersHandler : IRequestHandler<GetHomeBannersQuery,
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var pool = await _context.Banners
+        var pool = await _contentContext.Banners
             .AsNoTracking()
             .Where(b => b.IsActive && 
                         (b.StartsAtUtc == null || b.StartsAtUtc <= utcNow) &&

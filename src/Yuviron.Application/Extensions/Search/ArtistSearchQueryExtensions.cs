@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,20 +11,20 @@ namespace Yuviron.Application.Extensions;
 public static class ArtistSearchQueryExtensions
 {
     public static IQueryable<Artist> BuildPublicArtistSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         string searchTerm)
     {
-        return context.Artists
+        return catalogContext.Artists
             .AsNoTracking()
             .Where(a => !a.IsDeleted &&
                         a.Name.ToLower().Contains(searchTerm));
     }
 
     public static IQueryable<Artist> BuildPublicArtistFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments)
     {
-        var baseQuery = context.Artists
+        var baseQuery = catalogContext.Artists
             .AsNoTracking()
             .Where(a => !a.IsDeleted);
 

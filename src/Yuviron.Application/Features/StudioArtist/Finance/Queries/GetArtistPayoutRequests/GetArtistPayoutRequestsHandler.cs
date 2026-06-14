@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +13,14 @@ using Yuviron.Domain.Exceptions;
 
 public sealed class GetArtistPayoutRequestsHandler : IRequestHandler<GetArtistPayoutRequestsQuery, PaginatedList<ArtistPayoutRequestDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetArtistPayoutRequestsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetArtistPayoutRequestsHandler(ICatalogContext catalogContext, IMonetizationContext monetizationContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
     }
 
@@ -24,12 +28,12 @@ public sealed class GetArtistPayoutRequestsHandler : IRequestHandler<GetArtistPa
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasAccess = await _context.ArtistTeamMembers
+        var hasAccess = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == userId, cancellationToken);
 
         if (!hasAccess) throw new ForbiddenException("No access to this artist's finances.");
 
-        var query = _context.PayoutRequests
+        var query = _monetizationContext.PayoutRequests
             .AsNoTracking()
             .Where(pr => pr.ArtistId == request.ArtistId);
 

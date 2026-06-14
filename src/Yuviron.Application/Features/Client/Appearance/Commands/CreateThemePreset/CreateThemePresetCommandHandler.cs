@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Client.Appearance.Commands.CreateThemePre
 
 public sealed class CreateThemePresetCommandHandler : IRequestHandler<CreateThemePresetCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
 
     public CreateThemePresetCommandHandler(
-        IApplicationDbContext context,
+        IProfileContext profileContext,
         ICurrentUserService currentUser,
         IPermissionService permissionService)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
     }
@@ -35,13 +37,13 @@ public sealed class CreateThemePresetCommandHandler : IRequestHandler<CreateThem
             throw new ForbiddenException("Theme presets are a premium feature.");
         }
 
-        var settings = await _context.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
+        var settings = await _profileContext.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new NotFoundException(nameof(UserSettings), userId);
 
         var normalizedName = request.Name.Trim();
         var utcNow = DateTime.UtcNow;
 
-        var existing = await _context.Themes
+        var existing = await _profileContext.Themes
             .FirstOrDefaultAsync(x => x.UserId == userId && x.Name == normalizedName, cancellationToken);
 
         if (existing == null)
@@ -55,7 +57,7 @@ public sealed class CreateThemePresetCommandHandler : IRequestHandler<CreateThem
                 isPremiumOnly: true,
                 userId: userId);
 
-            _context.Themes.Add(existing);
+            _profileContext.Add(existing);
         }
         else
         {
@@ -69,7 +71,7 @@ public sealed class CreateThemePresetCommandHandler : IRequestHandler<CreateThem
         }
 
         settings.ApplyDesign(existing.Id, null, utcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _profileContext.SaveChangesAsync(cancellationToken);
 
         return existing.Id;
     }

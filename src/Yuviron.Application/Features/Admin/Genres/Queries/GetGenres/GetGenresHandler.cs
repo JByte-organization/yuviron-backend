@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +13,13 @@ namespace Yuviron.Application.Features.Admin.Genres.Queries.GetGenres;
 
 public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, PaginatedList<GenreListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetGenresHandler(IApplicationDbContext context) => _context = context;
+    public GetGenresHandler(ICatalogContext catalogContext) => _catalogContext = catalogContext;
 
     public async Task<PaginatedList<GenreListItemDto>> Handle(GetGenresQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Genres.AsNoTracking();
+        var query = _catalogContext.Genres.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             query = query.Where(g => g.Name.StartsWith(request.SearchTerm));

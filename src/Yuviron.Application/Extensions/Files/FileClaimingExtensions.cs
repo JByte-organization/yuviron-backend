@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Data;
 using Yuviron.Application.Policies;
@@ -12,14 +14,14 @@ public record ClaimedFileResult(string FinalPath, string SourceKey, string Desti
 public static class FileClaimingExtensions
 {
     public static async Task<ClaimedFileResult> ClaimFileAsync(
-        this IApplicationDbContext context,
+        this ISystemContext systemContext,
         Guid fileId,
         Guid currentUserId,
         string expectedContentTypePrefix,
         string destinationFolder, 
         CancellationToken cancellationToken)
     {
-        var fileMeta = await context.FileMetadata.FindAsync(new object[] { fileId }, cancellationToken);
+        var fileMeta = await systemContext.FileMetadata.FirstOrDefaultAsync(x => x.Id == fileId, cancellationToken);
 
         if (fileMeta == null) throw new NotFoundException("File", fileId);
         if (fileMeta.UserId != currentUserId) throw new UnauthorizedAccessException("You don't have access to this file.");
@@ -57,13 +59,13 @@ public static class FileClaimingExtensions
     }
     
     public static async Task ValidateAnimatedMediaPolicyAsync(
-        this IApplicationDbContext context,
+        this ISystemContext systemContext,
         Guid fileId,
         bool hasAnimatedMediaPermission,
         UserSettingsPolicy policy,
         CancellationToken cancellationToken)
     {
-        var fileMeta = await context.FileMetadata.FindAsync(new object[] { fileId }, cancellationToken);
+        var fileMeta = await systemContext.FileMetadata.FirstOrDefaultAsync(x => x.Id == fileId, cancellationToken);
         if (fileMeta == null) return;
 
         if (!policy.CanUploadAnimatedMedia(hasAnimatedMediaPermission, fileMeta.ContentType))

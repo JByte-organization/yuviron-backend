@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,13 +12,13 @@ namespace Yuviron.Application.Features.Client.Playlists.Commands.DeletePlaylist;
 
 public sealed class DeletePlaylistHandler : IRequestHandler<DeletePlaylistCommand>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public DeletePlaylistHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public DeletePlaylistHandler(ILibraryContext libraryContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -25,7 +27,7 @@ public sealed class DeletePlaylistHandler : IRequestHandler<DeletePlaylistComman
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.PlaylistId , cancellationToken);
 
         if (playlist is null)
@@ -36,6 +38,6 @@ public sealed class DeletePlaylistHandler : IRequestHandler<DeletePlaylistComman
 
         playlist.Delete(_timeProvider.GetUtcNow().UtcDateTime);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _libraryContext.SaveChangesAsync(cancellationToken);
     }
 }

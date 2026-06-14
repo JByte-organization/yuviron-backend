@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using Yuviron.Application.Extensions;
 using Yuviron.Application.Abstractions.Services;
 using MediatR;
@@ -14,12 +16,14 @@ namespace Yuviron.Application.Features.StudioArtist.Marketing.Queries.GetActiveB
 
 public sealed class GetActiveBannerRequestHandler : IRequestHandler<GetActiveBannerRequestQuery, ActiveBannerRequestDto?>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly IContentContext _contentContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetActiveBannerRequestHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetActiveBannerRequestHandler(ICatalogContext catalogContext, IContentContext contentContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _contentContext = contentContext;
         _currentUser = currentUser;
     }
 
@@ -27,13 +31,13 @@ public sealed class GetActiveBannerRequestHandler : IRequestHandler<GetActiveBan
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this artist.");
 
-        var activeRequest = await _context.BannerRequests
+        var activeRequest = await _contentContext.BannerRequests
             .AsNoTracking()
             .Where(br => br.ArtistId == request.ArtistId && 
                          (br.Status == BannerRequestStatus.Pending || br.Status == BannerRequestStatus.AwaitingPayment))

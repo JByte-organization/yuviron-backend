@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -13,18 +15,18 @@ namespace Yuviron.Application.Features.Client.Albums.Queries.GetAlbumById;
 
 public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, AlbumDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetAlbumByIdHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -34,7 +36,7 @@ public sealed class GetAlbumByIdHandler : IRequestHandler<GetAlbumByIdQuery, Alb
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var album = await _context.Albums
+        var album = await _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(a => a.Id == request.AlbumId)

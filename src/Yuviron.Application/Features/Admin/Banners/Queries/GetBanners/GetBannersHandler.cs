@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBanners;
 
 public sealed class GetBannersHandler : IRequestHandler<GetBannersQuery, PaginatedList<BannerListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
 
-    public GetBannersHandler(IApplicationDbContext context)
+    public GetBannersHandler(IContentContext contentContext)
     {
-        _context = context;
+        _contentContext = contentContext;
     }
 
     public async Task<PaginatedList<BannerListItemDto>> Handle(GetBannersQuery request, CancellationToken cancellationToken)
     {
-        return await _context.Banners
+        return await _contentContext.Banners
             .AsNoTracking()
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new BannerListItemDto(

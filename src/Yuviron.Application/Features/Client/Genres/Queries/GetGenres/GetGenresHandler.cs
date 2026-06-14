@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,12 +13,12 @@ namespace Yuviron.Application.Features.Client.Genres.Queries.GetGenres;
 
 public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, List<GenreItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
 
-    public GetGenresHandler(IApplicationDbContext context, TimeProvider timeProvider)
+    public GetGenresHandler(ICatalogContext catalogContext, TimeProvider timeProvider)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
     }
 
@@ -24,9 +26,9 @@ public sealed class GetGenresHandler : IRequestHandler<GetGenresQuery, List<Genr
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var availableTracks = _context.Tracks.AvailableForPublic(utcNow);
+        var availableTracks = _catalogContext.Tracks.AvailableForPublic(utcNow);
 
-        return await _context.Genres
+        return await _catalogContext.Genres
             .AsNoTracking()
             
             .Where(g => availableTracks.Any(t => t.TrackGenres.Any(tg => tg.GenreId == g.Id)))

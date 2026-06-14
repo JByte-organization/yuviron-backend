@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -17,7 +19,7 @@ public static class UserAccountExtensions
     /// </summary>
     public static async Task EnsureAllowedToLoginAsync(
         this User user, 
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         DateTime utcNow, 
         CancellationToken cancellationToken)
     {
@@ -28,7 +30,7 @@ public static class UserAccountExtensions
 
         if (user.AccountState == AccountState.Banned)
         {
-            var activeBlocks = await context.UserBlocks
+            var activeBlocks = await identityContext.UserBlocks
                 .Where(b => b.UserId == user.Id && b.IsActive)
                 .ToListAsync(cancellationToken);
 

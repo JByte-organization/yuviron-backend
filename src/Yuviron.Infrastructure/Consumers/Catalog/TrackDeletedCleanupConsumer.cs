@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,9 +10,9 @@ namespace Yuviron.Infrastructure.Consumers.Catalog;
 
 public sealed class TrackDeletedCleanupConsumer : IConsumer<TrackDeletedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
 
-    public TrackDeletedCleanupConsumer(IApplicationDbContext context)
+    public TrackDeletedCleanupConsumer(AppDbContext context)
     {
         _context = context;
     }

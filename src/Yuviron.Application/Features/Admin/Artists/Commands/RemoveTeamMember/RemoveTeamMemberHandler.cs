@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,18 +14,20 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.RemoveTeamMember;
 
 public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
     private readonly ILogger<RemoveTeamMemberHandler> _logger;
 
     public RemoveTeamMemberHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         IPermissionService permissionService,
         ILogger<RemoveTeamMemberHandler> logger)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
         _logger = logger;
@@ -31,7 +35,7 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
 
     public async Task<Unit> Handle(RemoveTeamMemberCommand request, CancellationToken cancellationToken)
     {
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
                          .Include(a => a.TeamMembers)
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
@@ -45,10 +49,10 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
             return Unit.Value; 
         }
 
-        var belongsToOtherArtists = await _context.ArtistTeamMembers
+        var belongsToOtherArtists = await _catalogContext.ArtistTeamMembers
             .AnyAsync(tm => tm.UserId == request.UserId && tm.ArtistId != request.ArtistId, cancellationToken);
 
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.UserRoles) 
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
@@ -57,7 +61,7 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
             if (!belongsToOtherArtists)
             {
                 var managementRoleStr = nameof(RoleName.ManagementUser);
-                var managementRoleId = await _context.Roles
+                var managementRoleId = await _identityContext.Roles
                     .Where(r => r.Name == managementRoleStr)
                     .Select(r => r.Id)
                     .FirstOrDefaultAsync(cancellationToken);
@@ -78,7 +82,7 @@ public sealed class RemoveTeamMemberHandler : IRequestHandler<RemoveTeamMemberCo
             user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         try
         {

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,22 +13,22 @@ namespace Yuviron.Application.Features.Admin.Tracks.Commands.DeleteTrackLyrics;
 
 public sealed class DeleteTrackLyricsHandler : IRequestHandler<DeleteTrackLyricsCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public DeleteTrackLyricsHandler(IApplicationDbContext context)
+    public DeleteTrackLyricsHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<Unit> Handle(DeleteTrackLyricsCommand request, CancellationToken cancellationToken)
     {
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
                         .Include(t => t.Lyrics)
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken)
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
         track.SetLyrics(null); 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

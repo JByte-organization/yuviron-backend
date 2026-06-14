@@ -1,3 +1,6 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,18 +16,20 @@ namespace Yuviron.Infrastructure.Services;
 
 public class NotificationService : INotificationService
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _profileContext;
+    private readonly AppDbContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly IHubContext<AppHub, IYuvironClient> _hubContext;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
-        IApplicationDbContext context,
+        AppDbContext profileContext, AppDbContext systemContext,
         TimeProvider timeProvider,
         IHubContext<AppHub, IYuvironClient> hubContext,
         ILogger<NotificationService> logger)
     {
-        _context = context;
+        _profileContext = profileContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _hubContext = hubContext;
         _logger = logger;
@@ -56,7 +61,7 @@ public class NotificationService : INotificationService
         var usersList = userIds.Distinct().ToList();
         if (!usersList.Any()) return;
 
-        var preferences = await _context.UserNotificationPreferences
+        var preferences = await _profileContext.UserNotificationPreferences
             .AsNoTracking()
             .Where(x => usersList.Contains(x.UserId))
             .ToListAsync(cancellationToken);
@@ -80,8 +85,8 @@ public class NotificationService : INotificationService
             Notification.Create(userId, category, type, title, body, entityType, entityId, utcNow)
         ).ToList();
 
-        _context.Notifications.AddRange(notifications);
-        await _context.SaveChangesAsync(cancellationToken);
+        _systemContext.AddRange(notifications);
+        await _profileContext.SaveChangesAsync(cancellationToken);
 
         var sampleNotif = notifications.First();
         var dto = new NotificationDto(

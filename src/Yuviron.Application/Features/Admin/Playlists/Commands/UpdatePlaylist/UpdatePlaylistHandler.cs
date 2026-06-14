@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,16 +15,22 @@ namespace Yuviron.Application.Features.Admin.Playlists.Commands.UpdatePlaylist;
 
 public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public UpdatePlaylistHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext, ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -31,7 +39,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var playlist = await _context.Playlists
+        var playlist = await _libraryContext.Playlists
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Playlist), request.Id);
 
@@ -40,13 +48,13 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
 
         if (targetUserId.HasValue && targetUserId != playlist.UserId)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == targetUserId.Value, cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(u => u.Id == targetUserId.Value, cancellationToken);
             if (!userExists) throw new NotFoundException(nameof(User), targetUserId.Value);
         }
 
         if (targetArtistId.HasValue && targetArtistId != playlist.ArtistId)
         {
-            var artistExists = await _context.Artists.AnyAsync(a => a.Id == targetArtistId.Value, cancellationToken);
+            var artistExists = await _catalogContext.Artists.AnyAsync(a => a.Id == targetArtistId.Value, cancellationToken);
             if (!artistExists) throw new NotFoundException(nameof(Artist), targetArtistId.Value);
         }
 
@@ -55,7 +63,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
 
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
             playlist.RegisterFileSwapEvents(coverClaim, playlist.CoverUrl);
             finalCoverUrl = coverClaim.FinalPath;
@@ -72,7 +80,7 @@ public sealed class UpdatePlaylistHandler : IRequestHandler<UpdatePlaylistComman
             utcNow: utcNow
         );
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

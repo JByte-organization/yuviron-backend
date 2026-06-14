@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,15 +12,15 @@ namespace Yuviron.Application.Extensions;
 public static class AlbumSearchQueryExtensions
 {
     public static IQueryable<Album> BuildPublicAlbumSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         string searchTerm,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        return context.Albums
+        return catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(a => publicTracks.Any(t => t.AlbumId == a.Id))
@@ -27,15 +29,15 @@ public static class AlbumSearchQueryExtensions
     }
 
     public static IQueryable<Album> BuildPublicAlbumFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        var baseQuery = context.Albums
+        var baseQuery = catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .Where(a => publicTracks.Any(t => t.AlbumId == a.Id));

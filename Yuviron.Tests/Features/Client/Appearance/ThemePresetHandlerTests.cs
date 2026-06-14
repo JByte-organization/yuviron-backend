@@ -48,7 +48,7 @@ public class ThemePresetHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -65,12 +65,12 @@ public class ThemePresetHandlerTests
             new CreateThemePresetCommand("Velvet", "#111111", "#222222", "#333333"),
             CancellationToken.None);
 
-        var theme = await dbContext.Themes.FindAsync(presetId);
+        var theme = await dbContext.Set<Theme>().FindAsync(presetId);
         theme.Should().NotBeNull();
         theme!.UserId.Should().Be(userId);
         theme.Name.Should().Be("Velvet");
 
-        var settings = await dbContext.UserSettings.FindAsync(userId);
+        var settings = await dbContext.Set<UserSettings>().FindAsync(userId);
         settings!.ThemeId.Should().Be(presetId);
         settings.CustomThemeId.Should().BeNull();
     }
@@ -80,7 +80,7 @@ public class ThemePresetHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
         var userId = Guid.NewGuid();
-        dbContext.UserSettings.Add(UserSettings.Create(userId, DateTime.UtcNow));
+        dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
@@ -96,7 +96,7 @@ public class ThemePresetHandlerTests
 
         await handler.Handle(new UpdateThemeCommand(ThemeMode.System), CancellationToken.None);
 
-        var updated = await dbContext.UserSettings.FindAsync(userId);
+        var updated = await dbContext.Set<UserSettings>().FindAsync(userId);
         updated.Should().NotBeNull();
         updated!.ThemeMode.Should().Be(ThemeMode.System.ToString());
     }

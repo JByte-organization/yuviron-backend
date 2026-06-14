@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -16,12 +18,12 @@ namespace Yuviron.Application.Features.StudioArtist.Tracks.Queries.GetStudioTrac
 
 public sealed class GetStudioTracksHandler : IRequestHandler<GetStudioTracksQuery, PaginatedList<StudioTrackListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioTracksHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioTracksHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -29,13 +31,13 @@ public sealed class GetStudioTracksHandler : IRequestHandler<GetStudioTracksQuer
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to this artist's tracks.");
 
-        var query = _context.Tracks.AsNoTracking()
+        var query = _catalogContext.Tracks.AsNoTracking()
             .Where(t => t.TrackArtists.Any(ta => ta.ArtistId == request.ArtistId) && !t.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

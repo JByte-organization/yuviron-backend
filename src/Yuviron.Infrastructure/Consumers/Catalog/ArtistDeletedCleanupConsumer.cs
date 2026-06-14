@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,10 +9,10 @@ namespace Yuviron.Infrastructure.Consumers.Catalog;
 
 public class ArtistDeletedCleanupConsumer : IConsumer<ArtistDeletedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly TimeProvider _timeProvider;
 
-    public ArtistDeletedCleanupConsumer(IApplicationDbContext context, TimeProvider timeProvider)
+    public ArtistDeletedCleanupConsumer(AppDbContext context, TimeProvider timeProvider)
     {
         _context = context;
         _timeProvider = timeProvider;

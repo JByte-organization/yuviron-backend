@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using System;
 using System.Threading;
@@ -12,13 +14,15 @@ namespace Yuviron.Application.Features.Admin.Ads.Commands.CreateAd;
 
 public sealed class CreateAdHandler : IRequestHandler<CreateAdCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
 
-    public CreateAdHandler(IApplicationDbContext context, ICurrentUserService currentUser, TimeProvider timeProvider)
+    public CreateAdHandler(IMonetizationContext monetizationContext, ISystemContext systemContext, ICurrentUserService currentUser, TimeProvider timeProvider)
     {
-        _context = context;
+        _monetizationContext = monetizationContext;
+        _systemContext = systemContext;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
     }
@@ -28,10 +32,10 @@ public sealed class CreateAdHandler : IRequestHandler<CreateAdCommand, Guid>
         var adminUserId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var audioClaim = await _context.ClaimFileAsync(
+        var audioClaim = await _systemContext.ClaimFileAsync(
             request.AudioFileId, adminUserId, "audio/", "ads/audio", cancellationToken);
 
-        var imageClaim = await _context.ClaimFileAsync(
+        var imageClaim = await _systemContext.ClaimFileAsync(
             request.ImageFileId, adminUserId, "image/", "ads/images", cancellationToken);
 
         var ad = Ad.Create(
@@ -46,8 +50,8 @@ public sealed class CreateAdHandler : IRequestHandler<CreateAdCommand, Guid>
         ad.RegisterFileSwapEvents(audioClaim);
         ad.RegisterFileSwapEvents(imageClaim);
 
-        _context.Ads.Add(ad);
-        await _context.SaveChangesAsync(cancellationToken);
+        _monetizationContext.Add(ad);
+        await _monetizationContext.SaveChangesAsync(cancellationToken);
 
         return ad.Id;
     }

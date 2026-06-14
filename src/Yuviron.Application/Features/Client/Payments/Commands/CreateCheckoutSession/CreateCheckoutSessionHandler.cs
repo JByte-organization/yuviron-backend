@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,18 +16,20 @@ namespace Yuviron.Application.Features.Client.Payments.Commands.CreateCheckoutSe
 
 public sealed class CreateCheckoutSessionHandler : IRequestHandler<CreateCheckoutSessionCommand, string>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly IMonetizationContext _monetizationContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentService _paymentService;
     private readonly TimeProvider _timeProvider;
 
     public CreateCheckoutSessionHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, IMonetizationContext monetizationContext, 
         ICurrentUserService currentUser, 
         IPaymentService paymentService,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _monetizationContext = monetizationContext;
         _currentUser = currentUser;
         _paymentService = paymentService;
         _timeProvider = timeProvider;
@@ -35,7 +39,7 @@ public sealed class CreateCheckoutSessionHandler : IRequestHandler<CreateCheckou
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         
-        var user = await _context.Users
+        var user = await _identityContext.Users
             .Include(u => u.Subscriptions)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
@@ -46,7 +50,7 @@ public sealed class CreateCheckoutSessionHandler : IRequestHandler<CreateCheckou
             throw new InvalidOperationException("You already have an active Premium subscription.");
         }
 
-        var plan = await _context.Plans.FirstOrDefaultAsync(p => p.Id == request.PlanId, cancellationToken);
+        var plan = await _monetizationContext.Plans.FirstOrDefaultAsync(p => p.Id == request.PlanId, cancellationToken);
         if (plan == null) throw new NotFoundException(nameof(Plan), request.PlanId);
         
         if (plan.Type != PlanType.Listener)

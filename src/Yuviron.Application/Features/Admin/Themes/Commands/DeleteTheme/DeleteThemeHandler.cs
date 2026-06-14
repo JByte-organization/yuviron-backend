@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,21 +10,21 @@ namespace Yuviron.Application.Features.Admin.Themes.Commands.DeleteTheme;
 
 public sealed class DeleteThemeHandler : IRequestHandler<DeleteThemeCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
 
-    public DeleteThemeHandler(IApplicationDbContext context)
+    public DeleteThemeHandler(IProfileContext profileContext)
     {
-        _context = context;
+        _profileContext = profileContext;
     }
 
     public async Task<Unit> Handle(DeleteThemeCommand request, CancellationToken cancellationToken)
     {
-        var theme = await _context.Themes
+        var theme = await _profileContext.Themes
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.Id);
 
-        _context.Themes.Remove(theme);
-        await _context.SaveChangesAsync(cancellationToken);
+        _profileContext.Remove(theme);
+        await _profileContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

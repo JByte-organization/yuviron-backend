@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,12 +15,12 @@ namespace Yuviron.Infrastructure.Consumers;
 public sealed class NotifyUserOnModeratedPlaylistDeletedConsumer : IConsumer<ModeratedPlaylistDeletedEvent>
 {
     private readonly INotificationService _notificationService;
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly TimeProvider _timeProvider;
 
     public NotifyUserOnModeratedPlaylistDeletedConsumer(
         INotificationService notificationService,
-        IApplicationDbContext context,
+        AppDbContext context,
         TimeProvider timeProvider)
     {
         _notificationService = notificationService;

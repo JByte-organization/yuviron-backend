@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,18 +13,20 @@ namespace Yuviron.Application.Features.Admin.Tracks.Commands.UpdateTrack;
 
 public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly IAudioMetadataService _audioMetadataService;
     private readonly ICurrentUserService _currentUser;
 
     public UpdateTrackHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ISystemContext systemContext, 
         TimeProvider timeProvider,
         IAudioMetadataService audioMetadataService,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _audioMetadataService = audioMetadataService;
         _currentUser = currentUser;
@@ -32,17 +36,17 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
     {
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
             .Include(t => t.TrackArtists)
             .Include(t => t.TrackGenres)
             .Include(t => t.TrackMoods) 
             .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken)
             ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
-        var albumExists = await _context.Albums.AsNoTracking().AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
+        var albumExists = await _catalogContext.Albums.AsNoTracking().AnyAsync(a => a.Id == request.AlbumId, cancellationToken);
         if (!albumExists) throw new NotFoundException(nameof(Album), request.AlbumId);
 
-        var isPositionTaken = await _context.Tracks.AnyAsync(t => t.AlbumId == request.AlbumId && t.AlbumPosition == request.AlbumPosition && t.Id != request.TrackId, cancellationToken);
+        var isPositionTaken = await _catalogContext.Tracks.AnyAsync(t => t.AlbumId == request.AlbumId && t.AlbumPosition == request.AlbumPosition && t.Id != request.TrackId, cancellationToken);
         if (isPositionTaken) throw new PositionConflictException(request.AlbumPosition, "Track in this Album");
         
         var uniqueArtists = request.Artists.DistinctBy(a => a.Id).ToList();
@@ -50,9 +54,9 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         var uniqueGenreIds = request.GenreIds.Distinct().ToList();
         var uniqueMoodIds = request.MoodIds.Distinct().ToList();
 
-        await _context.Artists.EnsureAllExistAsync(uniqueArtistIds, nameof(Artist), cancellationToken);
-        await _context.Genres.EnsureAllExistAsync(uniqueGenreIds, nameof(Genre), cancellationToken);
-        await _context.Moods.EnsureAllExistAsync(uniqueMoodIds, nameof(Mood), cancellationToken);
+        await _catalogContext.Artists.EnsureAllExistAsync(uniqueArtistIds, nameof(Artist), cancellationToken);
+        await _catalogContext.Genres.EnsureAllExistAsync(uniqueGenreIds, nameof(Genre), cancellationToken);
+        await _catalogContext.Moods.EnsureAllExistAsync(uniqueMoodIds, nameof(Mood), cancellationToken);
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -66,7 +70,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             var oldAudioKey = track.AudioStorageKey;
             var targetAudioFolder = $"tracks/{track.Id}";
 
-            var audioClaim = await _context.ClaimFileAsync(
+            var audioClaim = await _systemContext.ClaimFileAsync(
                 request.AudioFileId.Value, adminId, "audio/", targetAudioFolder, cancellationToken);
             
             var audioMeta = await _audioMetadataService.GetAudioMetadataAsync(audioClaim.SourceKey, cancellationToken);
@@ -90,7 +94,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
         string? finalCoverUrl = track.CoverUrl;
         if (request.CoverFileId.HasValue)
         {
-            var coverClaim = await _context.ClaimFileAsync(
+            var coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
             
             track.RegisterFileSwapEvents(coverClaim, track.CoverUrl);
@@ -113,7 +117,7 @@ public sealed class UpdateTrackHandler : IRequestHandler<UpdateTrackCommand, Uni
             utcNow, 
             audioFileChanged);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

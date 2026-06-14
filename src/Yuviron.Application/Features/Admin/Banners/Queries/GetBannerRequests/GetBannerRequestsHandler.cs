@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Admin.Banners.Queries.GetBannerRequests;
 
 public sealed class GetBannerRequestsHandler : IRequestHandler<GetBannerRequestsQuery, PaginatedList<BannerRequestListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IContentContext _contentContext;
 
-    public GetBannerRequestsHandler(IApplicationDbContext context)
+    public GetBannerRequestsHandler(IContentContext contentContext)
     {
-        _context = context;
+        _contentContext = contentContext;
     }
 
     public async Task<PaginatedList<BannerRequestListItemDto>> Handle(GetBannerRequestsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.BannerRequests
+        var query = _contentContext.BannerRequests
             .AsNoTracking()
             .Include(br => br.Artist)
             .Include(br => br.Album)

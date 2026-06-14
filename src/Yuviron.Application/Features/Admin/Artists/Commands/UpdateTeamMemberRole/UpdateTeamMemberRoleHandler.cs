@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging; 
@@ -12,20 +14,20 @@ namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateTeamMemberRo
 
 public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemberRoleCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPermissionService _permissionService;
     private readonly ILogger<UpdateTeamMemberRoleHandler> _logger; 
     private readonly IIdentityManager _identityManager;
 
     public UpdateTeamMemberRoleHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, 
         TimeProvider timeProvider,
         IPermissionService permissionService,
         ILogger<UpdateTeamMemberRoleHandler> logger,
         IIdentityManager identityManager) 
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _permissionService = permissionService;
         _logger = logger;
@@ -34,7 +36,7 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
 
     public async Task<Unit> Handle(UpdateTeamMemberRoleCommand request, CancellationToken cancellationToken)
     {
-        var artist = await _context.Artists
+        var artist = await _catalogContext.Artists
                          .Include(a => a.TeamMembers)
                          .FirstOrDefaultAsync(a => a.Id == request.ArtistId, cancellationToken)
                      ?? throw new NotFoundException(nameof(Artist), request.ArtistId);
@@ -47,7 +49,7 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
 
         artist.AddDomainEvent(new UserPermissionsChangedEvent(request.UserId));
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         try
         {

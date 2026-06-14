@@ -39,19 +39,18 @@ public class CreateArtistProfileHandlerTests
 
         // 1. Создаем юзера честно
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
 
         // 2. Учим мок возвращать сгенерированный ID этого юзера
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         var managementRole = Role.Create(nameof(RoleName.ManagementUser));
-        dbContext.Roles.Add(managementRole);
+        dbContext.Add(managementRole);
         await dbContext.SaveChangesAsync();
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
         
-        var handler = new CreateArtistProfileHandler(
-            dbContext, TimeProvider.System, options, _currentUserServiceMock.Object, _permissionServiceMock.Object);
+        var handler = new CreateArtistProfileHandler(dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object, _permissionServiceMock.Object);
             
         var command = new CreateArtistProfileCommand("My New Band", null);
 
@@ -80,18 +79,17 @@ public class CreateArtistProfileHandlerTests
         var utcNow = DateTime.UtcNow;
 
         var user = User.Create("test@mail.com", "hash", "Test", true, true, utcNow);
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(user.Id);
 
         var options = Options.Create(new ArtistLimitsOptions { FreeUserMaxProfiles = 1, PremiumUserMaxProfiles = 5 });
         
         var existingArtist = Artist.Create(user.Id, "Old Band", null, null, null, VerificationStatus.None, utcNow);
-        dbContext.Artists.Add(existingArtist);
+        dbContext.Add(existingArtist);
         await dbContext.SaveChangesAsync();
 
-        var handler = new CreateArtistProfileHandler(
-            dbContext, TimeProvider.System, options, _currentUserServiceMock.Object, _permissionServiceMock.Object);
+        var handler = new CreateArtistProfileHandler(dbContext, dbContext, dbContext, TimeProvider.System, options, _currentUserServiceMock.Object, _permissionServiceMock.Object);
             
         var command = new CreateArtistProfileCommand("Second Band", null);
 

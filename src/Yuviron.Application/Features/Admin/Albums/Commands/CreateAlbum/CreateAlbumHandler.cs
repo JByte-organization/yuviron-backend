@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -10,16 +12,18 @@ namespace Yuviron.Application.Features.Admin.Albums.Commands.CreateAlbum;
 
 public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ISystemContext _systemContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICurrentUserService _currentUser;
 
     public CreateAlbumHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext, ISystemContext systemContext,
         TimeProvider timeProvider,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _systemContext = systemContext;
         _timeProvider = timeProvider;
         _currentUser = currentUser;
     }
@@ -29,7 +33,7 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
         var adminId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         
         var uniqueArtistIds = request.ArtistIds.Distinct().ToList();
-        var existingArtistsCount = await _context.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
+        var existingArtistsCount = await _catalogContext.Artists.CountAsync(a => uniqueArtistIds.Contains(a.Id), cancellationToken);
 
         if (existingArtistsCount != uniqueArtistIds.Count)
         {
@@ -41,7 +45,7 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
         ClaimedFileResult? coverClaim = null;
         if (request.CoverFileId.HasValue)
         {
-            coverClaim = await _context.ClaimFileAsync(
+            coverClaim = await _systemContext.ClaimFileAsync(
                 request.CoverFileId.Value, adminId, "image/", "covers", cancellationToken);
         }
         
@@ -61,8 +65,8 @@ public sealed class CreateAlbumHandler : IRequestHandler<CreateAlbumCommand, Gui
             album.RegisterFileSwapEvents(coverClaim);
         }
 
-        _context.Albums.Add(album);
-        await _context.SaveChangesAsync(cancellationToken);
+        _catalogContext.Add(album);
+        await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return album.Id;
     }

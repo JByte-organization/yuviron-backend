@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,12 +18,12 @@ namespace Yuviron.Application.Features.StudioArtist.Tracks.Queries.GetStudioTrac
 
 public sealed class GetStudioTrackByIdHandler : IRequestHandler<GetStudioTrackByIdQuery, StudioTrackDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioTrackByIdHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioTrackByIdHandler(ICatalogContext catalogContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _currentUser = currentUser;
     }
 
@@ -29,7 +31,7 @@ public sealed class GetStudioTrackByIdHandler : IRequestHandler<GetStudioTrackBy
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
                         .AsNoTracking()
                         .Include(t => t.TrackArtists).ThenInclude(ta => ta.Artist)
                         .Include(t => t.TrackGenres)
@@ -41,7 +43,7 @@ public sealed class GetStudioTrackByIdHandler : IRequestHandler<GetStudioTrackBy
 
         var artistIds = track.TrackArtists.Select(ta => ta.ArtistId).ToList();
         
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .Where(tm => artistIds.Contains(tm.ArtistId) && tm.UserId == userId)
             .AnyAsync(cancellationToken);
 

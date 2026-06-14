@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -11,13 +13,13 @@ namespace Yuviron.Application.Features.Admin.Plans.Queries.GetPlanById;
 
 public sealed class GetPlanByIdHandler : IRequestHandler<GetPlanByIdQuery, PlanDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMonetizationContext _monetizationContext;
 
-    public GetPlanByIdHandler(IApplicationDbContext context) => _context = context;
+    public GetPlanByIdHandler(IMonetizationContext monetizationContext) => _monetizationContext = monetizationContext;
 
     public async Task<PlanDetailsDto> Handle(GetPlanByIdQuery request, CancellationToken cancellationToken)
     {
-        var plan = await _context.Plans
+        var plan = await _monetizationContext.Plans
             .AsNoTracking()
             .Where(p => p.Id == request.Id)
             .Select(p => new PlanDetailsDto(

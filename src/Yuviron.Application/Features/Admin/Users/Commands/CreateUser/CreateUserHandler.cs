@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -12,16 +14,16 @@ namespace Yuviron.Application.Features.Admin.Users.Commands.CreateUser;
 
 public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
     public CreateUserHandler(
-        IApplicationDbContext context, 
+        IIdentityContext identityContext, 
         IPasswordHasher passwordHasher,
         TimeProvider timeProvider)
     {
-        _context = context;
+        _identityContext = identityContext;
         _passwordHasher = passwordHasher;
         _timeProvider = timeProvider;
     }
@@ -30,7 +32,7 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
     {
         var normalizedEmail = EmailNormalizer.Normalize(request.Email);
 
-        var emailExists = await _context.Users
+        var emailExists = await _identityContext.Users
             .AsNoTracking()
             .AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
 
@@ -72,7 +74,7 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
 
         if (requestedRoleIds is { Length: > 0 })
         {
-            var existingRoleIds = await _context.Roles
+            var existingRoleIds = await _identityContext.Roles
                 .AsNoTracking()
                 .Where(r => requestedRoleIds.Contains(r.Id))
                 .Select(r => r.Id)
@@ -89,7 +91,7 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
         {
             var userRoleStr = nameof(RoleName.User); 
             
-            var defaultRoleId = await _context.Roles
+            var defaultRoleId = await _identityContext.Roles
                 .AsNoTracking()
                 .Where(r => r.Name == userRoleStr)
                 .Select(r => r.Id)
@@ -105,11 +107,11 @@ public sealed class CreateUserHandler : IRequestHandler<CreateUserCommand, Guid>
 
         user.AddDomainEvent(new UserPermissionsChangedEvent(user.Id));
 
-        _context.Users.Add(user);
+        _identityContext.Add(user);
 
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _identityContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsDuplicateEmailViolation(ex))
         {

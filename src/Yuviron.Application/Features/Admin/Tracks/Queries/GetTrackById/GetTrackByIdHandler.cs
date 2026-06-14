@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -9,16 +11,16 @@ namespace Yuviron.Application.Features.Admin.Tracks.Queries.GetTrackById;
 
 public sealed class GetTrackByIdHandler : IRequestHandler<GetTrackByIdQuery, TrackDetailsDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
 
-    public GetTrackByIdHandler(IApplicationDbContext context)
+    public GetTrackByIdHandler(ICatalogContext catalogContext)
     {
-        _context = context;
+        _catalogContext = catalogContext;
     }
 
     public async Task<TrackDetailsDto> Handle(GetTrackByIdQuery request, CancellationToken cancellationToken)
     {
-        var track = await _context.Tracks
+        var track = await _catalogContext.Tracks
             .AsNoTracking()
             .Where(t => t.Id == request.TrackId )
             .Select(t => new TrackDetailsDto(

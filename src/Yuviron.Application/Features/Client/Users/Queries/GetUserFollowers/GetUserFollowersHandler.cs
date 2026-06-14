@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,12 +19,14 @@ namespace Yuviron.Application.Features.Client.Users.Queries.GetUserFollowers;
 
 public sealed class GetUserFollowersHandler : IRequestHandler<GetUserFollowersQuery, PaginatedList<FollowerDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUserFollowersHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserFollowersHandler(IIdentityContext identityContext, ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _identityContext = identityContext;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -33,11 +37,11 @@ public sealed class GetUserFollowersHandler : IRequestHandler<GetUserFollowersQu
 
         if (request.TargetUserId.HasValue)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == targetId , cancellationToken);
+            var userExists = await _identityContext.Users.AnyAsync(u => u.Id == targetId , cancellationToken);
             if (!userExists) throw new NotFoundException(nameof(User), targetId);
         }
 
-        var query = _context.UserFollowUsers
+        var query = _libraryContext.UserFollowUsers
             .AsNoTracking()
             .Where(ufu => ufu.FolloweeId == targetId && !ufu.Follower.IsDeleted);
 

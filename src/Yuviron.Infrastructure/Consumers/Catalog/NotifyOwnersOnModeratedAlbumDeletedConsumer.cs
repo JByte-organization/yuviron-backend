@@ -1,3 +1,5 @@
+using Yuviron.Infrastructure.Persistence;
+using Yuviron.Application.Abstractions.Data.Contexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +17,11 @@ namespace Yuviron.Infrastructure.Consumers;
 
 public sealed class NotifyOwnersOnModeratedAlbumDeletedConsumer : NotifyArtistOwnersConsumerBase<ModeratedAlbumDeletedEvent>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly TimeProvider _timeProvider;
 
     public NotifyOwnersOnModeratedAlbumDeletedConsumer(
-        IApplicationDbContext context, 
+        AppDbContext context, 
         INotificationService notificationService,
         TimeProvider timeProvider) : base(context, notificationService) 
     { 

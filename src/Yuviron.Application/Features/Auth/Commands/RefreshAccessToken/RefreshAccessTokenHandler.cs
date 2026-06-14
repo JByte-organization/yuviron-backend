@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,18 +13,18 @@ namespace Yuviron.Application.Features.Auth.Commands.RefreshAccessToken;
 
 public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTokenCommand, RefreshAccessTokenResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IIdentityContext _identityContext;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly TimeProvider _timeProvider; 
     private readonly ILogger<RefreshAccessTokenHandler> _logger;
 
     public RefreshAccessTokenHandler(
-        IApplicationDbContext context,
+        IIdentityContext identityContext,
         IJwtTokenGenerator jwtTokenGenerator,
         TimeProvider timeProvider,
         ILogger<RefreshAccessTokenHandler> logger) 
     {
-        _context = context;
+        _identityContext = identityContext;
         _jwtTokenGenerator = jwtTokenGenerator;
         _timeProvider = timeProvider; 
         _logger = logger;
@@ -32,7 +34,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
     {
         var requestTokenHash = _jwtTokenGenerator.HashRefreshToken(request.RefreshToken.Trim());
 
-        var existingToken = await _context.RefreshTokens
+        var existingToken = await _identityContext.RefreshTokens
             .IgnoreQueryFilters() 
             .Include(rt => rt.User)
             .ThenInclude(u => u.UserRoles)
@@ -62,7 +64,7 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
 
                 if (existingToken.RevokedAt.HasValue)
                 {
-                    var lostTokens = await _context.RefreshTokens
+                    var lostTokens = await _identityContext.RefreshTokens
                         .Where(t => t.UserId == existingToken.UserId 
                                  && t.CreatedAt >= existingToken.RevokedAt.Value 
                                  && t.RevokedAt == null)
@@ -77,14 +79,14 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
             }
             else
             {
-                var allUserTokens = await _context.RefreshTokens
+                var allUserTokens = await _identityContext.RefreshTokens
                     .Where(x => x.UserId == existingToken.UserId && x.RevokedAt == null)
                     .ToListAsync(cancellationToken);
 
                 foreach (var token in allUserTokens) token.Revoke(utcNow);
 
                 existingToken.User.AddDomainEvent(new UserPermissionsChangedEvent(existingToken.UserId));
-                await _context.SaveChangesAsync(cancellationToken);
+                await _identityContext.SaveChangesAsync(cancellationToken);
                 
                 _logger.LogWarning("Security Alert: Token reuse detected for User {UserId}. All sessions terminated.", existingToken.UserId);
                 throw new UnauthorizedAccessException("Security Alert: Token reuse detected. All sessions terminated.");
@@ -117,8 +119,8 @@ public sealed class RefreshAccessTokenHandler : IRequestHandler<RefreshAccessTok
             utcNow             
         );
 
-        _context.RefreshTokens.Add(newRefreshTokenEntity);
-        await _context.SaveChangesAsync(cancellationToken);
+        _identityContext.Add(newRefreshTokenEntity);
+        await _identityContext.SaveChangesAsync(cancellationToken);
 
         return new RefreshAccessTokenResponse(newAccessToken, newRawRefreshToken);
     }

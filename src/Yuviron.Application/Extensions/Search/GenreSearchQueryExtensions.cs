@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -8,15 +10,15 @@ namespace Yuviron.Application.Extensions;
 public static class GenreSearchQueryExtensions
 {
     public static IQueryable<Genre> BuildPublicGenreSearchQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         string searchTerm,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        return context.Genres
+        return catalogContext.Genres
             .AsNoTracking()
             .Where(g => !g.IsDeleted &&
                         g.Name.ToLower().Contains(searchTerm) &&
@@ -24,15 +26,15 @@ public static class GenreSearchQueryExtensions
     }
 
     public static IQueryable<Genre> BuildPublicGenreFuzzyCandidateQuery(
-        this IApplicationDbContext context,
+        this ICatalogContext catalogContext,
         IReadOnlyCollection<string> fragments,
         DateTime utcNow)
     {
-        var publicTracks = context.Tracks
+        var publicTracks = catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow);
 
-        var baseQuery = context.Genres
+        var baseQuery = catalogContext.Genres
             .AsNoTracking()
             .Where(g => !g.IsDeleted &&
                         publicTracks.Any(t => t.TrackGenres.Any(tg => tg.GenreId == g.Id)));

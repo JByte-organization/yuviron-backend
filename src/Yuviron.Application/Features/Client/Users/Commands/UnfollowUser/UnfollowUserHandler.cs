@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -7,12 +9,12 @@ namespace Yuviron.Application.Features.Client.Users.Commands.UnfollowUser;
 
 public sealed class UnfollowUserHandler : IRequestHandler<UnfollowUserCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public UnfollowUserHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public UnfollowUserHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context;
+        _libraryContext = libraryContext;
         _currentUserService = currentUserService;
     }
 
@@ -20,13 +22,13 @@ public sealed class UnfollowUserHandler : IRequestHandler<UnfollowUserCommand, U
     {
         var currentUserId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var followRecord = await _context.UserFollowUsers
+        var followRecord = await _libraryContext.UserFollowUsers
             .FirstOrDefaultAsync(f => f.FollowerId == currentUserId && f.FolloweeId == request.TargetUserId, cancellationToken);
 
         if (followRecord != null)
         {
-            _context.UserFollowUsers.Remove(followRecord);
-            await _context.SaveChangesAsync(cancellationToken);
+            _libraryContext.Remove(followRecord);
+            await _libraryContext.SaveChangesAsync(cancellationToken);
         }
 
         return Unit.Value;

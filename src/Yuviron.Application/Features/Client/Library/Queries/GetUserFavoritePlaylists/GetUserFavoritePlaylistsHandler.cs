@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,20 +19,20 @@ namespace Yuviron.Application.Features.Client.Library.Queries.GetUserFavoritePla
 
 public sealed class GetUserFavoritePlaylistsHandler : IRequestHandler<GetUserFavoritePlaylistsQuery, PaginatedList<UserFavoritePlaylistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetUserFavoritePlaylistsHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetUserFavoritePlaylistsHandler(ILibraryContext libraryContext, ICurrentUserService currentUserService)
     {
-        _context = context; _currentUserService = currentUserService;
+        _libraryContext = libraryContext; _currentUserService = currentUserService;
     }
 
     public async Task<PaginatedList<UserFavoritePlaylistDto>> Handle(GetUserFavoritePlaylistsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
 
-        var query = _context.UserSavedPlaylists.AsNoTracking()
-            .Where(usp => usp.UserId == userId && _context.Playlists.Any(p => p.Id == usp.PlaylistId && !p.IsDeleted && (p.Visibility == PlaylistVisibility.Public || p.UserId == userId)));
+        var query = _libraryContext.UserSavedPlaylists.AsNoTracking()
+            .Where(usp => usp.UserId == userId && _libraryContext.Playlists.Any(p => p.Id == usp.PlaylistId && (p.Visibility == PlaylistVisibility.Public || p.UserId == userId)));
 
         var sortedQuery = query.ApplySorting(
             request.SortBy, 

@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -16,18 +18,18 @@ namespace Yuviron.Application.Features.Client.Artists.Queries.GetArtistTopTracks
 
 public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTracksQuery, List<ArtistTopTrackDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
     private readonly ICurrentUserService _currentUser;
 
     public GetArtistTopTracksHandler(
-        IApplicationDbContext context,
+        ICatalogContext catalogContext,
         TimeProvider timeProvider,
         ICacheService cache,
         ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
         _timeProvider = timeProvider;
         _cache = cache;
         _currentUser = currentUser;
@@ -35,7 +37,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 
     public async Task<List<ArtistTopTrackDto>> Handle(GetArtistTopTracksQuery request, CancellationToken cancellationToken)
     {
-        var artistExists = await _context.Artists
+        var artistExists = await _catalogContext.Artists
             .AsNoTracking()
             .AnyAsync(a => a.Id == request.ArtistId, cancellationToken);
 
@@ -46,7 +48,7 @@ public sealed class GetArtistTopTracksHandler : IRequestHandler<GetArtistTopTrac
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var rawTracks = await _context.Tracks
+        var rawTracks = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
             .ForArtist(request.ArtistId)

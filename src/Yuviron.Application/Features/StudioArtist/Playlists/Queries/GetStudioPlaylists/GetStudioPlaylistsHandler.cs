@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -15,12 +17,14 @@ namespace Yuviron.Application.Features.StudioArtist.Playlists.Queries.GetStudioP
 
 public sealed class GetStudioPlaylistsHandler : IRequestHandler<GetStudioPlaylistsQuery, PaginatedList<StudioPlaylistListItemDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
     private readonly ICurrentUserService _currentUser;
 
-    public GetStudioPlaylistsHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetStudioPlaylistsHandler(ICatalogContext catalogContext, ILibraryContext libraryContext, ICurrentUserService currentUser)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
         _currentUser = currentUser;
     }
 
@@ -29,13 +33,13 @@ public sealed class GetStudioPlaylistsHandler : IRequestHandler<GetStudioPlaylis
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var trackId = request.TrackId;
 
-        var hasPermission = await _context.ArtistTeamMembers
+        var hasPermission = await _catalogContext.ArtistTeamMembers
             .HasViewerAccess(request.ArtistId, userId)
             .AnyAsync(cancellationToken);
 
         if (!hasPermission) throw new ForbiddenException("No access to view this artist's playlists.");
 
-        var query = _context.Playlists
+        var query = _libraryContext.Playlists
             .AsNoTracking()
             .Where(p => p.ArtistId == request.ArtistId && !p.IsDeleted);
 

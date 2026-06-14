@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -13,18 +15,22 @@ namespace Yuviron.Application.Features.Client.Home.Queries.GetUserTopArtists;
 
 public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtistsQuery, List<TopArtistDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogContext _catalogContext;
+    private readonly ILibraryContext _libraryContext;
+    private readonly ISystemContext _systemContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly TimeProvider _timeProvider;
     private readonly ICacheService _cache;
 
     public GetUserTopArtistsHandler(
-        IApplicationDbContext context, 
+        ICatalogContext catalogContext, ILibraryContext libraryContext, ISystemContext systemContext, 
         ICurrentUserService currentUserService,
         TimeProvider timeProvider,
         ICacheService cache)
     {
-        _context = context;
+        _catalogContext = catalogContext;
+        _libraryContext = libraryContext;
+        _systemContext = systemContext;
         _currentUserService = currentUserService;
         _timeProvider = timeProvider;
         _cache = cache;
@@ -35,9 +41,9 @@ public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtists
         var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User is not authenticated.");
         var minDate = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-30);
 
-        var topArtistIds = await _context.ListeningEvents
+        var topArtistIds = await _systemContext.ListeningEvents
             .Where(le => le.UserId == userId && le.PlayedAt >= minDate && le.MsPlayed >= 30000) 
-            .Join(_context.TrackArtists.Where(ta => !ta.Track.IsDeleted && !ta.Artist.IsDeleted),
+            .Join(_catalogContext.TrackArtists.Where(ta => !ta.Track.IsDeleted && !ta.Artist.IsDeleted),
                 le => le.TrackId,
                 ta => ta.TrackId,
                 (le, ta) => ta.ArtistId)
@@ -49,14 +55,14 @@ public sealed class GetUserTopArtistsHandler : IRequestHandler<GetUserTopArtists
 
         if (!topArtistIds.Any()) return new List<TopArtistDto>();
 
-        var dbArtists = await _context.Artists
+        var dbArtists = await _catalogContext.Artists
             .AsNoTracking()
             .Where(a => topArtistIds.Contains(a.Id) )
             .Select(a => new TopArtistDto(
                 a.Id,
                 a.Name,
                 a.AvatarUrl,
-                _context.UserFollowArtists.Count(ufa => ufa.ArtistId == a.Id),
+                _libraryContext.UserFollowArtists.Count(ufa => ufa.ArtistId == a.Id),
                 false 
             ))
             .ToListAsync(cancellationToken);

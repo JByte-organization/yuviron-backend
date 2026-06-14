@@ -1,3 +1,5 @@
+using Yuviron.Application.Abstractions.Data.Contexts;
+using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Yuviron.Application.Abstractions;
@@ -11,16 +13,16 @@ namespace Yuviron.Application.Features.Client.Appearance.Commands.ActivateThemeP
 
 public sealed class ActivateThemePresetCommandHandler : IRequestHandler<ActivateThemePresetCommand, Unit>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IProfileContext _profileContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPermissionService _permissionService;
 
     public ActivateThemePresetCommandHandler(
-        IApplicationDbContext context,
+        IProfileContext profileContext,
         ICurrentUserService currentUser,
         IPermissionService permissionService)
     {
-        _context = context;
+        _profileContext = profileContext;
         _currentUser = currentUser;
         _permissionService = permissionService;
     }
@@ -30,10 +32,10 @@ public sealed class ActivateThemePresetCommandHandler : IRequestHandler<Activate
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var hasCustomThemePermission = await _permissionService.HasPermissionAsync(userId, AppPermission.CustomTheme, cancellationToken);
 
-        var settings = await _context.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
+        var settings = await _profileContext.UserSettings.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new NotFoundException(nameof(UserSettings), userId);
 
-        var theme = await _context.Themes
+        var theme = await _profileContext.Themes
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Theme), request.Id);
 
@@ -48,7 +50,7 @@ public sealed class ActivateThemePresetCommandHandler : IRequestHandler<Activate
         }
 
         settings.ApplyDesign(theme.Id, null, DateTime.UtcNow);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _profileContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

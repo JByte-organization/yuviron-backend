@@ -1,3 +1,4 @@
+using Yuviron.Infrastructure.Persistence;
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,7 +51,7 @@ public class SyncPlayCountsJob : BackgroundService
         if (trackIdsRaw.Length == 0 && artistIdsRaw.Length == 0) return;
 
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var eventBus = scope.ServiceProvider.GetRequiredService<IEventBus>();
 
         var tracksToSync = new Dictionary<Guid, long>();

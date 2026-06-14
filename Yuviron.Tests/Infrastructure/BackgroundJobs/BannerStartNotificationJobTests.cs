@@ -38,7 +38,7 @@ public class BannerStartNotificationJobTests
             artistId,
             startsAtUtc: utcNow.AddMinutes(-5));
 
-        dbContext.Banners.Add(banner);
+        dbContext.Add(banner);
         await dbContext.SaveChangesAsync();
 
         var serviceCollection = new ServiceCollection();
@@ -67,7 +67,7 @@ public class BannerStartNotificationJobTests
             It.Is<BannerStartedEvent>(e => e.ArtistId == artistId && e.BannerId == banner.Id),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var updatedBanner = await dbContext.Banners.FindAsync(banner.Id);
+        var updatedBanner = await dbContext.Set<Banner>().FindAsync(banner.Id);
         updatedBanner!.StartNotificationSentAtUtc.Should().NotBeNull();
     }
 }
