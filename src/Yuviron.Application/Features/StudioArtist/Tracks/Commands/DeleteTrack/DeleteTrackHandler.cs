@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Application.Extensions;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Exceptions;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.StudioArtist.Tracks.Commands.DeleteTrack;
 
@@ -29,11 +30,17 @@ public sealed class DeleteTrackHandler : IRequestHandler<DeleteTrackCommand, Uni
                         .FirstOrDefaultAsync(t => t.Id == request.TrackId, cancellationToken)
                     ?? throw new NotFoundException(nameof(Track), request.TrackId);
 
+        // Access only for Main artists of the album/track
+        var mainArtistIds = track.Album!.AlbumArtists
+            .Where(aa => aa.Role == ArtistRole.Main)
+            .Select(aa => aa.ArtistId)
+            .ToList();
+
         var hasAccess = await _catalogContext.ArtistTeamMembers
-            .HasManagementAccess(track.Album!.AlbumArtists.Select(aa => aa.ArtistId), userId)
+            .HasManagementAccess(mainArtistIds, userId)
             .AnyAsync(cancellationToken);
 
-        if (!hasAccess) throw new ForbiddenException("No access to this track.");
+        if (!hasAccess) throw new ForbiddenException("No access to this track (only Main artists or managers).");
 
         track.Delete(_timeProvider.GetUtcNow().UtcDateTime); 
         await _catalogContext.SaveChangesAsync(cancellationToken);

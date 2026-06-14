@@ -51,7 +51,7 @@ public sealed class GetArtistAlbumsHandler : IRequestHandler<GetArtistAlbumsQuer
         var query = _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .Where(a => a.ReleaseType == ReleaseType.Album)
             .Where(a => a.Tracks.Any(t => !t.IsDeleted 
                                           && t.VisibilityStatus == VisibilityStatus.Published 

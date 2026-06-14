@@ -48,7 +48,7 @@ public sealed class GetArtistSinglesHandler : IRequestHandler<GetArtistSinglesQu
         var query = _catalogContext.Albums
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .Where(a => a.ReleaseType == ReleaseType.Single);
 
         var sortedQuery = query.ApplySorting(

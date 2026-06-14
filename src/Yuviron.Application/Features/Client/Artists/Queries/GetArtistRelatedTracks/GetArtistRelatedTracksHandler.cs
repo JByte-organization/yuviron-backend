@@ -40,7 +40,7 @@ public sealed class GetArtistRelatedTracksHandler : IRequestHandler<GetArtistRel
         var artistGenreIds = await _catalogContext.Tracks
             .AsNoTracking()
             .AvailableForPublic(utcNow)
-            .ForArtist(request.ArtistId)
+            .ForArtistMain(request.ArtistId)
             .SelectMany(t => t.TrackGenres
                 
                 .Select(tg => tg.GenreId))
