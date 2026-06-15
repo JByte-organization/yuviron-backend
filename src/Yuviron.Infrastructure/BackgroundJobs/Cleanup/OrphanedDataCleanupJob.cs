@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -52,7 +52,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
 
         await context.PlaylistTracks.IgnoreQueryFilters().Where(x => expiredPlaylistsQuery.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
         await context.UserSavedPlaylists.IgnoreQueryFilters().Where(x => expiredPlaylistsQuery.Contains(x.PlaylistId)).ExecuteDeleteAsync(ct);
-        await context.Playlists.IgnoreQueryFilters().Where(p => expiredPlaylistsQuery.Contains(p.Id)).ExecuteDeleteAsync(ct);
+        await context.Playlists.IgnoreQueryFilters().Where(p => p.IsDeleted && p.UpdatedAt < playlistRetentionCutoff).ExecuteDeleteAsync(ct);
 
         // --- PART 3: ORPHAN CLEANUP (USING SQL SUBQUERIES FOR HIGH PERFORMANCE) ---
         var deletedUserIds = context.Users.IgnoreQueryFilters().Where(u => u.IsDeleted).Select(u => u.Id);
