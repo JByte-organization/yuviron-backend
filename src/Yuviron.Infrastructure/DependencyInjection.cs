@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Yuviron.Infrastructure.DependencyInjectionModules;
+using Yuviron.Application.Abstractions.Identity;
+using Yuviron.Infrastructure.Services;
 
 namespace Yuviron.Infrastructure;
 
@@ -19,6 +21,7 @@ public static class DependencyInjection
             .AddServices()
             .AddHealthChecksInternal();
 
+
         return services;
     }
 
@@ -31,3 +34,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

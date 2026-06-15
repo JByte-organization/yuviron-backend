@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +30,11 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
         IEventBus eventBus) 
     {
         _identityContext = identityContext;
-        _catalogContext = catalogContext; _currentUser = currentUser; _cache = cache; _timeProvider = timeProvider; _eventBus = eventBus;
+        _catalogContext = catalogContext; 
+        _currentUser = currentUser; 
+        _cache = cache; 
+        _timeProvider = timeProvider; 
+        _eventBus = eventBus;
     }
 
     public async Task<Unit> Handle(AcceptTeamInviteCommand request, CancellationToken cancellationToken)
@@ -39,7 +43,7 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var inviteData = await _cache.GetAsync<TeamInvitationData>($"team_invite:{request.Token}", cancellationToken)
-            ?? throw new InvalidOperationException("Invitation link is invalid or has expired.");
+            ?? throw new ForbiddenException("Invitation link is invalid or has expired.");
 
         var currentUser = await _identityContext.Users
             .AsNoTracking()
@@ -47,7 +51,7 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
 
         if (currentUser?.Email != inviteData.UserEmail)
         {
-            throw new InvalidOperationException("This invitation was sent to a different email address.");
+            throw new ForbiddenException("This invitation was sent to a different email address.");
         }
 
         var artist = await _catalogContext.Artists
