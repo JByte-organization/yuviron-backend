@@ -16,7 +16,15 @@ public class GenerateMockDataCommandHandler : IRequestHandler<GenerateMockDataCo
 
     public async Task<Unit> Handle(GenerateMockDataCommand request, CancellationToken cancellationToken)
     {
-        await _mockDataService.GenerateAsync(request.MonthsToGenerate, cancellationToken);
+        await _mockDataService.GenerateAsync(
+            new MockDataGenerationOptions(
+                request.MonthsToGenerate, 
+                request.GenerateUsers, 
+                request.GenerateSocial, 
+                request.GenerateAds, 
+                request.GenerateAnalytics), 
+            cancellationToken);
         return Unit.Value;
     }
 }
+

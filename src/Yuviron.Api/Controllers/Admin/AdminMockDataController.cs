@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Yuviron.Application.Abstractions.MockData;
+using Yuviron.Application.Features.Admin.System.Commands;
+using Yuviron.Application.MockData;
 
 namespace Yuviron.Api.Controllers.Admin;
 
@@ -11,28 +10,22 @@ public class AdminMockDataController : AdminApiControllerBase
 {
     [HttpPost("generate")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public IActionResult GenerateMockData(
-        [FromServices] IServiceScopeFactory scopeFactory,
-        [FromServices] ILogger<AdminMockDataController> logger,
-        [FromQuery] int months = 6)
+    public IActionResult GenerateMockData([FromQuery] GenerateMockDataCommand command)
     {
+        // We run it in background because it is very heavy
         _ = Task.Run(async () =>
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IMockDataService>();
-            try
-            {
-                await service.GenerateAsync(months, CancellationToken.None);
-                logger.LogInformation("Mock data generation completed ({Months} months)", months);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Mock data generation failed ({Months} months)", months);
-            }
+            await Mediator.Send(command);
         });
 
-        return Accepted(new { message = $"Mock data generation started for {months} months. Check server logs for progress." });
+        return Accepted(new { message = "Mock data generation started. Check server logs for progress." });
+    }
+
+    [HttpPost("backfill-roles")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> BackfillRoles(CancellationToken ct)
+    {
+        await Mediator.Send(new BackfillUserRolesCommand(), ct);
+        return NoContent();
     }
 }
