@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Yuviron.Infrastructure;
@@ -28,7 +28,8 @@ internal static class ServiceDiscoveryExtensions
             
             if (implementation != null)
             {
-                services.AddScoped(abstraction, implementation);
+                services.AddScoped(implementation);
+                services.AddScoped(abstraction, sp => sp.GetRequiredService(implementation));
             }
         }
 

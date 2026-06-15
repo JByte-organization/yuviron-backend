@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.ClaimProfile;
 using Yuviron.Application.Features.ArtistDashboard.Profiles.Commands.CreateProfile;
+using Yuviron.Application.Features.StudioArtist.Team.Commands.AcceptTeamInvite;
 
 namespace Yuviron.Api.Controllers.Client; 
 
@@ -44,5 +45,14 @@ public class ArtistProfilesController : ApiControllerBase
         await Mediator.Send(command, ct);
         
         return NoContent(); 
+    }
+    
+    [HttpPost("accept-invite")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AcceptInvite([FromBody] AcceptTeamInviteCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return NoContent();
     }
 }

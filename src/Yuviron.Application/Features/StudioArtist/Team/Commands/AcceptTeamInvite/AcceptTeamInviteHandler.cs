@@ -6,6 +6,7 @@ using Yuviron.Application.Abstractions;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Identity;
 using Yuviron.Application.Features.StudioArtist.Team.Commands.AddTeamMember;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
@@ -20,14 +21,16 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
     private readonly ICurrentUserService _currentUser;
     private readonly ICacheService _cache;
     private readonly TimeProvider _timeProvider;
-    private readonly IEventBus _eventBus; 
+    private readonly IEventBus _eventBus;
+    private readonly IIdentityManager _identityManager; 
 
     public AcceptTeamInviteHandler(
         IIdentityContext identityContext, ICatalogContext catalogContext, 
         ICurrentUserService currentUser, 
         ICacheService cache,
         TimeProvider timeProvider,
-        IEventBus eventBus) 
+        IEventBus eventBus,
+        IIdentityManager identityManager) 
     {
         _identityContext = identityContext;
         _catalogContext = catalogContext; 
@@ -35,6 +38,7 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
         _cache = cache; 
         _timeProvider = timeProvider; 
         _eventBus = eventBus;
+        _identityManager = identityManager;
     }
 
     public async Task<Unit> Handle(AcceptTeamInviteCommand request, CancellationToken cancellationToken)
@@ -60,6 +64,8 @@ public sealed class AcceptTeamInviteHandler : IRequestHandler<AcceptTeamInviteCo
                      ?? throw new NotFoundException(nameof(Artist), inviteData.ArtistId);
 
         artist.AddTeamMember(currentUserId, inviteData.Role, utcNow);
+
+        await _identityManager.EnsureManagementRoleAsync(currentUserId, cancellationToken);
 
         await _identityContext.SaveChangesAsync(cancellationToken);
         await _cache.RemoveAsync($"team_invite:{request.Token}", cancellationToken);

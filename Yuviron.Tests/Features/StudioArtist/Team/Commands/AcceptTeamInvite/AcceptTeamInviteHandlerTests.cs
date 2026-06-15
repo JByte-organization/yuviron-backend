@@ -1,10 +1,11 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
 using Yuviron.Application.Abstractions.Caching;
 using Yuviron.Application.Abstractions.Messaging;
 using Yuviron.Application.Abstractions.Services;
+using Yuviron.Application.Abstractions.Identity;
 using Yuviron.Application.Features.StudioArtist.Team.Commands.AcceptTeamInvite;
 using Yuviron.Application.Features.StudioArtist.Team.Commands.AddTeamMember;
 using Yuviron.Domain.Entities;
@@ -42,9 +43,10 @@ public class AcceptTeamInviteHandlerTests
         currentUserMock.Setup(x => x.UserId).Returns(user.Id);
 
         var eventBusMock = new Mock<IEventBus>();
+        var identityManagerMock = new Mock<IIdentityManager>();
 
         var handler = new AcceptTeamInviteHandler(
-            dbContext, dbContext, currentUserMock.Object, cacheMock.Object, TimeProvider.System, eventBusMock.Object);
+            dbContext, dbContext, currentUserMock.Object, cacheMock.Object, TimeProvider.System, eventBusMock.Object, identityManagerMock.Object);
 
         await handler.Handle(new AcceptTeamInviteCommand(token), CancellationToken.None);
 
@@ -73,7 +75,7 @@ public class AcceptTeamInviteHandlerTests
         currentUserMock.Setup(x => x.UserId).Returns(user.Id);
 
         var handler = new AcceptTeamInviteHandler(
-            dbContext, dbContext, currentUserMock.Object, cacheMock.Object, TimeProvider.System, Mock.Of<IEventBus>());
+            dbContext, dbContext, currentUserMock.Object, cacheMock.Object, TimeProvider.System, Mock.Of<IEventBus>(), Mock.Of<IIdentityManager>());
 
         Func<Task> action = () => handler.Handle(new AcceptTeamInviteCommand(token), CancellationToken.None);
 

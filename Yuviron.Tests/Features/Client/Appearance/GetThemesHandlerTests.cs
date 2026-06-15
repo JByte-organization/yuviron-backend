@@ -25,7 +25,10 @@ public class GetThemesHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
 
-        var userId = Guid.NewGuid();
+        var user = User.Create("test1@example.com", "hash", "Test", false, true, DateTime.UtcNow);
+        dbContext.Add(user);
+        var userId = user.Id;
+
         var theme = Theme.Create("Ocean", "#2DD4BF", "#0F766E", "#042F2E", true, false);
         dbContext.Add(theme);
 
@@ -57,7 +60,10 @@ public class GetThemesHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
 
-        var userId = Guid.NewGuid();
+        var user = User.Create("test2@example.com", "hash", "Test", false, true, DateTime.UtcNow);
+        dbContext.Add(user);
+        var userId = user.Id;
+
         dbContext.Add(UserSettings.Create(userId, DateTime.UtcNow));
         
         dbContext.Add(Theme.Create("Free Theme", "#111111", "#222222", "#333333", false, false));
@@ -85,7 +91,10 @@ public class GetThemesHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
 
-        var userId = Guid.NewGuid();
+        var user = User.Create("test3@example.com", "hash", "Test", false, true, DateTime.UtcNow);
+        dbContext.Add(user);
+        var userId = user.Id;
+
         var customTheme = CustomTheme.Create(userId, "#111111", "#222222", "#000000", DateTime.UtcNow);
         dbContext.Add(customTheme);
 
@@ -110,8 +119,12 @@ public class GetThemesHandlerTests
     {
         await using var dbContext = new AppDbContext(CreateOptions());
 
-        var currentUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
+        var currentUserEntity = User.Create("current@example.com", "hash", "Current", false, true, DateTime.UtcNow);
+        var otherUserEntity = User.Create("other@example.com", "hash", "Other", false, true, DateTime.UtcNow);
+        dbContext.AddRange(currentUserEntity, otherUserEntity);
+        
+        var currentUserId = currentUserEntity.Id;
+        var otherUserId = otherUserEntity.Id;
 
         dbContext.Add(UserSettings.Create(currentUserId, DateTime.UtcNow));
         dbContext.Add(UserSettings.Create(otherUserId, DateTime.UtcNow));
