@@ -95,12 +95,6 @@ public sealed class UpdateArtistHandler : IRequestHandler<UpdateArtistCommand, U
             if (currentOwner != null)
             {
                 artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
-                
-                var oldOwnerUser = await _identityContext.Users.FirstOrDefaultAsync(u => u.Id == currentOwner.UserId, cancellationToken);
-                if (oldOwnerUser != null)
-                {
-                    oldOwnerUser.AddDomainEvent(new UserPermissionsChangedEvent(oldOwnerUser.Id));
-                }
             }
 
             if (newOwnerId.HasValue)

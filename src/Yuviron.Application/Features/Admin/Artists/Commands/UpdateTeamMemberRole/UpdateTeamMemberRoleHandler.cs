@@ -9,6 +9,7 @@ using Yuviron.Application.Abstractions.Services;
 using Yuviron.Domain.Entities;
 using Yuviron.Domain.Events; 
 using Yuviron.Domain.Exceptions;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Artists.Commands.UpdateTeamMemberRole;
 
@@ -43,11 +44,19 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
+        if (request.NewRole == ArtistTeamRole.Owner)
+        {
+            var currentOwner = artist.TeamMembers.FirstOrDefault(tm => tm.Role == ArtistTeamRole.Owner);
+            if (currentOwner != null && currentOwner.UserId != request.UserId)
+            {
+                artist.UpdateTeamMemberRole(currentOwner.UserId, ArtistTeamRole.Manager, utcNow);
+                await _catalogContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         artist.UpdateTeamMemberRole(request.UserId, request.NewRole, utcNow);
 
         await _identityManager.EnsureManagementRoleAsync(request.UserId, cancellationToken);
-
-        artist.AddDomainEvent(new UserPermissionsChangedEvent(request.UserId));
 
         await _catalogContext.SaveChangesAsync(cancellationToken);
 

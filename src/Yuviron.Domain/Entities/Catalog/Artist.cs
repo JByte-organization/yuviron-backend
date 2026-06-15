@@ -1,4 +1,4 @@
-п»їusing Yuviron.Domain.Common;
+using Yuviron.Domain.Common;
 using Yuviron.Domain.Enums;
 using Yuviron.Domain.Events;
 using Yuviron.Domain.Exceptions;
@@ -100,6 +100,7 @@ public class Artist : Entity
             TeamMembers.Add(ArtistTeamMember.Create(this.Id, userId, role, utcNow));
         }
     
+        AddDomainEvent(new UserPermissionsChangedEvent(userId));
         UpdatedAt = utcNow;
     }
 
@@ -118,9 +119,13 @@ public class Artist : Entity
             if (currentOwner != null)
             {
                 currentOwner.ChangeRole(ArtistTeamRole.Manager);
+                AddDomainEvent(new UserPermissionsChangedEvent(currentOwner.UserId));
             }
         }
+
         targetMember.ChangeRole(newRole);
+        AddDomainEvent(new UserPermissionsChangedEvent(targetMember.UserId));
+        
         UpdatedAt = utcNow;
     }
 
@@ -135,6 +140,7 @@ public class Artist : Entity
             }
 
             TeamMembers.Remove(member);
+            AddDomainEvent(new UserPermissionsChangedEvent(userId));
             UpdatedAt = utcNow;
             return true; 
         }
@@ -164,18 +170,18 @@ public class Artist : Entity
     
     public void AddSocialLink(SocialLinkType type, string url, DateTime utcNow)
     {
-        // РџСЂРѕРІРµСЂРєР° РЅР° РґСѓР±Р»РёРєР°С‚С‹ РѕСЃС‚Р°Р»Р°СЃСЊ
+        // Проверка на дубликаты осталась
         if (SocialLinks.Any(l => l.Type == type))
         {
             throw new SocialLinkAlreadyExistsException(type);
         }
 
-        // РџСЂРѕСЃС‚Рѕ РґРѕР±Р°РІР»СЏРµРј РЅРѕРІСѓСЋ СЃРІСЏР·СЊ
+        // Просто добавляем новую связь
         SocialLinks.Add(ArtistSocialLink.Create(this.Id, type, url, utcNow));
     
-        // РњР« РџРћР›РќРћРЎРўР¬Р® РЈР‘Р РђР›Р UpdatedAt = utcNow;
-        // РўРµРїРµСЂСЊ EF Core РґР°Р¶Рµ РЅРµ РїРѕРїС‹С‚Р°РµС‚СЃСЏ РѕР±РЅРѕРІРёС‚СЊ С‚Р°Р±Р»РёС†Сѓ artists,
-        // Р° Р·РЅР°С‡РёС‚, MySQL РЅРµ СЃРјРѕР¶РµС‚ РІС‹РґР°С‚СЊ РѕС€РёР±РєСѓ "0 СЃС‚СЂРѕРє".
+        // МЫ ПОЛНОСТЬЮ УБРАЛИ UpdatedAt = utcNow;
+        // Теперь EF Core даже не попытается обновить таблицу artists,
+        // а значит, MySQL не сможет выдать ошибку "0 строк".
     }
 
     public void RemoveSocialLink(SocialLinkType type, DateTime utcNow)
@@ -183,10 +189,10 @@ public class Artist : Entity
         var link = SocialLinks.FirstOrDefault(l => l.Type == type);
         if (link != null)
         {
-            // РџСЂРѕСЃС‚Рѕ СѓРґР°Р»СЏРµРј СЃРІСЏР·СЊ
+            // Просто удаляем связь
             SocialLinks.Remove(link);
         
-            // РњР« РџРћР›РќРћРЎРўР¬Р® РЈР‘Р РђР›Р UpdatedAt = utcNow;
+            // МЫ ПОЛНОСТЬЮ УБРАЛИ UpdatedAt = utcNow;
         }
     }
 

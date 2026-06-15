@@ -31,14 +31,6 @@ public class StudioArtistTeamController : StudioArtistApiControllerBase
         return NoContent();
     }
 
-    [HttpPost("accept-invite")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AcceptInvite([FromBody] AcceptTeamInviteCommand command, CancellationToken ct)
-    {
-        await Mediator.Send(command, ct);
-        return NoContent();
-    }
 
     [HttpPut("{artistId:guid}/{targetUserId:guid}/role")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
