@@ -21,11 +21,17 @@ public sealed class GetMyDevicesHandler : IRequestHandler<GetMyDevicesQuery, Lis
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        return await _identityContext.UserDevices
+        var allDevices = await _identityContext.UserDevices
             .AsNoTracking()
             .Where(d => d.UserId == userId)
             .OrderByDescending(d => d.LastUsedAt)
-            .Select(d => new UserDeviceDto(d.Id, d.DeviceName, d.BrowserName, d.LastIpAddress, d.LastUsedAt, d.CreatedAt))
             .ToListAsync(cancellationToken);
+
+        return allDevices
+            .GroupBy(d => new { d.DeviceName, d.BrowserName })
+            .Select(g => g.First())
+            .Select(d => new UserDeviceDto(d.Id, d.DeviceName, d.BrowserName, d.LastIpAddress, d.LastUsedAt, d.CreatedAt))
+            .ToList();
     }
 }
+
