@@ -78,8 +78,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Configuration\Limits\" />
-  </ItemGroup>
-
 </Project>

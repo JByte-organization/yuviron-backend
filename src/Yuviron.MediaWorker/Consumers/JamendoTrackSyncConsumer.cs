@@ -66,7 +66,7 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
             utcNow);
         
         _systemContext.Add(audioMeta);
-        await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
+        await _systemContext.SaveChangesAsync(catalogContext.CancellationToken);
 
         // 2. Download cover (optional)
         Guid? coverFileId = null;
@@ -86,7 +86,7 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
                     utcNow);
                 
                 _systemContext.Add(coverMeta);
-                await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
+                await _systemContext.SaveChangesAsync(catalogContext.CancellationToken);
             }
         }
 
@@ -137,6 +137,7 @@ public class JamendoTrackSyncConsumer : IConsumer<JamendoTrackSyncRequestedEvent
         _systemContext.Add(ExternalMapping.Create(trackId, nameof(Track), ExternalProvider.Jamendo, message.JamendoId));
         
         await _catalogContext.SaveChangesAsync(catalogContext.CancellationToken);
+        await _systemContext.SaveChangesAsync(catalogContext.CancellationToken);
 
         _logger.LogInformation("Successfully synced Jamendo track: {TrackName}", message.TrackName);
     }
