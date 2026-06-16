@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +35,9 @@ public sealed class GetUserFavoriteAlbumsHandler : IRequestHandler<GetUserFavori
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         var query = _libraryContext.UserSavedAlbums.AsNoTracking()
-            .Where(usa => usa.UserId == userId && _catalogContext.Albums.AvailableForPublic(utcNow).Any(a => a.Id == usa.AlbumId));
+            .Where(usa => usa.UserId == userId && 
+                          usa.Album.VisibilityStatus == Yuviron.Domain.Enums.VisibilityStatus.Published &&
+                          usa.Album.ReleaseDate <= utcNow);
 
         var sortedQuery = query.ApplySorting(
             request.SortBy, 

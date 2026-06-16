@@ -111,6 +111,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
             var brokenBatch = await context.Albums
                 .IgnoreQueryFilters()
                 .Where(a => !a.IsDeleted && !context.AlbumArtists.IgnoreQueryFilters().Any(aa => aa.AlbumId == a.Id))
+                .OrderBy(a => a.Id)
                 .Take(BatchSize)
                 .ToListAsync(ct);
 
@@ -129,6 +130,7 @@ public sealed class OrphanedDataCleanupJob : BackgroundService
             var brokenBatch = await context.Tracks
                 .IgnoreQueryFilters()
                 .Where(t => !t.IsDeleted && !context.TrackArtists.IgnoreQueryFilters().Any(ta => ta.TrackId == t.Id))
+                .OrderBy(t => t.Id)
                 .Take(BatchSize)
                 .ToListAsync(ct);
 

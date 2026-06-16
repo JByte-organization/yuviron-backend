@@ -1,6 +1,7 @@
-using Yuviron.Infrastructure.Consumers.Notifications.Email;
+﻿using Yuviron.Infrastructure.Consumers.Notifications.Email;
 using Yuviron.Infrastructure.Consumers.Notifications.InApp;
-﻿using MassTransit;
+using Yuviron.Infrastructure.Consumers.Notifications;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
@@ -30,13 +31,34 @@ public class NotifyFollowersOnNewReleaseConsumerTests
         _consumer = new NotifyFollowersOnNewReleaseConsumer(_context, _notificationServiceMock.Object);
     }
 
+    private void SetupArtist(Guid artistId)
+    {
+        var artist = Artist.Create(null, "Artist " + artistId, "Bio", null, null, VerificationStatus.Verified, DateTime.UtcNow);
+        typeof(Artist).GetProperty("Id")!.SetValue(artist, artistId);
+        _context.Add(artist);
+    }
+
+    private void SetupUser(Guid userId)
+    {
+        var user = User.Create("user" + userId + "@test.com", "hash", "User", false, true, DateTime.UtcNow);
+        typeof(User).GetProperty("Id")!.SetValue(user, userId);
+        _context.Add(user);
+    }
+
     [Fact]
     public async Task Consume_Should_Notify_Followers_With_Notifications_Enabled()
     {
         // Arrange
         var artistId = Guid.NewGuid();
         var user1Id = Guid.NewGuid();
-        var user2Id = Guid.NewGuid(); _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); _context.Add(new UserFollowArtist(user2Id, artistId, true, DateTime.UtcNow));
+        var user2Id = Guid.NewGuid();
+
+        SetupArtist(artistId);
+        SetupUser(user1Id);
+        SetupUser(user2Id);
+
+        _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); 
+        _context.Add(new UserFollowArtist(user2Id, artistId, true, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var msg = new NewReleasePublishedEvent(artistId, "The Beatles", Guid.NewGuid(), NotificationEntityType.Album, "Abbey Road", null);
@@ -66,7 +88,14 @@ public class NotifyFollowersOnNewReleaseConsumerTests
         // Arrange
         var artistId = Guid.NewGuid();
         var user1Id = Guid.NewGuid(); 
-        var user2Id = Guid.NewGuid(); _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); _context.Add(new UserFollowArtist(user2Id, artistId, false, DateTime.UtcNow));
+        var user2Id = Guid.NewGuid();
+
+        SetupArtist(artistId);
+        SetupUser(user1Id);
+        SetupUser(user2Id);
+
+        _context.Add(new UserFollowArtist(user1Id, artistId, true, DateTime.UtcNow)); 
+        _context.Add(new UserFollowArtist(user2Id, artistId, false, DateTime.UtcNow));
         await _context.SaveChangesAsync();
 
         var msg = new NewReleasePublishedEvent(artistId, "The Beatles", Guid.NewGuid(), NotificationEntityType.Album, "Abbey Road", null);

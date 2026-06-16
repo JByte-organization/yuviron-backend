@@ -123,4 +123,18 @@ public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfi
     void IDataContext.RemoveRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class => base.RemoveRange(entities);
     void IDataContext.UpdateRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class => base.UpdateRange(entities);
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) { modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly()); base.OnModelCreating(modelBuilder); }}
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                entityType.SetQueryFilter(null);
+            }
+        }
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
