@@ -19,7 +19,7 @@ public static class DependencyInjection
             .AddCaching(configuration)
             .AddOptionsInternal(configuration)
             .AddServices()
-            .AddHealthChecksInternal();
+            .AddHealthChecksInternal(configuration);
 
 
         return services;
@@ -34,4 +34,3 @@ public static class DependencyInjection
         return services;
     }
 }
-
