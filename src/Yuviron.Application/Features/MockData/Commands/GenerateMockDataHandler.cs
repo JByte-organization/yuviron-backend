@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace Yuviron.Application.MockData;
 
-public class GenerateMockDataCommandHandler : IRequestHandler<GenerateMockDataCommand, Unit>
+public class GenerateMockDataHandler : IRequestHandler<GenerateMockDataCommand, Unit>
 {
     private readonly IMockDataService _mockDataService;
 
-    public GenerateMockDataCommandHandler(IMockDataService mockDataService)
+    public GenerateMockDataHandler(IMockDataService mockDataService)
     {
         _mockDataService = mockDataService;
     }

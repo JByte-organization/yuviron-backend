@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +25,6 @@ public class SmartLinkConfiguration : IEntityTypeConfiguration<SmartLink>
             .IsRequired(false) 
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasQueryFilter(x => x.CreatedByUserId == null || !x.CreatedByUser.IsDeleted);
+        builder.HasQueryFilter(x => x.CreatedByUserId == null || (x.CreatedByUser != null && !x.CreatedByUser.IsDeleted));
     }
 }

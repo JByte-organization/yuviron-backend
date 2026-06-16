@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -40,6 +40,11 @@ public sealed class UpdateTeamMemberRoleHandler : IRequestHandler<UpdateTeamMemb
             .AnyAsync(tm => tm.ArtistId == request.ArtistId && tm.UserId == currentUserId && tm.Role == ArtistTeamRole.Owner, cancellationToken);
         
         if (!isOwner) throw new ForbiddenException("Only the Owner can change team roles.");
+
+        if (request.TargetUserId == currentUserId && request.NewRole != ArtistTeamRole.Owner)
+        {
+            throw new InvalidOperationException("Cannot demote the only owner. Transfer ownership to another member first.");
+        }
 
         var artist = await _catalogContext.Artists
                          .Include(a => a.TeamMembers)

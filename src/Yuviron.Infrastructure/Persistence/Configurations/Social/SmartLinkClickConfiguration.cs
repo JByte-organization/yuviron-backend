@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +26,6 @@ public class SmartLinkClickConfiguration : IEntityTypeConfiguration<SmartLinkCli
             .HasForeignKey(x => x.SmartLinkId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasQueryFilter(x => x.SmartLink.CreatedByUserId == null || !x.SmartLink.CreatedByUser.IsDeleted);
+        builder.HasQueryFilter(x => x.SmartLink.CreatedByUserId == null || (x.SmartLink.CreatedByUser != null && !x.SmartLink.CreatedByUser.IsDeleted));
     }
 }

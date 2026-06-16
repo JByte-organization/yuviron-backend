@@ -1,4 +1,4 @@
-using Yuviron.Application.Abstractions.Data.Contexts;
+﻿using Yuviron.Application.Abstractions.Data.Contexts;
 using Yuviron.Application.Abstractions.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -44,7 +44,11 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
         var query = _libraryContext.UserSavedTracks
             .AsNoTracking()
             .Where(ust => ust.UserId == userId && 
-                          _catalogContext.Tracks.AvailableForPublic(utcNow).Any(t => t.Id == ust.TrackId));
+                          ust.Track.VisibilityStatus == Yuviron.Domain.Enums.VisibilityStatus.Published &&
+                          ust.Track.ProcessingStatus == Yuviron.Domain.Enums.TrackProcessingStatus.Ready &&
+                          ust.Track.Album != null &&
+                          ust.Track.Album.VisibilityStatus == Yuviron.Domain.Enums.VisibilityStatus.Published &&
+                          ust.Track.Album.ReleaseDate <= utcNow);
 
         var sortedQuery = query.ApplySorting(
             request.SortBy,
@@ -63,7 +67,6 @@ public sealed class GetUserFavoriteTracksHandler : IRequestHandler<GetUserFavori
             ust.TrackId,
             ust.Track.Title,
             ust.Track.TrackArtists
-                
                 .Select(ta => new TrackArtistDto(ta.Artist.Id, ta.Artist.Name, ta.Role)),
             ust.Track.AlbumId,
             ust.Track.Album != null ? ust.Track.Album.Title : "Unknown",

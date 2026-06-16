@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Yuviron.Infrastructure;
@@ -23,6 +23,9 @@ internal static class ServiceDiscoveryExtensions
         foreach (var abstraction in abstractionTypes)
         {
             if (abstraction.Name == "IDbTransaction") continue;
+            
+            // Skip database context interfaces because they are handled by AppDbContext registration
+            if (abstraction.Name.EndsWith("Context") && abstraction.Name != "IUserContext") continue;
 
             var implementation = implementationTypes.FirstOrDefault(impl => abstraction.IsAssignableFrom(impl));
             
