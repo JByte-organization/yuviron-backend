@@ -40,21 +40,6 @@ internal static class MessagingExtensions
             });
         });
 
-        // Singleton connection reused by the health check
-        services.AddSingleton<IConnection>(_ =>
-        {
-            var factory = new ConnectionFactory
-            {
-                HostName = configuration["RabbitMQ:Host"] ?? "127.0.0.1",
-                Port = int.TryParse(configuration["RabbitMQ:Port"], out var p) ? p : 5672,
-                UserName = configuration["RabbitMQ:Username"] ?? "guest",
-                Password = configuration["RabbitMQ:Password"] ?? "guest",
-                VirtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/",
-                AutomaticRecoveryEnabled = true,
-            };
-            return factory.CreateConnectionAsync("health-check").GetAwaiter().GetResult();
-        });
-
         return services;
     }
 }
