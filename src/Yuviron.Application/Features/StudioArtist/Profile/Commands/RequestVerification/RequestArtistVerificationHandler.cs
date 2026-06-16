@@ -64,6 +64,12 @@ public sealed class RequestArtistVerificationHandler : IRequestHandler<RequestAr
         );
 
         _auditingContext.Add(verificationReq);
+
+        if (proofFileClaim != null)
+        {
+            verificationReq.RegisterFileSwapEvents(proofFileClaim);
+        }
+
         await _catalogContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

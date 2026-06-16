@@ -26,6 +26,13 @@ public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfi
             .Where(e => e.Entity.DomainEvents.Any())
             .ToList();
 
+        if (domainEntities.Any())
+        {
+            // Temporary log for debugging outbox on server
+            // Using Console.WriteLine to ensure it's visible in raw logs
+            Console.WriteLine($"[Outbox-Debug] Captured {domainEntities.Sum(e => e.Entity.DomainEvents.Count)} domain events from {domainEntities.Count} entities.");
+        }
+
         var outboxMessages = domainEntities.SelectMany(e =>
             {
                 var domainEvents = e.Entity.DomainEvents.ToList();

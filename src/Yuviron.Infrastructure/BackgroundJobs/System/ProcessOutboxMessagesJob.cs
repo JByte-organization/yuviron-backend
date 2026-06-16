@@ -88,9 +88,11 @@ public class ProcessOutboxMessagesJob : BackgroundService
                                     throw new InvalidOperationException($"Deserialization returned null for {message.Type}");
                                 }
 
+                                Console.WriteLine($"[Outbox-Debug] Publishing message {message.Id} of type {message.Type}");
                                 await publishEndpoint.Publish(domainEvent, eventType, stoppingToken);
                                 
                                 message.MarkAsProcessed(DateTime.UtcNow);
+                                Console.WriteLine($"[Outbox-Debug] Successfully processed message {message.Id}");
                             }
                             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                             {

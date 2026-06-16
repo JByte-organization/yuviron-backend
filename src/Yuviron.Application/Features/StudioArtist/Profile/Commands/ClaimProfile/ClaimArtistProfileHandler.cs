@@ -94,6 +94,11 @@ public sealed class ClaimArtistProfileHandler : IRequestHandler<ClaimArtistProfi
         );
 
         _auditingContext.Add(verificationReq);
+
+        if (proofFileClaim != null)
+        {
+            verificationReq.RegisterFileSwapEvents(proofFileClaim);
+        }
         
         await _identityContext.SaveChangesAsync(cancellationToken);
     }
