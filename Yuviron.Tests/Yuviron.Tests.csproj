@@ -26,6 +26,7 @@
     <ProjectReference Include="..\src\Yuviron.Application\Yuviron.Application.csproj" />
     <ProjectReference Include="..\src\Yuviron.Domain\Yuviron.Domain.csproj" />
     <ProjectReference Include="..\src\Yuviron.Infrastructure\Yuviron.Infrastructure.csproj" />
+    <ProjectReference Include="..\src\Yuviron.Api\Yuviron.Api.csproj" />
   </ItemGroup>
 
 </Project>
