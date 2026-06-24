@@ -9,6 +9,7 @@ public sealed record PlanDetailsDto(
     decimal Price,
     string Currency,
     PlanPeriod Period,
+    string PlanTypeString,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

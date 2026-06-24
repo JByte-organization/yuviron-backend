@@ -9,6 +9,7 @@ public sealed record PlanListItemDto(
     decimal Price,
     string Currency,
     PlanPeriod Period,
+    string PlanTypeString,
     int ActiveSubscribersCount,
     DateTime CreatedAt,
     DateTime UpdatedAt

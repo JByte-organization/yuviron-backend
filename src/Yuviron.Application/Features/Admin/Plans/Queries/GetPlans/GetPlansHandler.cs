@@ -47,6 +47,9 @@ public sealed class GetPlansHandler : IRequestHandler<GetPlansQuery, PaginatedLi
             p.Price,
             p.Currency,
             p.Period,
+            p.Type == PlanType.Listener ? nameof(PlanType.Listener) :
+            p.Type == PlanType.Artist ? nameof(PlanType.Artist) :
+            nameof(PlanType.Unknown),
             _monetizationContext.Subscriptions.Count(s => s.PlanId == p.Id && s.Status == SubscriptionStatus.Active),
             p.CreatedAt,
             p.UpdatedAt
