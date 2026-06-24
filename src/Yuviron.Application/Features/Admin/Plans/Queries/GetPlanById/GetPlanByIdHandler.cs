@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Yuviron.Application.Abstractions;
 using Yuviron.Domain.Exceptions;
 using Yuviron.Domain.Entities;
+using Yuviron.Domain.Enums;
 
 namespace Yuviron.Application.Features.Admin.Plans.Queries.GetPlanById;
 
@@ -28,6 +29,9 @@ public sealed class GetPlanByIdHandler : IRequestHandler<GetPlanByIdQuery, PlanD
                 p.Price,
                 p.Currency,
                 p.Period,
+                p.Type == PlanType.Listener ? nameof(PlanType.Listener) :
+                p.Type == PlanType.Artist ? nameof(PlanType.Artist) :
+                nameof(PlanType.Unknown),
                 p.CreatedAt,
                 p.UpdatedAt
             ))

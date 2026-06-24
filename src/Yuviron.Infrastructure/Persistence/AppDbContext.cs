@@ -10,7 +10,7 @@ using Yuviron.Domain.Entities;
 
 namespace Yuviron.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfileContext, ILibraryContext, IMonetizationContext, IPlayerContext, IContentContext, IAuditingContext, ISystemContext, IDataContext, IUnitOfWork
+public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfileContext, ILibraryContext, IMonetizationContext, IContentContext, IAuditingContext, ISystemContext, IDataContext, IUnitOfWork
 {
 
     public AppDbContext(
@@ -126,9 +126,9 @@ public class AppDbContext : DbContext, IIdentityContext, ICatalogContext, IProfi
     void IDataContext.Add<T>(T entity) where T : class => base.Add(entity);
     void IDataContext.Remove<T>(T entity) where T : class => base.Remove(entity);
     void IDataContext.Update<T>(T entity) where T : class => base.Update(entity);
-    void IDataContext.AddRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class => base.AddRange(entities);
-    void IDataContext.RemoveRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class => base.RemoveRange(entities);
-    void IDataContext.UpdateRange<T>(System.Collections.Generic.IEnumerable<T> entities) where T : class => base.UpdateRange(entities);
+    void IDataContext.AddRange<T>(IEnumerable<T> entities) where T : class => base.AddRange(entities);
+    void IDataContext.RemoveRange<T>(IEnumerable<T> entities) where T : class => base.RemoveRange(entities);
+    void IDataContext.UpdateRange<T>(IEnumerable<T> entities) where T : class => base.UpdateRange(entities);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -33,7 +33,6 @@ internal static class PersistenceExtensions
         services.AddScoped<IProfileContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<ILibraryContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IMonetizationContext>(sp => sp.GetRequiredService<AppDbContext>());
-        services.AddScoped<IPlayerContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IContentContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IAuditingContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<ISystemContext>(sp => sp.GetRequiredService<AppDbContext>());
