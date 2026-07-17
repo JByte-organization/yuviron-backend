@@ -38,7 +38,14 @@ public sealed class ResolveSmartLinkHandler : IRequestHandler<ResolveSmartLinkQu
             return new ResolveSmartLinkResponse("/"); 
         }
 
-        smartLink.RecordClick(request.CountryCode, request.Referrer, request.DeviceType, utcNow);
+        var click = SmartLinkClick.Create(
+            smartLink.Id,
+            request.CountryCode,
+            request.Referrer,
+            request.DeviceType,
+            utcNow);
+
+        _contentContext.Add(click);
         await _contentContext.SaveChangesAsync(cancellationToken);
 
         string relativePath = smartLink.EntityType switch
@@ -47,6 +54,7 @@ public sealed class ResolveSmartLinkHandler : IRequestHandler<ResolveSmartLinkQu
             SmartLinkType.Track => $"/tracks/{smartLink.EntityId}",
             SmartLinkType.Playlist => $"/playlists/{smartLink.EntityId}",
             SmartLinkType.Artist => $"/artists/{smartLink.EntityId}",
+            SmartLinkType.UserProfile => $"/users/{smartLink.EntityId}",
             _ => "/" 
         };
 

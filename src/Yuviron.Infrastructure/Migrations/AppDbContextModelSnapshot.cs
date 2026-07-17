@@ -135,6 +135,11 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<DateTime>("ReleaseDate")
                         .HasColumnType("datetime(6)");
 
@@ -159,6 +164,9 @@ namespace Yuviron.Infrastructure.Migrations
 
                     b.HasIndex("CreatedAt")
                         .IsDescending();
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.HasIndex("ReleaseDate");
 
@@ -224,6 +232,11 @@ namespace Yuviron.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<long>("TotalPlays")
                         .HasColumnType("bigint");
 
@@ -239,6 +252,9 @@ namespace Yuviron.Infrastructure.Migrations
                         .IsDescending();
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.HasIndex("VerificationStatus", "CreatedAt");
 
@@ -1173,6 +1189,11 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<bool>("IsEditorial")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -1192,6 +1213,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasIndex("ArtistId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -1557,6 +1581,11 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<int>("ProcessingStatus")
                         .HasColumnType("int");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -1573,6 +1602,9 @@ namespace Yuviron.Infrastructure.Migrations
                     b.HasIndex("AlbumId");
 
                     b.HasIndex("Isrc");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.ToTable("tracks", (string)null);
                 });
@@ -1897,12 +1929,20 @@ namespace Yuviron.Infrastructure.Migrations
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("FirstName");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
 
                     b.ToTable("user_profiles", (string)null);
                 });

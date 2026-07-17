@@ -6,6 +6,7 @@ namespace Yuviron.Domain.Entities;
 
 public class Playlist : Entity
 {
+    public string PublicId { get; private set; } = string.Empty;
     public Guid? UserId { get; private set; } 
     
     // ДОБАВЛЕНО: Привязка к профилю артиста (если плейлист кураторский)
@@ -49,6 +50,7 @@ public class Playlist : Entity
         return new Playlist
         {
             Id = Guid.NewGuid(),
+            PublicId = PublicIdGenerator.NewId(),
             UserId = userId,
             ArtistId = artistId, 
             Title = title.Trim(),

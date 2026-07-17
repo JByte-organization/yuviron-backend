@@ -5,6 +5,7 @@ namespace Yuviron.Domain.Entities;
 
 public class Album : Entity
 {
+    public string PublicId { get; private set; } = string.Empty;
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public string? CoverUrl { get; private set; }
@@ -33,6 +34,7 @@ public class Album : Entity
         var album = new Album
         {
             Id = Guid.NewGuid(),
+            PublicId = PublicIdGenerator.NewId(),
             Title = title.Trim(),
             Description = description?.Trim(),
             CoverUrl = coverUrl?.Trim(),

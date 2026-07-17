@@ -6,6 +6,7 @@ namespace Yuviron.Domain.Entities;
 
 public class Track : Entity
 {
+    public string PublicId { get; private set; } = string.Empty;
     public Guid AlbumId { get; private set; } 
     public int AlbumPosition { get; private set; }
     public string Title { get; private set; } = string.Empty;
@@ -53,6 +54,7 @@ public class Track : Entity
         var track = new Track
         {
             Id = id,
+            PublicId = PublicIdGenerator.NewId(),
             AlbumId = albumId,
             AlbumPosition = albumPosition, 
             Title = title.Trim(),
