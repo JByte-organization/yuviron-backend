@@ -7,6 +7,7 @@ namespace Yuviron.Domain.Entities;
 
 public class UserProfile : Entity
 {
+    public string PublicId { get; private set; } = string.Empty;
     public string FirstName { get; private set; } = string.Empty;
     public string? AvatarUrl { get; private set; }
     public string? BannerUrl { get; private set; } 
@@ -36,6 +37,7 @@ public class UserProfile : Entity
         return new UserProfile
         {
             Id = userId,
+            PublicId = PublicIdGenerator.NewId(),
             FirstName = firstName.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
             BannerUrl = bannerUrl?.Trim(),

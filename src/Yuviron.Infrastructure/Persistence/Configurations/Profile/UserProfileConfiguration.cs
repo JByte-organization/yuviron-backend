@@ -12,6 +12,7 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.PublicId).IsRequired().HasMaxLength(32);
         builder.Property(x => x.FirstName).IsRequired().HasMaxLength(100);
         builder.Property(x => x.AvatarUrl).HasMaxLength(2048); 
         builder.Property(x => x.BannerUrl).HasMaxLength(2048);
@@ -25,6 +26,7 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         builder.Property(x => x.Gender).IsRequired();
         builder.Property(x => x.DateOfBirth).IsRequired().HasColumnType("date");
 
+        builder.HasIndex(x => x.PublicId).IsUnique();
         builder.HasIndex(x => x.FirstName);
 
         builder.HasOne(x => x.User)

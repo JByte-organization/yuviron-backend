@@ -11,6 +11,7 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.ToTable("tracks");
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.PublicId).IsRequired().HasMaxLength(32);
         builder.Property(x => x.Title).IsRequired().HasMaxLength(256);
         builder.Property(x => x.CoverUrl).HasMaxLength(2048);
         builder.Property(x => x.AudioStorageKey).IsRequired().HasMaxLength(1024); 
@@ -30,6 +31,7 @@ public class TrackConfiguration : IEntityTypeConfiguration<Track>
             .HasMaxLength(12)
             .IsRequired(false);
 
+        builder.HasIndex(x => x.PublicId).IsUnique();
         builder.HasIndex(t => t.Isrc);
         
         builder.HasQueryFilter(x => !x.IsDeleted);

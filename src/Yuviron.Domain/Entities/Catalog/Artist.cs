@@ -7,6 +7,7 @@ namespace Yuviron.Domain.Entities;
 
 public class Artist : Entity
 {
+    public string PublicId { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string? Bio { get; private set; }
     public string? AvatarUrl { get; private set; }
@@ -46,6 +47,7 @@ public class Artist : Entity
         var artist = new Artist
         {
             Id = Guid.NewGuid(),
+            PublicId = PublicIdGenerator.NewId(),
             Name = name.Trim(),
             Bio = bio?.Trim(),
             AvatarUrl = avatarUrl?.Trim(),
